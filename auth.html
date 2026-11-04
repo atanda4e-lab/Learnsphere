@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Login | LearnSphere</title>
+
+    <link rel="stylesheet" href="auth.css">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="auth-container">
+
+        <!-- LEFT SIDE -->
+        <div class="auth-left">
+
+            <a href="index.html" class="logo">
+                <i class="fa-solid fa-graduation-cap"></i>
+                Learn<span>Sphere</span>
+            </a>
+
+            <div class="auth-left-content">
+
+                <span class="auth-label">WELCOME TO LEARNSPHERE</span>
+
+                <h1>
+                    Your Learning Journey
+                    <span>Starts Here.</span>
+                </h1>
+
+                <p>
+                    Access your courses, study materials, assessments
+                    and learning activities from one platform.
+                </p>
+
+                <div class="auth-benefits">
+
+                    <div>
+                        <i class="fa-solid fa-book-open"></i>
+                        <span>Access your learning materials</span>
+                    </div>
+
+                    <div>
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Monitor your learning progress</span>
+                    </div>
+
+                    <div>
+                        <i class="fa-solid fa-award"></i>
+                        <span>Track your achievements</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <p class="auth-copyright">
+                &copy; 2026 LearnSphere. All Rights Reserved.
+            </p>
+
+        </div>
+
+
+        <!-- RIGHT SIDE -->
+        <div class="auth-right">
+
+            <div class="auth-box">
+
+                <a href="index.html" class="mobile-logo">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    Learn<span>Sphere</span>
+                </a>
+
+                <div class="auth-heading">
+
+                    <span class="section-label">ACCOUNT ACCESS</span>
+
+                    <h2>Welcome Back!</h2>
+
+                    <p>Select your account type to continue.</p>
+
+                </div>
+
+
+                <!-- ACCOUNT TYPE SELECTION -->
+                <div class="account-selector">
+
+                    <button type="button" class="account-option active"
+                        id="studentAccountBtn">
+
+                        <i class="fa-solid fa-user-graduate"></i>
+
+                        <span>Student</span>
+
+                    </button>
+
+                    <button type="button" class="account-option"
+                        id="adminAccountBtn">
+
+                        <i class="fa-solid fa-user-shield"></i>
+
+                        <span>Admin</span>
+
+                    </button>
+
+                </div>
+
+
+                <!-- STUDENT AUTHENTICATION -->
+                <div id="studentAuthSection">
+
+                    <div class="auth-tabs">
+
+                        <button type="button" class="auth-tab active"
+                            id="loginTab">
+                            Student Login
+                        </button>
+
+                        <button type="button" class="auth-tab"
+                            id="registerTab">
+                            Create Account
+                        </button>
+
+                    </div>
+
+
+                    <!-- STUDENT LOGIN FORM -->
+                    <form id="loginForm">
+
+                        <div class="form-group">
+
+                            <label for="loginEmail">Email Address</label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-envelope"></i>
+
+                                <input type="email" id="loginEmail"
+                                    placeholder="Enter your email" required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="loginPassword">Password</label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-lock"></i>
+
+                                <input type="password" id="loginPassword"
+                                    placeholder="Enter your password" required>
+
+                            </div>
+
+                        </div>
+
+
+                        <p class="form-message" id="loginMessage"></p>
+
+                        <button type="submit" class="auth-submit">
+                            Login as Student
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+
+                    </form>
+
+
+                    <!-- STUDENT REGISTRATION FORM -->
+                    <form id="registerForm" hidden>
+
+                        <div class="form-group">
+
+                            <label for="fullName">Full Name</label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-user"></i>
+
+                                <input type="text" id="fullName"
+                                    placeholder="Enter your full name" required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="registerEmail">Email Address</label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-envelope"></i>
+
+                                <input type="email" id="registerEmail"
+                                    placeholder="Enter your email" required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="university">University</label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-building-columns"></i>
+
+                                <input type="text" id="university"
+                                    placeholder="Enter your university" required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="department">Department</label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-book"></i>
+
+                                <input type="text" id="department"
+                                    placeholder="Enter your department" required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="level">Academic Level</label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-graduation-cap"></i>
+
+                                <select id="level" required>
+
+                                    <option value="">Select your level</option>
+                                    <option value="100">100 Level</option>
+                                    <option value="200">200 Level</option>
+                                    <option value="300">300 Level</option>
+                                    <option value="400">400 Level</option>
+                                    <option value="500">500 Level</option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="registerPassword">Password</label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-lock"></i>
+
+                                <input type="password" id="registerPassword"
+                                    placeholder="Create a password" required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="confirmPassword">Confirm Password</label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-lock"></i>
+
+                                <input type="password" id="confirmPassword"
+                                    placeholder="Confirm your password" required>
+
+                            </div>
+
+                        </div>
+
+
+                        <p class="form-message" id="registerMessage"></p>
+
+                        <button type="submit" class="auth-submit">
+                            Create Student Account
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+
+                    </form>
+
+                </div>
+
+
+                <!-- ADMIN LOGIN -->
+                <div id="adminAuthSection" hidden>
+
+                    <div class="admin-heading">
+
+                        <div class="admin-icon">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+
+                        <h3>Administrator Access</h3>
+
+                        <p>
+                            Login with your authorised administrator account.
+                        </p>
+
+                    </div>
+
+
+                    <form id="adminLoginForm">
+
+                        <div class="form-group">
+
+                            <label for="adminEmail">Admin Email</label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-envelope"></i>
+
+                                <input type="email" id="adminEmail"
+                                    placeholder="Enter admin email" required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="adminPassword">Admin Password</label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-lock"></i>
+
+                                <input type="password" id="adminPassword"
+                                    placeholder="Enter admin password" required>
+
+                            </div>
+
+                        </div>
+
+
+                        <p class="form-message" id="adminLoginMessage"></p>
+
+                        <button type="submit" class="auth-submit admin-submit">
+                            Login as Administrator
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+
+                    </form>
+
+                </div>
+
+
+                <div class="back-home">
+
+                    <a href="index.html">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        Back to Homepage
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script src="auth.js"></script>
+
+</body>
+
+</html>

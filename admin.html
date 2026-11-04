@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>LearnSphere Admin Dashboard</title>
+
+    <link rel="stylesheet" href="admin.css">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+    <div id="adminArea" class="admin-dashboard hidden">
+
+        <!-- SIDEBAR -->
+        <aside class="admin-sidebar">
+
+            <div class="admin-logo">
+                <h2>Learn<span>Sphere</span></h2>
+                <p>Admin Panel</p>
+            </div>
+
+            <nav class="admin-navigation">
+
+                <button class="admin-nav-btn active" data-page="overview">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Overview</span>
+                </button>
+
+                <button class="admin-nav-btn" data-page="manageCourses">
+                    <i class="fa-solid fa-book"></i>
+                    <span>Manage Courses</span>
+                </button>
+
+                <button class="admin-nav-btn" data-page="manageLessons">
+                    <i class="fa-solid fa-file-lines"></i>
+                    <span>Manage Lessons</span>
+                </button>
+
+                <button class="admin-nav-btn" data-page="manageQuizzes">
+                    <i class="fa-solid fa-circle-question"></i>
+                    <span>Manage Quizzes</span>
+                </button>
+
+                <button class="admin-nav-btn" data-page="manageStudents">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Manage Students</span>
+                </button>
+
+                <button class="admin-nav-btn" data-page="manageResults">
+                    <i class="fa-solid fa-chart-column"></i>
+                    <span>Student Results</span>
+                </button>
+
+                <button class="admin-nav-btn" data-page="manageCertificates">
+                    <i class="fa-solid fa-certificate"></i>
+                    <span>Certificates</span>
+                </button>
+
+            </nav>
+
+            <div class="admin-sidebar-bottom">
+
+                <button id="adminLogoutBtn">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <!-- MAIN CONTENT -->
+        <main class="admin-main">
+
+            <!-- TOP HEADER -->
+            <header class="admin-header">
+
+                <div>
+                    <h1>Admin Dashboard</h1>
+                    <p>Manage your LearnSphere platform.</p>
+                </div>
+
+                <div class="admin-profile">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span>Administrator</span>
+                </div>
+
+            </header>
+
+
+            <!-- OVERVIEW PAGE -->
+            <section id="overview" class="admin-page active">
+
+                <div class="page-heading">
+                    <h2>Dashboard Overview</h2>
+                    <p>Welcome to your LearnSphere admin dashboard.</p>
+                </div>
+
+                <div class="admin-stats">
+
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-book"></i>
+                        </div>
+
+                        <h3>Total Courses</h3>
+                        <p id="totalCourses">0</p>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+
+                        <h3>Total Students</h3>
+                        <p id="totalStudents">0</p>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-file-lines"></i>
+                        </div>
+
+                        <h3>Total Lessons</h3>
+                        <p id="totalLessons">0</p>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-circle-question"></i>
+                        </div>
+
+                        <h3>Total Quizzes</h3>
+                        <p id="totalQuizzes">0</p>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- MANAGE COURSES PAGE -->
+            <section id="manageCourses" class="admin-page">
+
+                <div class="page-heading">
+                    <h2>Manage Courses</h2>
+                    <p>Add, search, edit and delete courses.</p>
+                </div>
+
+                <div class="course-management">
+
+                    <div class="course-toolbar">
+
+                        <input
+                            type="search"
+                            id="adminCourseSearch"
+                            placeholder="Search courses..."
+                        >
+
+                        <select id="adminCourseFilter">
+                            <option value="all">All Courses</option>
+                            <option value="published">Published</option>
+                            <option value="unpublished">Unpublished</option>
+                        </select>
+
+                        <button class="primary-btn" id="addNewCourseBtn">
+                            <i class="fa-solid fa-plus"></i>
+                            Add New Course
+                        </button>
+
+                    </div>
+
+                    <!-- COURSE CARDS WILL APPEAR HERE -->
+                    <div id="adminCourseList" class="admin-course-list">
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- SEPARATE EDIT COURSE VIEW -->
+            <section id="courseEditor" class="course-editor hidden">
+
+                <div class="editor-heading">
+
+                    <button type="button" id="backToCoursesBtn" class="back-btn">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        Back to Courses
+                    </button>
+
+                    <div>
+                        <h2 id="editorCourseTitle">Edit Course</h2>
+                        <p>Update your course information and learning materials.</p>
+                    </div>
+
+                </div>
+
+
+                <!-- COURSE INFORMATION -->
+                <section class="editor-section">
+
+                    <h3>Course Information</h3>
+
+                    <form id="editCourseForm">
+
+                        <input type="hidden" id="editCourseId">
+
+                        <div class="form-group">
+                            <label for="editCourseTitle">Course Title</label>
+
+                            <input
+                                type="text"
+                                id="editCourseTitle"
+                                placeholder="Enter course title"
+                                required
+                            >
+                        </div>
+
+
+                        <div class="form-row">
+
+                            <div class="form-group">
+                                <label for="editCourseCategory">Category</label>
+
+                                <select id="editCourseCategory" required>
+                                    <option value="">Select Category</option>
+                                    <option value="Technology">Technology</option>
+                                    <option value="Business">Business</option>
+                                    <option value="Design">Design</option>
+                                    <option value="Science">Science</option>
+                                </select>
+                            </div>
+
+
+                            <div class="form-group">
+                                <label for="editCourseDepartment">Department</label>
+
+                                <input
+                                    type="text"
+                                    id="editCourseDepartment"
+                                    placeholder="Enter department"
+                                >
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+                            <label for="editCourseLevel">Level</label>
+
+                            <select id="editCourseLevel" required>
+                                <option value="">Select Level</option>
+                                <option value="100">100 Level</option>
+                                <option value="200">200 Level</option>
+                                <option value="300">300 Level</option>
+                                <option value="400">400 Level</option>
+                            </select>
+                        </div>
+
+
+                        <div class="form-group">
+                            <label for="editCourseDescription">Course Description</label>
+
+                            <textarea
+                                id="editCourseDescription"
+                                rows="5"
+                                placeholder="Write a course description"
+                                required
+                            ></textarea>
+                        </div>
+
+
+                        <div class="form-group">
+                            <label for="editCourseImage">Course Image URL</label>
+
+                            <input
+                                type="url"
+                                id="editCourseImage"
+                                placeholder="Enter image URL"
+                            >
+                        </div>
+
+
+                        <button type="submit" class="primary-btn">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            Save Course Information
+                        </button>
+
+                    </form>
+
+                </section>
+
+
+                <!-- LESSON MANAGEMENT -->
+                <section class="editor-section">
+
+                    <h3>Course Lessons</h3>
+
+                    <form id="editorLessonForm">
+
+                        <input type="hidden" id="editorLessonCourseId">
+
+                        <div class="form-group">
+                            <label for="editorLessonTitle">Lesson Title</label>
+
+                            <input
+                                type="text"
+                                id="editorLessonTitle"
+                                placeholder="Enter lesson title"
+                                required
+                            >
+                        </div>
+
+
+                        <div class="form-group">
+                            <label for="editorLessonDescription">Lesson Description</label>
+
+                            <textarea
+                                id="editorLessonDescription"
+                                rows="3"
+                                placeholder="Describe this lesson"
+                            ></textarea>
+                        </div>
+
+
+                        <div class="form-group">
+                            <label for="editorLessonContent">Lesson Content</label>
+
+                            <textarea
+                                id="editorLessonContent"
+                                rows="6"
+                                placeholder="Write the lesson content"
+                            ></textarea>
+                        </div>
+
+
+                        <div class="form-group">
+                            <label for="editorLessonPDF">PDF Link</label>
+
+                            <input
+                                type="url"
+                                id="editorLessonPDF"
+                                placeholder="Paste PDF link"
+                            >
+                        </div>
+
+
+                        <div class="form-group">
+                            <label for="editorLessonVideo">Video Link</label>
+
+                            <input
+                                type="url"
+                                id="editorLessonVideo"
+                                placeholder="Paste video link"
+                            >
+                        </div>
+
+
+                        <button type="submit" class="primary-btn">
+                            <i class="fa-solid fa-plus"></i>
+                            Add Lesson
+                        </button>
+
+                    </form>
+
+
+                    <h4>Lessons Added</h4>
+
+                    <div id="editorLessonList" class="editor-list">
+
+                    </div>
+
+                </section>
+
+
+                <!-- QUIZ MANAGEMENT -->
+                <section class="editor-section">
+
+                    <h3>Course Quiz</h3>
+
+                    <form id="editorQuizForm">
+
+                        <input type="hidden" id="editorQuizCourseId">
+
+                        <div class="form-group">
+                            <label for="editorQuestionText">Question</label>
+
+                            <textarea
+                                id="editorQuestionText"
+                                rows="3"
+                                placeholder="Enter quiz question"
+                                required
+                            ></textarea>
+                        </div>
+
+
+                        <div class="form-row">
+
+                            <div class="form-group">
+                                <label for="editorOptionA">Option A</label>
+                                <input type="text" id="editorOptionA" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="editorOptionB">Option B</label>
+                                <input type="text" id="editorOptionB" required>
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-row">
+
+                            <div class="form-group">
+                                <label for="editorOptionC">Option C</label>
+                                <input type="text" id="editorOptionC" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="editorOptionD">Option D</label>
+                                <input type="text" id="editorOptionD" required>
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+                            <label for="editorCorrectAnswer">Correct Answer</label>
+
+                            <select id="editorCorrectAnswer" required>
+                                <option value="">Select Correct Answer</option>
+                                <option value="0">Option A</option>
+                                <option value="1">Option B</option>
+                                <option value="2">Option C</option>
+                                <option value="3">Option D</option>
+                            </select>
+                        </div>
+
+
+                        <button type="submit" class="primary-btn">
+                            <i class="fa-solid fa-plus"></i>
+                            Add Quiz Question
+                        </button>
+
+                    </form>
+
+
+                    <h4>Quiz Questions Added</h4>
+
+                    <div id="editorQuizList" class="editor-list">
+
+                    </div>
+
+                </section>
+
+
+                <!-- COURSE PUBLICATION -->
+                <section class="editor-section">
+
+                    <h3>Course Publication</h3>
+
+                    <p>
+                        Current status:
+                        <strong id="coursePublishStatus">Unpublished</strong>
+                    </p>
+
+                    <div class="publication-buttons">
+
+                        <button type="button" id="previewCourseBtn">
+                            <i class="fa-solid fa-eye"></i>
+                            Preview Course
+                        </button>
+
+                        <button type="button" id="publishEditorCourseBtn">
+                            <i class="fa-solid fa-upload"></i>
+                            Publish Course
+                        </button>
+
+                        <button type="button" id="unpublishCourseBtn">
+                            <i class="fa-solid fa-eye-slash"></i>
+                            Unpublish Course
+                        </button>
+
+                    </div>
+
+                </section>
+
+            </section>
+
+
+            <!-- COURSE PREVIEW -->
+            <div id="coursePreview" class="course-preview hidden">
+
+                <div class="preview-heading">
+
+                    <h3>Course Preview</h3>
+
+                    <button type="button" id="closePreviewBtn">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                </div>
+
+                <div id="coursePreviewContent">
+
+                </div>
+
+            </div>
+
+
+            <!-- MANAGE LESSONS PAGE -->
+            <section id="manageLessons" class="admin-page">
+
+                <div class="page-heading">
+                    <h2>Manage Lessons</h2>
+                    <p>View lessons available on the platform.</p>
+                </div>
+
+                <div id="adminLessonList" class="admin-content-list">
+
+                </div>
+
+            </section>
+
+
+            <!-- MANAGE QUIZZES PAGE -->
+            <section id="manageQuizzes" class="admin-page">
+
+                <div class="page-heading">
+                    <h2>Manage Quizzes</h2>
+                    <p>View quiz questions created for your courses.</p>
+                </div>
+
+                <div id="adminQuizList" class="admin-content-list">
+
+                </div>
+
+            </section>
+
+
+            <!-- MANAGE STUDENTS PAGE -->
+            <section id="manageStudents" class="admin-page">
+
+                <div class="page-heading">
+                    <h2>Manage Students</h2>
+                    <p>View registered students.</p>
+                </div>
+
+                <div id="adminStudentList" class="admin-content-list">
+
+                </div>
+
+            </section>
+
+
+            <!-- STUDENT RESULTS PAGE -->
+            <section id="manageResults" class="admin-page">
+
+                <div class="page-heading">
+                    <h2>Student Results</h2>
+                    <p>View student quiz results.</p>
+                </div>
+
+                <div id="adminResultList" class="admin-content-list">
+
+                </div>
+
+            </section>
+
+
+            <!-- CERTIFICATES PAGE -->
+            <section id="manageCertificates" class="admin-page">
+
+                <div class="page-heading">
+                    <h2>Certificates</h2>
+                    <p>View certificates issued to students.</p>
+                </div>
+
+                <div id="adminCertificateList" class="admin-content-list">
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <!-- JAVASCRIPT -->
+    <script src="course-catalog.js"></script>
+    <script src="admin.js"></script>
+
+</body>
+
+</html>

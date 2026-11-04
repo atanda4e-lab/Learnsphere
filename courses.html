@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Explore Courses | LearnSphere</title>
+
+    <link rel="stylesheet" href="courses.css">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header class="courses-header">
+
+        <a href="index.html" class="logo">
+            <i class="fa-solid fa-graduation-cap"></i>
+            LearnSphere
+        </a>
+
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="courses.html" class="active">Courses</a>
+            <a href="student-dashboard.html">Dashboard</a>
+            <a href="admin.html">Admin</a>
+        </nav>
+
+        <a href="auth.html?mode=login" class="login-link">
+            Login
+        </a>
+
+    </header>
+
+
+    <!-- PAGE INTRODUCTION -->
+    <section class="courses-hero">
+
+        <div>
+            <span class="hero-label">LEARN SOMETHING NEW</span>
+
+            <h1>Explore Our Courses</h1>
+
+            <p>
+                Discover courses designed to help you develop new skills,
+                improve your knowledge and achieve your academic goals.
+            </p>
+        </div>
+
+    </section>
+
+
+    <!-- COURSE CATALOGUE -->
+    <main class="courses-container">
+
+        <div class="courses-heading">
+
+            <div>
+                <h2>Available Courses</h2>
+                <p>Find a course that matches your interests.</p>
+            </div>
+
+            <span id="courseCount">0 Courses</span>
+
+        </div>
+
+
+        <!-- SEARCH AND FILTER -->
+        <div class="course-filters">
+
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="text"
+                    id="courseSearch"
+                    placeholder="Search for a course..."
+                >
+            </div>
+
+
+            <select id="departmentFilter">
+
+                <option value="">All Departments</option>
+
+            </select>
+
+
+            <select id="levelFilter">
+
+                <option value="">All Levels</option>
+                <option value="100">100 Level</option>
+                <option value="200">200 Level</option>
+                <option value="300">300 Level</option>
+                <option value="400">400 Level</option>
+                <option value="500">500 Level</option>
+
+            </select>
+
+        </div>
+
+
+        <!-- COURSE CARDS -->
+        <div id="courseGrid" class="course-grid">
+
+            <!-- Courses will be displayed here using JavaScript -->
+
+        </div>
+
+
+        <!-- EMPTY MESSAGE -->
+        <div id="emptyMessage" class="empty-message hidden">
+
+            <i class="fa-solid fa-book-open"></i>
+
+            <h3>No Courses Found</h3>
+
+            <p>
+                No courses match your search. Try another search
+                or change your filters.
+            </p>
+
+        </div>
+
+    </main>
+
+
+    <!-- FOOTER -->
+    <footer class="courses-footer">
+
+        <p>
+            &copy; 2026 LearnSphere. All rights reserved.
+        </p>
+
+    </footer>
+
+
+    <!-- JAVASCRIPT -->
+    <script src="courses.js"></script>
+
+</body>
+
+</html>

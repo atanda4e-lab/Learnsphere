@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Student Dashboard | LearnSphere</title>
+
+    <link rel="stylesheet" href="student-dashboard.css">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+
+            <div class="logo">
+                <h2>Learn<span>Sphere</span></h2>
+            </div>
+
+            <div class="sidebar-profile">
+
+                <div class="profile-avatar">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+
+                <div>
+                    <h3 id="studentName">Student</h3>
+                    <p>Student Account</p>
+                </div>
+
+            </div>
+
+            <!-- NAVIGATION -->
+            <nav class="sidebar-navigation">
+
+                <a href="#" class="sidebar-link active" data-section="overview">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Overview</span>
+                </a>
+
+                <a href="#" class="sidebar-link" data-section="explore">
+                    <i class="fa-solid fa-compass"></i>
+                    <span>Explore Courses</span>
+                </a>
+
+                <a href="#" class="sidebar-link" data-section="courses">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>My Courses</span>
+                </a>
+
+                <a href="#" class="sidebar-link" data-section="results">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>My Results</span>
+                </a>
+
+                <a href="#" class="sidebar-link" data-section="certificates">
+                    <i class="fa-solid fa-certificate"></i>
+                    <span>Certificates</span>
+                </a>
+
+                <a href="#" class="sidebar-link" data-section="profile">
+                    <i class="fa-solid fa-user"></i>
+                    <span>My Profile</span>
+                </a>
+
+            </nav>
+
+            <div class="sidebar-bottom">
+
+                <button id="logoutBtn">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <!-- HEADER -->
+            <header class="dashboard-header">
+
+                <div>
+                    <h1>Student Dashboard</h1>
+                    <p>Manage your learning activities in one place.</p>
+                </div>
+
+                <div class="header-right">
+
+                    <div class="header-icon">
+                        <i class="fa-regular fa-bell"></i>
+                    </div>
+
+                    <div class="header-avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+
+                </div>
+
+            </header>
+
+
+            <!-- OVERVIEW -->
+            <section class="dashboard-section active" id="overview">
+
+                <div class="welcome-card">
+
+                    <div>
+
+                        <p class="welcome-label">WELCOME BACK</p>
+
+                        <h2>
+                            Hello, <span id="welcomeName">Student</span>!
+                        </h2>
+
+                        <p>
+                            Continue learning and make progress
+                            towards your academic goals.
+                        </p>
+
+                        <button class="primary-btn" data-section="explore">
+                            Explore Courses
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+
+                    </div>
+
+                    <div class="welcome-icon">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+
+                </div>
+
+
+                <!-- STATISTICS -->
+                <div class="statistics-grid">
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon blue">
+                            <i class="fa-solid fa-book"></i>
+                        </div>
+
+                        <div>
+                            <p>Enrolled Courses</p>
+                            <h2 id="enrolledCourses">0</h2>
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon green">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+
+                        <div>
+                            <p>Completed Lessons</p>
+                            <h2 id="completedLessons">0</h2>
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon orange">
+                            <i class="fa-solid fa-clipboard-check"></i>
+                        </div>
+
+                        <div>
+                            <p>Completed Quizzes</p>
+                            <h2 id="completedQuizzes">0</h2>
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon purple">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+
+                        <div>
+                            <p>Certificates</p>
+                            <h2 id="earnedCertificates">0</h2>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- RECENT COURSES -->
+                <div class="content-card">
+
+                    <div class="section-heading">
+
+                        <div>
+                            <h2>Continue Learning</h2>
+                            <p>Continue with your enrolled courses.</p>
+                        </div>
+
+                        <button class="text-btn" data-section="courses">
+                            View All
+                        </button>
+
+                    </div>
+
+                    <div class="course-grid" id="overviewCourseList">
+
+                        <div class="empty-state">
+                            <i class="fa-solid fa-book-open"></i>
+                            <p>You have not enrolled in any courses yet.</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- EXPLORE COURSES -->
+            <section class="dashboard-section" id="explore">
+
+                <div class="page-heading">
+
+                    <h2>Explore Courses</h2>
+
+                    <p>
+                        Discover new courses and enrol to start learning.
+                    </p>
+
+                </div>
+
+
+                <!-- SEARCH AND FILTER -->
+                <div class="course-search-area">
+
+                    <div class="search-box">
+
+                        <i class="fa-solid fa-magnifying-glass"></i>
+
+                        <input
+                            type="text"
+                            id="courseSearch"
+                            placeholder="Search course name..."
+                        >
+
+                    </div>
+
+
+                    <select id="departmentFilter">
+
+                        <option value="">All Departments</option>
+
+                    </select>
+
+
+                    <select id="levelFilter">
+
+                        <option value="">All Levels</option>
+                        <option value="100">100 Level</option>
+                        <option value="200">200 Level</option>
+                        <option value="300">300 Level</option>
+                        <option value="400">400 Level</option>
+                        <option value="500">500 Level</option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="explore-summary">
+
+                    <p>
+                        Available courses:
+                        <strong id="availableCourseCount">0</strong>
+                    </p>
+
+                </div>
+
+
+                <!-- EXPLORE COURSE LIST -->
+                <div class="course-grid" id="exploreCourseList">
+
+                    <div class="empty-state">
+                        <i class="fa-solid fa-book-open"></i>
+                        <p>Loading courses...</p>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- MY COURSES -->
+            <section class="dashboard-section" id="courses">
+
+                <div class="page-heading">
+
+                    <h2>My Courses</h2>
+
+                    <p>
+                        All the courses you have enrolled in.
+                    </p>
+
+                </div>
+
+
+                <div class="course-grid" id="studentCourseList">
+
+                    <div class="empty-state">
+                        <i class="fa-solid fa-book"></i>
+                        <p>No enrolled courses found.</p>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- RESULTS -->
+            <section class="dashboard-section" id="results">
+
+                <div class="page-heading">
+
+                    <h2>My Results</h2>
+
+                    <p>
+                        Check your quiz scores and learning performance.
+                    </p>
+
+                </div>
+
+
+                <div class="content-card">
+
+                    <div id="studentResultList">
+
+                        <div class="empty-state">
+                            <i class="fa-solid fa-chart-column"></i>
+                            <p>You have not completed any quizzes yet.</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- CERTIFICATES -->
+            <section class="dashboard-section" id="certificates">
+
+                <div class="page-heading">
+
+                    <h2>My Certificates</h2>
+
+                    <p>
+                        Download certificates for courses you have completed.
+                    </p>
+
+                </div>
+
+
+                <div class="certificate-grid" id="studentCertificateList">
+
+                    <div class="empty-state">
+                        <i class="fa-solid fa-certificate"></i>
+                        <p>You have not earned any certificates yet.</p>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- PROFILE -->
+            <section class="dashboard-section" id="profile">
+
+                <div class="page-heading">
+
+                    <h2>My Profile</h2>
+
+                    <p>Your LearnSphere student information.</p>
+
+                </div>
+
+
+                <div class="content-card profile-card">
+
+                    <div class="large-avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+
+
+                    <div class="profile-details">
+
+                        <div class="profile-item">
+                            <span>Full Name</span>
+                            <h3 id="profileFullName">Not available</h3>
+                        </div>
+
+                        <div class="profile-item">
+                            <span>Email Address</span>
+                            <h3 id="profileEmail">Not available</h3>
+                        </div>
+
+                        <div class="profile-item">
+                            <span>Department</span>
+                            <h3 id="profileDepartment">Not available</h3>
+                        </div>
+
+                        <div class="profile-item">
+                            <span>Level</span>
+                            <h3 id="profileLevel">Not available</h3>
+                        </div>
+
+                        <div class="profile-item">
+                            <span>University</span>
+                            <h3 id="profileUniversity">Not available</h3>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- FOOTER -->
+            <footer class="dashboard-footer">
+
+                <p>
+                    &copy; <span id="currentYear"></span>
+                    LearnSphere. All rights reserved.
+                </p>
+
+            </footer>
+
+        </main>
+
+    </div>
+
+
+    <!-- PDF LIBRARY -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- DASHBOARD JAVASCRIPT -->
+    <script src="student-dashboard.js"></script>
+
+</body>
+
+</html>
