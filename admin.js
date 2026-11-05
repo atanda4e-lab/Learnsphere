@@ -1,261 +1,258 @@
-// ========================================
+// =============================================
 // LEARNSPHERE ADMIN DASHBOARD
-// ========================================
+// FIREBASE FIRESTORE INTEGRATION
+// =============================================
 
 
-// ========================================
-// 1. CHECK ADMIN LOGIN
-// ========================================
+// =============================================
+// 1. FIREBASE IMPORTS
+// =============================================
 
-if (localStorage.getItem("learnsphereAdminLoggedIn") !== "true") {
+import { auth, db } from "./firebase.js";
 
-    window.location.href = "auth.html?mode=admin";
+import {
+    onAuthStateChanged,
+    signOut
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+
+import {
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    writeBatch,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+
+// =============================================
+// 2. GLOBAL VARIABLES
+// =============================================
+
+let courses = [];
+let students = [];
+let lessons = [];
+let quizzes = [];
+let results = [];
+let certificates = [];
+
+let currentCourseId = null;
+let dashboardInitialized = false;
+let currentAdmin = null;
+
+
+// =============================================
+// 3. HTML ELEMENT HELPER
+// =============================================
+
+function getElement(id) {
+
+    return document.getElementById(id);
 
 }
 
 
-// ========================================
-// 2. LOCAL STORAGE KEYS
-// ========================================
+function getValue(id) {
 
-const COURSES_KEY = "learnsphereCourses";
-const LESSONS_KEY = "learnsphereLessons";
-const QUIZZES_KEY = "learnsphereQuizzes";
-const STUDENTS_KEY = "learnsphereStudents";
-const RESULTS_KEY = "learnsphereResults";
-const CERTIFICATES_KEY = "learnsphereCertificates";
+    return getElement(id)?.value?.trim() || "";
 
+}
 
-// ========================================
-// 3. GET HTML ELEMENTS
-// ========================================
 
-const adminArea = document.getElementById("adminArea");
+function setValue(id, value) {
 
-const adminNavButtons = document.querySelectorAll(".admin-nav-btn");
+    const element = getElement(id);
 
-const adminPages = document.querySelectorAll(".admin-page");
+    if (element) {
 
-const adminLogoutBtn = document.getElementById("adminLogoutBtn");
-
-
-// COURSE ELEMENTS
-
-const adminCourseList = document.getElementById("adminCourseList");
-
-const adminCourseSearch = document.getElementById("adminCourseSearch");
-
-const adminCourseFilter = document.getElementById("adminCourseFilter");
-
-const addNewCourseBtn = document.getElementById("addNewCourseBtn");
-
-
-// COURSE EDITOR ELEMENTS
-
-const courseEditor = document.getElementById("courseEditor");
-
-const backToCoursesBtn = document.getElementById("backToCoursesBtn");
-
-const editCourseForm = document.getElementById("editCourseForm");
-
-const editCourseId = document.getElementById("editCourseId");
-
-const editCourseTitle = document.getElementById("editCourseTitle");
-
-const editCourseCategory = document.getElementById("editCourseCategory");
-
-const editCourseDepartment = document.getElementById("editCourseDepartment");
-
-const editCourseLevel = document.getElementById("editCourseLevel");
-
-const editCourseDescription = document.getElementById("editCourseDescription");
-
-const editCourseImage = document.getElementById("editCourseImage");
-
-const editorCourseTitle = document.getElementById("editorCourseTitle");
-
-
-// LESSON ELEMENTS
-
-const editorLessonForm = document.getElementById("editorLessonForm");
-
-const editorLessonCourseId = document.getElementById("editorLessonCourseId");
-
-const editorLessonTitle = document.getElementById("editorLessonTitle");
-
-const editorLessonDescription = document.getElementById("editorLessonDescription");
-
-const editorLessonContent = document.getElementById("editorLessonContent");
-
-const editorLessonPDF = document.getElementById("editorLessonPDF");
-
-const editorLessonVideo = document.getElementById("editorLessonVideo");
-
-const editorLessonList = document.getElementById("editorLessonList");
-
-
-// QUIZ ELEMENTS
-
-const editorQuizForm = document.getElementById("editorQuizForm");
-
-const editorQuizCourseId = document.getElementById("editorQuizCourseId");
-
-const editorQuestionText = document.getElementById("editorQuestionText");
-
-const editorOptionA = document.getElementById("editorOptionA");
-
-const editorOptionB = document.getElementById("editorOptionB");
-
-const editorOptionC = document.getElementById("editorOptionC");
-
-const editorOptionD = document.getElementById("editorOptionD");
-
-const editorCorrectAnswer = document.getElementById("editorCorrectAnswer");
-
-const editorQuizList = document.getElementById("editorQuizList");
-
-
-// PUBLICATION ELEMENTS
-
-const coursePublishStatus = document.getElementById("coursePublishStatus");
-
-const previewCourseBtn = document.getElementById("previewCourseBtn");
-
-const publishEditorCourseBtn = document.getElementById("publishEditorCourseBtn");
-
-const unpublishCourseBtn = document.getElementById("unpublishCourseBtn");
-
-const coursePreview = document.getElementById("coursePreview");
-
-const closePreviewBtn = document.getElementById("closePreviewBtn");
-
-const coursePreviewContent = document.getElementById("coursePreviewContent");
-
-
-// ADMIN LIST ELEMENTS
-
-const adminLessonList = document.getElementById("adminLessonList");
-
-const adminQuizList = document.getElementById("adminQuizList");
-
-const adminStudentList = document.getElementById("adminStudentList");
-
-const adminResultList = document.getElementById("adminResultList");
-
-const adminCertificateList = document.getElementById("adminCertificateList");
-
-
-// DASHBOARD STATISTICS
-
-const totalCourses = document.getElementById("totalCourses");
-
-const totalStudents = document.getElementById("totalStudents");
-
-const totalLessons = document.getElementById("totalLessons");
-
-const totalQuizzes = document.getElementById("totalQuizzes");
-
-
-// ========================================
-// 4. GET DATA FROM LOCAL STORAGE
-// ========================================
-
-function getData(key) {
-
-    try {
-
-        const data = localStorage.getItem(key);
-
-        return data ? JSON.parse(data) : [];
-
-    } catch (error) {
-
-        console.error("Could not read:", key, error);
-
-        return [];
+        element.value = value ?? "";
 
     }
 
 }
 
 
-// ========================================
-// 5. SAVE DATA TO LOCAL STORAGE
-// ========================================
-
-function saveData(key, data) {
-
-    localStorage.setItem(key, JSON.stringify(data));
-
-}
-
-
-// ========================================
-// 6. GENERATE UNIQUE ID
-// ========================================
-
-function generateId() {
-
-    return Date.now().toString() +
-
-        Math.floor(Math.random() * 10000).toString();
-
-}
-
-
-// ========================================
-// 7. ESCAPE HTML
-// ========================================
+// =============================================
+// 4. HTML SECURITY
+// =============================================
 
 function escapeHTML(value) {
 
-    return String(value ?? "").replace(/[&<>"']/g, function (character) {
+    return String(value ?? "").replace(/[&<>"']/g, character => {
 
-        const characters = {
+        return {
 
             "&": "&amp;",
-
             "<": "&lt;",
-
             ">": "&gt;",
-
             '"': "&quot;",
-
             "'": "&#039;"
 
-        };
-
-        return characters[character];
+        }[character];
 
     });
 
 }
 
 
-// ========================================
-// 8. SHOW ADMIN DASHBOARD
-// ========================================
+// =============================================
+// 5. NOTIFICATION HELPER
+// =============================================
 
-function showAdminDashboard() {
+function notify(message) {
 
-    if (adminArea) {
-
-        adminArea.classList.remove("hidden");
-
-    }
-
-    displayAll();
+    alert(message);
 
 }
 
 
-// ========================================
-// 9. DISPLAY ALL ADMIN DATA
-// ========================================
+// =============================================
+// 6. ADMIN AUTHENTICATION
+// =============================================
 
-function displayAll() {
+onAuthStateChanged(auth, async (user) => {
 
-    displayStatistics();
+    if (!user) {
+
+        window.location.href = "auth.html";
+
+        return;
+
+    }
+
+    try {
+
+        const adminRef = doc(db, "admins", user.uid);
+
+        const adminSnapshot = await getDoc(adminRef);
+
+        if (!adminSnapshot.exists() ||
+            adminSnapshot.data().role !== "admin") {
+
+            notify("You do not have administrator access.");
+
+            await signOut(auth);
+
+            window.location.href = "auth.html";
+
+            return;
+
+        }
+
+        currentAdmin = user;
+
+        getElement("adminArea")?.classList.remove("hidden");
+
+        if (!dashboardInitialized) {
+
+            dashboardInitialized = true;
+
+            await initializeDashboard();
+
+        }
+
+    } catch (error) {
+
+        console.error("Admin authentication error:", error);
+
+        notify(
+            "Unable to verify administrator access: " +
+            error.message
+        );
+
+    }
+
+});
+
+
+// =============================================
+// 7. INITIALIZE DASHBOARD
+// =============================================
+
+async function initializeDashboard() {
+
+    setupNavigation();
+
+    setupEventListeners();
+
+    createImportButton();
+
+    await loadAllData();
+
+    showPage("overview");
+
+    console.log("LearnSphere Admin Dashboard Ready.");
+
+}
+
+
+// =============================================
+// 8. LOAD ALL DATA
+// =============================================
+
+async function loadAllData() {
+
+    console.log("Loading LearnSphere data...");
+
+    const tasks = [
+
+        ["Courses", loadCourses],
+
+        ["Students", loadStudents],
+
+        ["Lessons", loadLessons],
+
+        ["Quizzes", loadQuizzes],
+
+        ["Results", loadResults],
+
+        ["Certificates", loadCertificates]
+
+    ];
+
+    const failed = [];
+
+    for (const [name, task] of tasks) {
+
+        try {
+
+            await task();
+
+            console.log(name + " loaded successfully.");
+
+        } catch (error) {
+
+            console.error(name + " loading error:", error);
+
+            failed.push(name);
+
+        }
+
+    }
+
+    refreshDashboard();
+
+    if (failed.length > 0) {
+
+        notify(
+            "Some information could not load: " +
+            failed.join(", ") +
+            ". Check your Firestore permissions."
+        );
+
+    }
+
+}
+
+
+// =============================================
+// 9. REFRESH DASHBOARD
+// =============================================
+
+function refreshDashboard() {
 
     displayCourses();
 
@@ -269,1169 +266,1472 @@ function displayAll() {
 
     displayCertificates();
 
-}
+    updateStatistics();
 
-
-// ========================================
-// 10. DISPLAY DASHBOARD STATISTICS
-// ========================================
-
-function displayStatistics() {
-
-    const courses = getData(COURSES_KEY);
-
-    const students = getData(STUDENTS_KEY);
-
-    const lessons = getData(LESSONS_KEY);
-
-    const quizzes = getData(QUIZZES_KEY);
-
-
-    if (totalCourses) {
-
-        totalCourses.textContent = courses.length;
-
-    }
-
-    if (totalStudents) {
-
-        totalStudents.textContent = students.length;
-
-    }
-
-    if (totalLessons) {
-
-        totalLessons.textContent = lessons.length;
-
-    }
-
-    if (totalQuizzes) {
-
-        totalQuizzes.textContent = quizzes.length;
-
-    }
+    updateCoursePublicationStatus();
 
 }
 
 
-// ========================================
-// 11. SHOW ADMIN PAGE
-// ========================================
+// =============================================
+// 10. LOAD COURSES
+// =============================================
 
-function showPage(pageId) {
+async function loadCourses() {
 
-    if (courseEditor) {
-
-        courseEditor.classList.add("hidden");
-
-    }
-
-
-    adminPages.forEach(function (page) {
-
-        page.classList.remove("active");
-
-    });
-
-
-    adminNavButtons.forEach(function (button) {
-
-        button.classList.remove("active");
-
-    });
-
-
-    const selectedPage = document.getElementById(pageId);
-
-
-    if (selectedPage) {
-
-        selectedPage.classList.add("active");
-
-    }
-
-
-    const selectedButton = document.querySelector(
-
-        '.admin-nav-btn[data-page="' + pageId + '"]'
-
+    const snapshot = await getDocs(
+        collection(db, "courses")
     );
 
+    courses = snapshot.docs.map(item => {
 
-    if (selectedButton) {
+        const data = item.data();
 
-        selectedButton.classList.add("active");
+        let published = false;
 
-    }
+        // The published field takes priority.
+        // Use isPublished only for older documents
+        // that do not have the published field.
 
+        if (typeof data.published === "boolean") {
 
-    displayAll();
+            published = data.published;
 
-}
+        } else if (typeof data.isPublished === "boolean") {
 
-
-// ========================================
-// 12. ADMIN NAVIGATION
-// ========================================
-
-adminNavButtons.forEach(function (button) {
-
-    button.addEventListener("click", function () {
-
-        const pageId = button.getAttribute("data-page");
-
-        showPage(pageId);
-
-    });
-
-});
-
-
-// ========================================
-// 13. ADMIN LOGOUT
-// ========================================
-
-if (adminLogoutBtn) {
-
-    adminLogoutBtn.addEventListener("click", function () {
-
-        const confirmLogout = confirm(
-
-            "Are you sure you want to log out?"
-
-        );
-
-
-        if (!confirmLogout) {
-
-            return;
+            published = data.isPublished;
 
         }
 
+        return {
 
-        localStorage.removeItem("learnsphereAdminLoggedIn");
+            id: item.id,
 
-        window.location.href = "auth.html?mode=admin";
+            ...data,
+
+            published
+
+        };
 
     });
 
 }
 
 
-// ========================================
-// 14. DISPLAY COURSES
-// ========================================
+// =============================================
+// 11. LOAD STUDENTS
+// =============================================
 
-function displayCourses() {
+async function loadStudents() {
 
-    if (!adminCourseList) {
+    const snapshot = await getDocs(
+        collection(db, "students")
+    );
 
-        return;
+    students = snapshot.docs.map(item => ({
 
-    }
+        id: item.id,
 
+        ...item.data()
 
-    const courses = getData(COURSES_KEY);
+    }));
 
+    // Keep student records unique.
 
-    const searchText = adminCourseSearch
+    const uniqueStudents = new Map();
 
-        ? adminCourseSearch.value.toLowerCase().trim()
+    students.forEach(student => {
 
-        : "";
+        const key = student.uid ||
+            student.userId ||
+            student.id;
 
-
-    const filterValue = adminCourseFilter
-
-        ? adminCourseFilter.value
-
-        : "all";
-
-
-    const filteredCourses = courses.filter(function (course) {
-
-        const matchesSearch =
-
-            String(course.title || "").toLowerCase().includes(searchText) ||
-
-            String(course.department || "").toLowerCase().includes(searchText);
-
-
-        const isPublished = course.published === true ||
-
-            course.isPublished === true;
-
-
-        let matchesFilter = true;
-
-
-        if (filterValue === "published") {
-
-            matchesFilter = isPublished;
-
-        }
-
-
-        if (filterValue === "unpublished") {
-
-            matchesFilter = !isPublished;
-
-        }
-
-
-        return matchesSearch && matchesFilter;
+        uniqueStudents.set(key, student);
 
     });
 
-
-    if (filteredCourses.length === 0) {
-
-        adminCourseList.innerHTML =
-
-            "<p>No courses found.</p>";
-
-        return;
-
-    }
-
-
-    adminCourseList.innerHTML = filteredCourses.map(function (course) {
-
-        const isPublished = course.published === true ||
-
-            course.isPublished === true;
-
-
-        return `
-
-            <div class="course-card">
-
-                <div class="course-card-info">
-
-                    <h3>${escapeHTML(course.title)}</h3>
-
-                    <p>${escapeHTML(course.department || "General")}</p>
-
-                    <p>${escapeHTML(course.level || "All Levels")}</p>
-
-                    <span class="course-status">
-
-                        ${isPublished ? "Published" : "Unpublished"}
-
-                    </span>
-
-                </div>
-
-
-                <div class="course-card-actions">
-
-                    <button
-
-                        type="button"
-
-                        class="edit-course-btn"
-
-                        data-id="${escapeHTML(course.id)}"
-
-                    >
-
-                        Edit Course
-
-                    </button>
-
-
-                    <button
-
-                        type="button"
-
-                        class="delete-course-btn"
-
-                        data-id="${escapeHTML(course.id)}"
-
-                    >
-
-                        Delete
-
-                    </button>
-
-                </div>
-
-            </div>
-
-        `;
-
-    }).join("");
+    students = Array.from(uniqueStudents.values());
 
 }
 
 
-// ========================================
-// 15. COURSE SEARCH
-// ========================================
+// =============================================
+// 12. LOAD LESSONS
+// =============================================
 
-if (adminCourseSearch) {
+async function loadLessons() {
 
-    adminCourseSearch.addEventListener("input", displayCourses);
+    const snapshot = await getDocs(
+        collection(db, "lessons")
+    );
+
+    lessons = snapshot.docs.map(item => ({
+
+        id: item.id,
+
+        ...item.data()
+
+    }));
 
 }
 
 
-// ========================================
-// 16. COURSE FILTER
-// ========================================
+// =============================================
+// 13. LOAD QUIZZES
+// =============================================
 
-if (adminCourseFilter) {
+async function loadQuizzes() {
 
-    adminCourseFilter.addEventListener("change", displayCourses);
+    const snapshot = await getDocs(
+        collection(db, "quizzes")
+    );
+
+    quizzes = snapshot.docs.map(item => ({
+
+        id: item.id,
+
+        ...item.data()
+
+    }));
 
 }
 
 
-// ========================================
-// 17. OPEN COURSE EDITOR
-// ========================================
+// =============================================
+// 14. LOAD RESULTS
+// =============================================
 
-function openCourseEditor(courseId = null) {
+async function loadResults() {
 
-    const courses = getData(COURSES_KEY);
+    const snapshot = await getDocs(
+        collection(db, "results")
+    );
+
+    results = snapshot.docs.map(item => ({
+
+        id: item.id,
+
+        ...item.data()
+
+    }));
+
+}
 
 
-    let selectedCourse = null;
+// =============================================
+// 15. LOAD CERTIFICATES
+// =============================================
+
+async function loadCertificates() {
+
+    const snapshot = await getDocs(
+        collection(db, "certificates")
+    );
+
+    certificates = snapshot.docs.map(item => ({
+
+        id: item.id,
+
+        ...item.data()
+
+    }));
+
+}
 
 
-    if (courseId !== null) {
+// =============================================
+// 16. NAVIGATION
+// =============================================
 
-        selectedCourse = courses.find(function (course) {
+function setupNavigation() {
 
-            return String(course.id) === String(courseId);
+    document.querySelectorAll(".admin-nav-btn").forEach(button => {
+
+        button.addEventListener("click", () => {
+
+            showPage(button.dataset.page);
 
         });
 
+    });
 
-        if (!selectedCourse) {
+}
 
-            alert("Course not found.");
 
-            return;
+// =============================================
+// 17. SHOW PAGE
+// =============================================
+
+function showPage(pageName) {
+
+    const pages = [
+
+        "overview",
+
+        "manageCourses",
+
+        "manageLessons",
+
+        "manageQuizzes",
+
+        "manageStudents",
+
+        "manageResults",
+
+        "manageCertificates"
+
+    ];
+
+    pages.forEach(page => {
+
+        const section = getElement(page);
+
+        if (section) {
+
+            section.classList.remove("active");
+
+            section.classList.add("hidden");
 
         }
 
-    }
-
-
-    adminPages.forEach(function (page) {
-
-        page.classList.remove("active");
-
     });
 
+    getElement("courseEditor")?.classList.add("hidden");
 
-    if (courseEditor) {
+    getElement("coursePreview")?.classList.add("hidden");
 
-        courseEditor.classList.remove("hidden");
+    const selectedPage = getElement(pageName);
 
-    }
+    if (!selectedPage) {
 
-
-    // CLEAR THE FORM
-
-    editCourseForm.reset();
-
-    editCourseId.value = "";
-
-    editorLessonForm.reset();
-
-    editorQuizForm.reset();
-
-
-    // CLEAR EDITOR LISTS
-
-    editorLessonList.innerHTML = "";
-
-    editorQuizList.innerHTML = "";
-
-
-    // NEW COURSE
-
-    if (!selectedCourse) {
-
-        editorCourseTitle.textContent = "Create New Course";
-
-        coursePublishStatus.textContent = "Unpublished";
-
-        publishEditorCourseBtn.disabled = true;
-
-        unpublishCourseBtn.disabled = true;
-
-        editorLessonCourseId.value = "";
-
-        editorQuizCourseId.value = "";
+        console.warn("Page not found:", pageName);
 
         return;
 
     }
 
+    selectedPage.classList.remove("hidden");
 
-    // EXISTING COURSE
+    selectedPage.classList.add("active");
 
-    editCourseId.value = selectedCourse.id;
+    document.querySelectorAll(".admin-nav-btn").forEach(button => {
 
-    editCourseTitle.value = selectedCourse.title || "";
+        button.classList.toggle(
+            "active",
+            button.dataset.page === pageName
+        );
 
-    editCourseCategory.value = selectedCourse.category || "";
-
-    editCourseDepartment.value = selectedCourse.department || "";
-
-    editCourseLevel.value = selectedCourse.level || "";
-
-    editCourseDescription.value = selectedCourse.description || "";
-
-    editCourseImage.value = selectedCourse.image || "";
-
-
-    editorCourseTitle.textContent = selectedCourse.title;
-
-
-    editorLessonCourseId.value = selectedCourse.id;
-
-    editorQuizCourseId.value = selectedCourse.id;
-
-
-    const isPublished = selectedCourse.published === true ||
-
-        selectedCourse.isPublished === true;
-
-
-    coursePublishStatus.textContent = isPublished
-
-        ? "Published"
-
-        : "Unpublished";
-
-
-    publishEditorCourseBtn.disabled = false;
-
-    unpublishCourseBtn.disabled = false;
-
-
-    displayEditorLessons(selectedCourse.id);
-
-    displayEditorQuizzes(selectedCourse.id);
+    });
 
 }
 
 
-// ========================================
-// 18. ADD NEW COURSE BUTTON
-// ========================================
+// =============================================
+// 18. EVENT LISTENERS
+// =============================================
 
-if (addNewCourseBtn) {
+function setupEventListeners() {
 
-    addNewCourseBtn.addEventListener("click", function () {
+    // LOGOUT
+
+    getElement("adminLogoutBtn")?.addEventListener("click", async () => {
+
+        try {
+
+            await signOut(auth);
+
+            window.location.href = "auth.html";
+
+        } catch (error) {
+
+            console.error(error);
+
+            notify("Unable to log out.");
+
+        }
+
+    });
+
+
+    // ADD COURSE
+
+    getElement("addNewCourseBtn")?.addEventListener("click", () => {
 
         openCourseEditor();
 
     });
 
-}
 
+    // BACK TO COURSES
 
-// ========================================
-// 19. BACK TO MANAGE COURSES
-// ========================================
-
-if (backToCoursesBtn) {
-
-    backToCoursesBtn.addEventListener("click", function () {
+    getElement("backToCoursesBtn")?.addEventListener("click", () => {
 
         showPage("manageCourses");
 
     });
 
+
+    // SAVE COURSE
+
+    getElement("editCourseForm")?.addEventListener(
+        "submit",
+        saveCourse
+    );
+
+
+    // ADD LESSON
+
+    getElement("editorLessonForm")?.addEventListener(
+        "submit",
+        saveLesson
+    );
+
+
+    // ADD QUIZ
+
+    getElement("editorQuizForm")?.addEventListener(
+        "submit",
+        saveQuiz
+    );
+
+
+    // COURSE SEARCH
+
+    getElement("adminCourseSearch")?.addEventListener(
+        "input",
+        displayCourses
+    );
+
+
+    // COURSE FILTER
+
+    getElement("adminCourseFilter")?.addEventListener(
+        "change",
+        displayCourses
+    );
+
+
+    // PUBLISH
+
+    getElement("publishEditorCourseBtn")?.addEventListener(
+        "click",
+        () => changeCourseStatus(true)
+    );
+
+
+    // UNPUBLISH
+
+    getElement("unpublishCourseBtn")?.addEventListener(
+        "click",
+        () => changeCourseStatus(false)
+    );
+
+
+    // PREVIEW
+
+    getElement("previewCourseBtn")?.addEventListener(
+        "click",
+        previewCourse
+    );
+
+
+    // CLOSE PREVIEW
+
+    getElement("closePreviewBtn")?.addEventListener("click", () => {
+
+        getElement("coursePreview")?.classList.add("hidden");
+
+    });
+
 }
 
 
-// ========================================
-// 20. SAVE COURSE
-// ========================================
+// =============================================
+// 19. DISPLAY COURSES
+// =============================================
 
-if (editCourseForm) {
+function displayCourses() {
 
-    editCourseForm.addEventListener("submit", function (event) {
+    const container = getElement("adminCourseList");
 
-        event.preventDefault();
+    if (!container) return;
+
+    const search = getValue("adminCourseSearch").toLowerCase();
+
+    const filter = getElement("adminCourseFilter")?.value || "all";
+
+    const filteredCourses = courses.filter(course => {
+
+        const title = String(course.title || "").toLowerCase();
+
+        const department = String(
+            course.department || ""
+        ).toLowerCase();
+
+        const matchesSearch =
+            title.includes(search) ||
+            department.includes(search);
+
+        const matchesFilter =
+            filter === "all" ||
+            (filter === "published" && course.published) ||
+            (filter === "unpublished" && !course.published);
+
+        return matchesSearch && matchesFilter;
+
+    });
+
+    if (!filteredCourses.length) {
+
+        container.innerHTML = `
+
+            <div class="empty-message">
+
+                <h3>No Courses Found</h3>
+
+                <p>No courses match your search.</p>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+    container.innerHTML = filteredCourses.map(course => {
+
+        const lessonCount = lessons.filter(
+            lesson => lesson.courseId === course.id
+        ).length;
+
+        const quizCount = quizzes.filter(
+            quiz => quiz.courseId === course.id
+        ).length;
+
+        return `
+
+            <div class="admin-course-card">
+
+                ${course.image ? `
+
+                    <img
+                        src="${escapeHTML(course.image)}"
+                        alt="${escapeHTML(course.title)}"
+                    >
+
+                ` : ""}
+
+                <h3>${escapeHTML(course.title)}</h3>
+
+                <p>
+                    Department:
+                    ${escapeHTML(course.department || "Not specified")}
+                </p>
+
+                <p>
+                    Category:
+                    ${escapeHTML(course.category || "Not specified")}
+                </p>
+
+                <p>
+                    Level:
+                    ${escapeHTML(course.level || "Not specified")}
+                </p>
+
+                <p>Lessons: ${lessonCount}</p>
+
+                <p>Quizzes: ${quizCount}</p>
+
+                <p>
+                    Status:
+
+                    <strong>
+                        ${course.published ? "Published" : "Unpublished"}
+                    </strong>
+
+                </p>
+
+                <button
+                    type="button"
+                    onclick="editCourse('${escapeHTML(course.id)}')"
+                >
+                    Edit Course
+                </button>
+
+                <button
+                    type="button"
+                    onclick="removeCourse('${escapeHTML(course.id)}')"
+                >
+                    Delete Course
+                </button>
+
+            </div>
+
+        `;
+
+    }).join("");
+
+}
 
 
-        const courses = getData(COURSES_KEY);
+// =============================================
+// 20. OPEN COURSE EDITOR
+// =============================================
+
+function openCourseEditor(course = null) {
+
+    currentCourseId = course?.id || null;
+
+    document.querySelectorAll(".admin-page").forEach(page => {
+
+        page.classList.remove("active");
+
+        page.classList.add("hidden");
+
+    });
+
+    getElement("courseEditor")?.classList.remove("hidden");
+
+    getElement("editCourseForm")?.reset();
+
+    getElement("editorLessonForm")?.reset();
+
+    getElement("editorQuizForm")?.reset();
+
+    setValue("editCourseId", course?.id);
+
+    setValue("editCourseTitle", course?.title);
+
+    setValue("editCourseCategory", course?.category);
+
+    setValue("editCourseDepartment", course?.department);
+
+    setValue("editCourseLevel", course?.level);
+
+    setValue("editCourseDescription", course?.description);
+
+    setValue("editCourseImage", course?.image);
+
+    const title = getElement("editorCourseTitle");
+
+    if (title) {
+
+        title.textContent = course
+            ? course.title
+            : "Create New Course";
+
+    }
+
+    setValue("editorLessonCourseId", course?.id);
+
+    setValue("editorQuizCourseId", course?.id);
+
+    updateCoursePublicationStatus();
+
+    displayEditorLessons();
+
+    displayEditorQuizzes();
+
+}
 
 
-        const existingId = editCourseId.value;
+// =============================================
+// 21. EDIT COURSE
+// =============================================
+
+window.editCourse = function(courseId) {
+
+    const course = courses.find(item => item.id === courseId);
+
+    if (!course) {
+
+        notify("Course not found.");
+
+        return;
+
+    }
+
+    openCourseEditor(course);
+
+};
 
 
-        const courseData = {
+// =============================================
+// 22. SAVE COURSE
+// =============================================
 
-            id: existingId || generateId(),
+async function saveCourse(event) {
 
-            title: editCourseTitle.value.trim(),
+    event.preventDefault();
 
-            category: editCourseCategory.value,
+    const courseId = getValue("editCourseId");
 
-            department: editCourseDepartment.value,
+    const title = getValue("editCourseTitle");
 
-            level: editCourseLevel.value,
+    if (!title) {
 
-            description: editCourseDescription.value.trim(),
+        notify("Please enter a course title.");
 
-            image: editCourseImage.value.trim(),
+        return;
 
-            published: false,
+    }
 
-            isPublished: false,
+    const courseData = {
 
-            createdAt: new Date().toISOString()
+        title,
 
-        };
+        category: getValue("editCourseCategory"),
 
+        department: getValue("editCourseDepartment"),
 
-        if (!courseData.title) {
+        level: getValue("editCourseLevel"),
 
-            alert("Please enter a course title.");
+        description: getValue("editCourseDescription"),
 
-            return;
+        image: getValue("editCourseImage"),
 
-        }
+        updatedAt: serverTimestamp()
 
+    };
 
-        if (existingId) {
+    try {
 
-            const courseIndex = courses.findIndex(function (course) {
+        if (courseId) {
 
-                return String(course.id) === String(existingId);
+            await updateDoc(
+                doc(db, "courses", courseId),
+                courseData
+            );
 
-            });
-
-
-            if (courseIndex === -1) {
-
-                alert("Course not found.");
-
-                return;
-
-            }
-
-
-            // KEEP THE EXISTING PUBLICATION STATUS
-
-            courseData.published =
-
-                courses[courseIndex].published === true ||
-
-                courses[courseIndex].isPublished === true;
-
-
-            courseData.isPublished = courseData.published;
-
-            courseData.createdAt =
-
-                courses[courseIndex].createdAt || courseData.createdAt;
-
-
-            courses[courseIndex] = courseData;
-
-
-            alert("Course updated successfully!");
+            notify("Course updated successfully.");
 
         } else {
 
-            courses.push(courseData);
+            courseData.published = false;
 
-            alert("New course created successfully!");
+            courseData.isPublished = false;
 
-        }
+            courseData.createdAt = serverTimestamp();
 
+            const newCourse = await addDoc(
+                collection(db, "courses"),
+                courseData
+            );
 
-        saveData(COURSES_KEY, courses);
+            currentCourseId = newCourse.id;
 
+            setValue("editCourseId", newCourse.id);
 
-        openCourseEditor(courseData.id);
+            setValue("editorLessonCourseId", newCourse.id);
 
-        displayAll();
+            setValue("editorQuizCourseId", newCourse.id);
 
-    });
-
-}
-
-
-// ========================================
-// 21. DELETE COURSE
-// ========================================
-
-if (adminCourseList) {
-
-    adminCourseList.addEventListener("click", function (event) {
-
-        const deleteButton = event.target.closest(".delete-course-btn");
-
-        const editButton = event.target.closest(".edit-course-btn");
-
-
-        if (editButton) {
-
-            openCourseEditor(editButton.dataset.id);
-
-            return;
+            notify("Course created successfully. It is currently unpublished.");
 
         }
 
+        await loadCourses();
 
-        if (!deleteButton) {
+        refreshDashboard();
 
-            return;
+        const editorTitle = getElement("editorCourseTitle");
 
-        }
+        if (editorTitle) {
 
-
-        const confirmDelete = confirm(
-
-            "Are you sure you want to delete this course?\n\n" +
-
-            "Its lessons and quizzes will also be deleted."
-
-        );
-
-
-        if (!confirmDelete) {
-
-            return;
+            editorTitle.textContent = title;
 
         }
 
+    } catch (error) {
 
-        const id = deleteButton.dataset.id;
+        console.error("Save course error:", error);
 
-
-        const courses = getData(COURSES_KEY);
-
-        const lessons = getData(LESSONS_KEY);
-
-        const quizzes = getData(QUIZZES_KEY);
-
-
-        saveData(
-
-            COURSES_KEY,
-
-            courses.filter(function (course) {
-
-                return String(course.id) !== String(id);
-
-            })
-
-        );
-
-
-        saveData(
-
-            LESSONS_KEY,
-
-            lessons.filter(function (lesson) {
-
-                return String(lesson.courseId) !== String(id);
-
-            })
-
-        );
-
-
-        saveData(
-
-            QUIZZES_KEY,
-
-            quizzes.filter(function (quiz) {
-
-                return String(quiz.courseId) !== String(id);
-
-            })
-
-        );
-
-
-        alert("Course deleted successfully.");
-
-        displayAll();
-
-    });
-
-}
-
-
-// ========================================
-// 22. DISPLAY LESSONS INSIDE EDITOR
-// ========================================
-
-function displayEditorLessons(courseId) {
-
-    const lessons = getData(LESSONS_KEY).filter(function (lesson) {
-
-        return String(lesson.courseId) === String(courseId);
-
-    });
-
-
-    if (!editorLessonList) {
-
-        return;
+        notify("Unable to save course: " + error.message);
 
     }
 
-
-    if (lessons.length === 0) {
-
-        editorLessonList.innerHTML =
-
-            "<p>No lessons added yet.</p>";
-
-        return;
-
-    }
-
-
-    editorLessonList.innerHTML = lessons.map(function (lesson) {
-
-        return `
-
-            <div class="content-card">
-
-                <h4>${escapeHTML(lesson.title)}</h4>
-
-                <p>${escapeHTML(lesson.description || "")}</p>
-
-
-                <button
-
-                    type="button"
-
-                    class="delete-editor-lesson-btn"
-
-                    data-id="${escapeHTML(lesson.id)}"
-
-                >
-
-                    Delete Lesson
-
-                </button>
-
-            </div>
-
-        `;
-
-    }).join("");
-
 }
 
 
-// ========================================
-// 23. ADD LESSON
-// ========================================
+// =============================================
+// 23. DELETE COURSE
+// =============================================
 
-if (editorLessonForm) {
+window.removeCourse = async function(courseId) {
 
-    editorLessonForm.addEventListener("submit", function (event) {
+    const course = courses.find(item => item.id === courseId);
 
-        event.preventDefault();
+    if (!course) return;
 
+    const confirmed = confirm(
 
-        const courseId = editorLessonCourseId.value;
+        `Delete "${course.title}" and all its lessons and quizzes?`
 
+    );
 
-        if (!courseId) {
+    if (!confirmed) return;
 
-            alert("Save the course before adding lessons.");
+    try {
 
-            return;
-
-        }
-
-
-        const lessons = getData(LESSONS_KEY);
-
-
-        const newLesson = {
-
-            id: generateId(),
-
-            courseId: courseId,
-
-            title: editorLessonTitle.value.trim(),
-
-            description: editorLessonDescription.value.trim(),
-
-            content: editorLessonContent.value.trim(),
-
-            pdf: editorLessonPDF.value.trim(),
-
-            video: editorLessonVideo.value.trim(),
-
-            createdAt: new Date().toISOString()
-
-        };
-
-
-        if (!newLesson.title) {
-
-            alert("Please enter a lesson title.");
-
-            return;
-
-        }
-
-
-        lessons.push(newLesson);
-
-
-        saveData(LESSONS_KEY, lessons);
-
-
-        editorLessonForm.reset();
-
-        editorLessonCourseId.value = courseId;
-
-
-        displayEditorLessons(courseId);
-
-        displayAll();
-
-
-        alert("Lesson added successfully!");
-
-    });
-
-}
-
-
-// ========================================
-// 24. DELETE LESSON FROM EDITOR
-// ========================================
-
-if (editorLessonList) {
-
-    editorLessonList.addEventListener("click", function (event) {
-
-        const button = event.target.closest(".delete-editor-lesson-btn");
-
-
-        if (!button) {
-
-            return;
-
-        }
-
-
-        if (!confirm("Delete this lesson?")) {
-
-            return;
-
-        }
-
-
-        const lessonId = button.dataset.id;
-
-        const courseId = editorLessonCourseId.value;
-
-
-        const lessons = getData(LESSONS_KEY);
-
-
-        saveData(
-
-            LESSONS_KEY,
-
-            lessons.filter(function (lesson) {
-
-                return String(lesson.id) !== String(lessonId);
-
-            })
-
+        const relatedLessons = lessons.filter(
+            item => item.courseId === courseId
         );
 
+        const relatedQuizzes = quizzes.filter(
+            item => item.courseId === courseId
+        );
 
-        displayEditorLessons(courseId);
+        const references = [
 
-        displayAll();
+            doc(db, "courses", courseId),
 
-    });
+            ...relatedLessons.map(item =>
+                doc(db, "lessons", item.id)
+            ),
 
-}
-
-
-// ========================================
-// 25. DISPLAY QUIZZES INSIDE EDITOR
-// ========================================
-
-function displayEditorQuizzes(courseId) {
-
-    const quizzes = getData(QUIZZES_KEY).filter(function (quiz) {
-
-        return String(quiz.courseId) === String(courseId);
-
-    });
-
-
-    if (!editorQuizList) {
-
-        return;
-
-    }
-
-
-    if (quizzes.length === 0) {
-
-        editorQuizList.innerHTML =
-
-            "<p>No quiz questions added yet.</p>";
-
-        return;
-
-    }
-
-
-    editorQuizList.innerHTML = quizzes.map(function (quiz, index) {
-
-        return `
-
-            <div class="content-card">
-
-                <h4>Question ${index + 1}</h4>
-
-                <p>${escapeHTML(quiz.question)}</p>
-
-
-                <button
-
-                    type="button"
-
-                    class="delete-editor-quiz-btn"
-
-                    data-id="${escapeHTML(quiz.id)}"
-
-                >
-
-                    Delete Question
-
-                </button>
-
-            </div>
-
-        `;
-
-    }).join("");
-
-}
-
-
-// ========================================
-// 26. ADD QUIZ QUESTION
-// ========================================
-
-if (editorQuizForm) {
-
-    editorQuizForm.addEventListener("submit", function (event) {
-
-        event.preventDefault();
-
-
-        const courseId = editorQuizCourseId.value;
-
-
-        if (!courseId) {
-
-            alert("Save the course before adding quiz questions.");
-
-            return;
-
-        }
-
-
-        const quizzes = getData(QUIZZES_KEY);
-
-
-        const options = [
-
-            editorOptionA.value.trim(),
-
-            editorOptionB.value.trim(),
-
-            editorOptionC.value.trim(),
-
-            editorOptionD.value.trim()
+            ...relatedQuizzes.map(item =>
+                doc(db, "quizzes", item.id)
+            )
 
         ];
 
+        for (let i = 0; i < references.length; i += 450) {
 
-        if (options.some(function (option) {
+            const batch = writeBatch(db);
 
-            return option === "";
+            references.slice(i, i + 450).forEach(reference => {
 
-        })) {
+                batch.delete(reference);
 
-            alert("Please fill in all four answer options.");
+            });
 
-            return;
-
-        }
-
-
-        const newQuiz = {
-
-            id: generateId(),
-
-            courseId: courseId,
-
-            question: editorQuestionText.value.trim(),
-
-            options: options,
-
-            correctAnswer: editorCorrectAnswer.value,
-
-            createdAt: new Date().toISOString()
-
-        };
-
-
-        if (!newQuiz.question) {
-
-            alert("Please enter a question.");
-
-            return;
+            await batch.commit();
 
         }
 
+        await loadCourses();
 
-        quizzes.push(newQuiz);
+        await loadLessons();
+
+        await loadQuizzes();
+
+        refreshDashboard();
+
+        notify("Course and its lessons and quizzes deleted successfully.");
+
+    } catch (error) {
+
+        console.error("Delete course error:", error);
+
+        notify("Unable to delete course: " + error.message);
+
+    }
+
+};
 
 
-        saveData(QUIZZES_KEY, quizzes);
+// =============================================
+// 24. PUBLISH / UNPUBLISH COURSE
+// =============================================
 
+async function changeCourseStatus(status) {
 
-        editorQuizForm.reset();
+    const courseId = getValue("editCourseId");
 
-        editorQuizCourseId.value = courseId;
+    if (!courseId) {
 
+        notify("Save the course before publishing it.");
 
-        displayEditorQuizzes(courseId);
+        return;
 
-        displayAll();
+    }
 
+    try {
 
-        alert("Quiz question added successfully!");
+        await updateDoc(
+            doc(db, "courses", courseId),
+            {
 
-    });
+                published: status,
+
+                isPublished: status,
+
+                updatedAt: serverTimestamp()
+
+            }
+        );
+
+        await loadCourses();
+
+        refreshDashboard();
+
+        notify(
+            status
+                ? "Course published successfully."
+                : "Course unpublished successfully."
+        );
+
+    } catch (error) {
+
+        console.error("Publication error:", error);
+
+        notify("Unable to update publication status: " + error.message);
+
+    }
 
 }
 
 
-// ========================================
-// 27. DELETE QUIZ QUESTION FROM EDITOR
-// ========================================
+// =============================================
+// 25. UPDATE PUBLICATION STATUS
+// =============================================
 
-if (editorQuizList) {
+function updateCoursePublicationStatus() {
 
-    editorQuizList.addEventListener("click", function (event) {
+    const statusElement = getElement("coursePublishStatus");
 
-        const button = event.target.closest(".delete-editor-quiz-btn");
+    if (!statusElement) return;
+
+    const courseId = getValue("editCourseId");
+
+    const course = courses.find(item => item.id === courseId);
+
+    statusElement.textContent = course?.published
+        ? "Published"
+        : "Unpublished";
+
+}
 
 
-        if (!button) {
+// =============================================
+// 26. IMPORT BUTTON
+// =============================================
 
-            return;
+function createImportButton() {
+
+    const container = getElement("manageCourses");
+
+    if (!container || getElement("importCatalogueBtn")) return;
+
+    const button = document.createElement("button");
+
+    button.id = "importCatalogueBtn";
+
+    button.className = "primary-btn";
+
+    button.textContent = "Import Course Catalogue";
+
+    const toolbar = container.querySelector(".course-toolbar");
+
+    if (toolbar) {
+
+        toolbar.appendChild(button);
+
+    } else {
+
+        container.prepend(button);
+
+    }
+
+    button.addEventListener("click", importCourseCatalogue);
+
+}
+
+
+// =============================================
+// 27. IMPORT COURSE CATALOGUE
+// =============================================
+
+async function importCourseCatalogue() {
+
+    const catalogue = window.learnSphereCourseCatalog || [];
+
+    if (!catalogue.length) {
+
+        notify("Course catalogue is empty or course-catalog.js is missing.");
+
+        return;
+
+    }
+
+    if (!confirm(
+        "Import missing catalogue courses and set catalogue courses to Unpublished?"
+    )) {
+
+        return;
+
+    }
+
+    try {
+
+        const snapshot = await getDocs(
+            collection(db, "courses")
+        );
+
+        const existingIds = new Set(
+            snapshot.docs.map(item => item.id)
+        );
+
+        let imported = 0;
+
+        let updated = 0;
+
+        // Firestore allows up to 500 operations per batch.
+
+        let batch = writeBatch(db);
+
+        let operations = 0;
+
+        async function commitBatch() {
+
+            if (operations > 0) {
+
+                await batch.commit();
+
+                batch = writeBatch(db);
+
+                operations = 0;
+
+            }
 
         }
 
+        for (let index = 0; index < catalogue.length; index++) {
 
-        if (!confirm("Delete this quiz question?")) {
+            const course = catalogue[index];
 
-            return;
+            const courseId = `catalogue_${index}`;
+
+            const reference = doc(db, "courses", courseId);
+
+            if (existingIds.has(courseId)) {
+
+                const existing = snapshot.docs.find(
+                    item => item.id === courseId
+                );
+
+                const data = existing.data();
+
+                // Reset only catalogue-generated courses.
+                // Do not change manually created courses.
+
+                if (
+                    data.published !== false ||
+                    data.isPublished !== false
+                ) {
+
+                    batch.update(reference, {
+
+                        published: false,
+
+                        isPublished: false,
+
+                        updatedAt: serverTimestamp()
+
+                    });
+
+                    updated++;
+
+                    operations++;
+
+                }
+
+            } else {
+
+                batch.set(reference, {
+
+                    ...course,
+
+                    published: false,
+
+                    isPublished: false,
+
+                    createdAt: serverTimestamp(),
+
+                    updatedAt: serverTimestamp()
+
+                });
+
+                imported++;
+
+                operations++;
+
+            }
+
+            if (operations >= 450) {
+
+                await commitBatch();
+
+            }
 
         }
 
+        await commitBatch();
 
-        const quizId = button.dataset.id;
+        await loadCourses();
 
-        const courseId = editorQuizCourseId.value;
+        refreshDashboard();
 
+        notify(
 
-        const quizzes = getData(QUIZZES_KEY);
-
-
-        saveData(
-
-            QUIZZES_KEY,
-
-            quizzes.filter(function (quiz) {
-
-                return String(quiz.id) !== String(quizId);
-
-            })
+            `Catalogue import completed!\n\n` +
+            `New courses: ${imported}\n` +
+            `Reset to unpublished: ${updated}`
 
         );
 
+    } catch (error) {
 
-        displayEditorQuizzes(courseId);
+        console.error("Catalogue import error:", error);
 
-        displayAll();
+        notify("Catalogue import failed: " + error.message);
 
-    });
+    }
 
 }
 
 
-// ========================================
-// 28. DISPLAY ALL LESSONS
-// ========================================
+// =============================================
+// 28. DISPLAY EDITOR LESSONS
+// =============================================
+
+function displayEditorLessons() {
+
+    const container = getElement("editorLessonList");
+
+    if (!container) return;
+
+    const courseLessons = lessons.filter(
+        item => item.courseId === currentCourseId
+    );
+
+    if (!courseLessons.length) {
+
+        container.innerHTML = "<p>No lessons added yet.</p>";
+
+        return;
+
+    }
+
+    container.innerHTML = courseLessons.map(lesson => `
+
+        <div class="admin-item">
+
+            <h4>${escapeHTML(lesson.title)}</h4>
+
+            <p>${escapeHTML(lesson.description || "")}</p>
+
+            <button
+                type="button"
+                onclick="deleteLesson('${escapeHTML(lesson.id)}')"
+            >
+                Delete Lesson
+            </button>
+
+        </div>
+
+    `).join("");
+
+}
+
+
+// =============================================
+// 29. ADD LESSON
+// =============================================
+
+async function saveLesson(event) {
+
+    event.preventDefault();
+
+    const courseId = getValue("editorLessonCourseId");
+
+    if (!courseId) {
+
+        notify("Save the course before adding lessons.");
+
+        return;
+
+    }
+
+    const title = getValue("editorLessonTitle");
+
+    if (!title) {
+
+        notify("Enter a lesson title.");
+
+        return;
+
+    }
+
+    const lessonData = {
+
+        courseId,
+
+        title,
+
+        description: getValue("editorLessonDescription"),
+
+        content: getValue("editorLessonContent"),
+
+        pdf: getValue("editorLessonPDF"),
+
+        video: getValue("editorLessonVideo"),
+
+        createdAt: serverTimestamp()
+
+    };
+
+    try {
+
+        const newLesson = await addDoc(
+            collection(db, "lessons"),
+            lessonData
+        );
+
+        lessons.push({
+
+            id: newLesson.id,
+
+            ...lessonData
+
+        });
+
+        getElement("editorLessonForm").reset();
+
+        setValue("editorLessonCourseId", courseId);
+
+        displayEditorLessons();
+
+        displayAllLessons();
+
+        displayCourses();
+
+        updateStatistics();
+
+        notify("Lesson added successfully.");
+
+    } catch (error) {
+
+        console.error("Add lesson error:", error);
+
+        notify("Unable to add lesson: " + error.message);
+
+    }
+
+}
+
+
+// =============================================
+// 30. DELETE LESSON
+// =============================================
+
+window.deleteLesson = async function(lessonId) {
+
+    if (!confirm("Delete this lesson?")) return;
+
+    try {
+
+        await deleteDoc(
+            doc(db, "lessons", lessonId)
+        );
+
+        lessons = lessons.filter(
+            item => item.id !== lessonId
+        );
+
+        displayEditorLessons();
+
+        displayAllLessons();
+
+        displayCourses();
+
+        updateStatistics();
+
+        notify("Lesson deleted successfully.");
+
+    } catch (error) {
+
+        console.error("Delete lesson error:", error);
+
+        notify("Unable to delete lesson: " + error.message);
+
+    }
+
+};
+
+
+// =============================================
+// 31. DISPLAY EDITOR QUIZZES
+// =============================================
+
+function displayEditorQuizzes() {
+
+    const container = getElement("editorQuizList");
+
+    if (!container) return;
+
+    const courseQuizzes = quizzes.filter(
+        item => item.courseId === currentCourseId
+    );
+
+    if (!courseQuizzes.length) {
+
+        container.innerHTML = "<p>No quiz questions added yet.</p>";
+
+        return;
+
+    }
+
+    container.innerHTML = courseQuizzes.map(quiz => `
+
+        <div class="admin-item">
+
+            <h4>${escapeHTML(quiz.question)}</h4>
+
+            <button
+                type="button"
+                onclick="deleteQuiz('${escapeHTML(quiz.id)}')"
+            >
+                Delete Question
+            </button>
+
+        </div>
+
+    `).join("");
+
+}
+
+
+// =============================================
+// 32. ADD QUIZ
+// =============================================
+
+async function saveQuiz(event) {
+
+    event.preventDefault();
+
+    const courseId = getValue("editorQuizCourseId");
+
+    if (!courseId) {
+
+        notify("Save the course before adding quizzes.");
+
+        return;
+
+    }
+
+    const question = getValue("editorQuestionText");
+
+    const options = [
+
+        getValue("editorOptionA"),
+
+        getValue("editorOptionB"),
+
+        getValue("editorOptionC"),
+
+        getValue("editorOptionD")
+
+    ];
+
+    const correctAnswer = getValue("editorCorrectAnswer");
+
+    if (!question || options.some(option => !option) || !correctAnswer) {
+
+        notify("Complete the question, all four options and correct answer.");
+
+        return;
+
+    }
+
+    const quizData = {
+
+        courseId,
+
+        question,
+
+        options,
+
+        correctAnswer,
+
+        createdAt: serverTimestamp()
+
+    };
+
+    try {
+
+        const newQuiz = await addDoc(
+            collection(db, "quizzes"),
+            quizData
+        );
+
+        quizzes.push({
+
+            id: newQuiz.id,
+
+            ...quizData
+
+        });
+
+        getElement("editorQuizForm").reset();
+
+        setValue("editorQuizCourseId", courseId);
+
+        displayEditorQuizzes();
+
+        displayAllQuizzes();
+
+        displayCourses();
+
+        updateStatistics();
+
+        notify("Quiz question added successfully.");
+
+    } catch (error) {
+
+        console.error("Add quiz error:", error);
+
+        notify("Unable to add quiz: " + error.message);
+
+    }
+
+}
+
+
+// =============================================
+// 33. DELETE QUIZ
+// =============================================
+
+window.deleteQuiz = async function(quizId) {
+
+    if (!confirm("Delete this quiz question?")) return;
+
+    try {
+
+        await deleteDoc(
+            doc(db, "quizzes", quizId)
+        );
+
+        quizzes = quizzes.filter(
+            item => item.id !== quizId
+        );
+
+        displayEditorQuizzes();
+
+        displayAllQuizzes();
+
+        displayCourses();
+
+        updateStatistics();
+
+        notify("Quiz deleted successfully.");
+
+    } catch (error) {
+
+        console.error("Delete quiz error:", error);
+
+        notify("Unable to delete quiz: " + error.message);
+
+    }
+
+};
+
+
+// =============================================
+// 34. PREVIEW COURSE
+// =============================================
+
+function previewCourse() {
+
+    const title = getValue("editCourseTitle");
+
+    const description = getValue("editCourseDescription");
+
+    const category = getValue("editCourseCategory");
+
+    const department = getValue("editCourseDepartment");
+
+    const level = getValue("editCourseLevel");
+
+    const image = getValue("editCourseImage");
+
+    const container = getElement("coursePreviewContent");
+
+    if (!container) return;
+
+    container.innerHTML = `
+
+        ${image ? `
+
+            <img
+                src="${escapeHTML(image)}"
+                alt="${escapeHTML(title)}"
+            >
+
+        ` : ""}
+
+        <h2>${escapeHTML(title)}</h2>
+
+        <p>${escapeHTML(description)}</p>
+
+        <p>Category: ${escapeHTML(category)}</p>
+
+        <p>Department: ${escapeHTML(department)}</p>
+
+        <p>Level: ${escapeHTML(level)}</p>
+
+    `;
+
+    getElement("coursePreview")?.classList.remove("hidden");
+
+}
+
+
+// =============================================
+// 35. DISPLAY ALL LESSONS
+// =============================================
 
 function displayAllLessons() {
 
-    if (!adminLessonList) {
+    const container = getElement("adminLessonList");
+
+    if (!container) return;
+
+    if (!lessons.length) {
+
+        container.innerHTML = "<p>No lessons available yet.</p>";
 
         return;
 
     }
 
+    container.innerHTML = lessons.map(lesson => {
 
-    const lessons = getData(LESSONS_KEY);
-
-
-    if (lessons.length === 0) {
-
-        adminLessonList.innerHTML = "<p>No lessons available.</p>";
-
-        return;
-
-    }
-
-
-    const courses = getData(COURSES_KEY);
-
-
-    adminLessonList.innerHTML = lessons.map(function (lesson) {
-
-        const course = courses.find(function (item) {
-
-            return String(item.id) === String(lesson.courseId);
-
-        });
-
+        const course = courses.find(
+            item => item.id === lesson.courseId
+        );
 
         return `
 
-            <div class="content-card">
+            <div class="admin-item">
 
                 <h3>${escapeHTML(lesson.title)}</h3>
 
-                <p>Course: ${escapeHTML(course ? course.title : "Unknown course")}</p>
+                <p>
+                    Course:
+                    ${escapeHTML(course?.title || "Unknown Course")}
+                </p>
 
                 <p>${escapeHTML(lesson.description || "")}</p>
 
+                <button
+                    type="button"
+                    onclick="deleteLesson('${escapeHTML(lesson.id)}')"
+                >
+                    Delete Lesson
+                </button>
+
             </div>
 
         `;
@@ -1441,49 +1741,59 @@ function displayAllLessons() {
 }
 
 
-// ========================================
-// 29. DISPLAY ALL QUIZZES
-// ========================================
+// =============================================
+// 36. DISPLAY ALL QUIZZES
+// =============================================
 
 function displayAllQuizzes() {
 
-    if (!adminQuizList) {
+    const container = getElement("adminQuizList");
+
+    if (!container) return;
+
+    if (!quizzes.length) {
+
+        container.innerHTML = "<p>No quizzes available yet.</p>";
 
         return;
 
     }
 
+    container.innerHTML = quizzes.map(quiz => {
 
-    const quizzes = getData(QUIZZES_KEY);
-
-    const courses = getData(COURSES_KEY);
-
-
-    if (quizzes.length === 0) {
-
-        adminQuizList.innerHTML = "<p>No quiz questions available.</p>";
-
-        return;
-
-    }
-
-
-    adminQuizList.innerHTML = quizzes.map(function (quiz) {
-
-        const course = courses.find(function (item) {
-
-            return String(item.id) === String(quiz.courseId);
-
-        });
-
+        const course = courses.find(
+            item => item.id === quiz.courseId
+        );
 
         return `
 
-            <div class="content-card">
+            <div class="admin-item">
 
                 <h3>${escapeHTML(quiz.question)}</h3>
 
-                <p>Course: ${escapeHTML(course ? course.title : "Unknown course")}</p>
+                <p>
+                    Course:
+                    ${escapeHTML(course?.title || "Unknown Course")}
+                </p>
+
+                <p>Options:</p>
+
+                <ol>
+
+                    ${(quiz.options || []).map(option => `
+
+                        <li>${escapeHTML(option)}</li>
+
+                    `).join("")}
+
+                </ol>
+
+                <button
+                    type="button"
+                    onclick="deleteQuiz('${escapeHTML(quiz.id)}')"
+                >
+                    Delete Quiz
+                </button>
 
             </div>
 
@@ -1494,133 +1804,109 @@ function displayAllQuizzes() {
 }
 
 
-// ========================================
-// 30. DISPLAY STUDENTS
-// ========================================
+// =============================================
+// 37. DISPLAY STUDENTS
+// =============================================
 
 function displayStudents() {
 
-    if (!adminStudentList) {
+    const container = getElement("adminStudentList");
+
+    if (!container) return;
+
+    if (!students.length) {
+
+        container.innerHTML = "<p>No students registered yet.</p>";
 
         return;
 
     }
 
+    container.innerHTML = students.map(student => `
 
-    const students = getData(STUDENTS_KEY);
+        <div class="admin-item">
 
+            <h3>
+                ${escapeHTML(student.fullName || "Unnamed Student")}
+            </h3>
 
-    if (students.length === 0) {
+            <p>
+                Email:
+                ${escapeHTML(student.email || "Not available")}
+            </p>
 
-        adminStudentList.innerHTML = "<p>No registered students found.</p>";
+            <p>
+                University:
+                ${escapeHTML(student.university || "Not available")}
+            </p>
 
-        return;
+            <p>
+                Department:
+                ${escapeHTML(student.department || "Not available")}
+            </p>
 
-    }
+            <p>
+                Level:
+                ${escapeHTML(student.level || "Not available")}
+            </p>
 
+        </div>
 
-    adminStudentList.innerHTML = students.map(function (student) {
-
-        return `
-
-            <div class="content-card">
-
-                <h3>${escapeHTML(student.fullName || "Student")}</h3>
-
-                <p>Email: ${escapeHTML(student.email || "Not provided")}</p>
-
-                <p>Department: ${escapeHTML(student.department || "Not provided")}</p>
-
-                <p>Level: ${escapeHTML(student.level || "Not provided")}</p>
-
-            </div>
-
-        `;
-
-    }).join("");
+    `).join("");
 
 }
 
 
-// ========================================
-// 31. DISPLAY STUDENT QUIZ RESULTS
-// ========================================
+// =============================================
+// 38. DISPLAY RESULTS
+// =============================================
 
 function displayResults() {
 
-    if (!adminResultList) {
+    const container = getElement("adminResultList");
+
+    if (!container) return;
+
+    if (!results.length) {
+
+        container.innerHTML = "<p>No student results available yet.</p>";
 
         return;
 
     }
 
+    container.innerHTML = results.map(result => {
 
-    const results = getData(RESULTS_KEY);
+        const student = students.find(
+            item => item.id === result.studentId
+        );
 
-
-    if (results.length === 0) {
-
-        adminResultList.innerHTML = "<p>No student results available.</p>";
-
-        return;
-
-    }
-
-
-    adminResultList.innerHTML = results.map(function (result) {
+        const course = courses.find(
+            item => item.id === result.courseId
+        );
 
         return `
 
-            <div class="content-card">
+            <div class="admin-item">
 
-                <h3>${escapeHTML(result.studentName || "Student")}</h3>
-
-                <p>Course: ${escapeHTML(result.courseTitle || "Unknown course")}</p>
+                <h3>
+                    ${escapeHTML(student?.fullName || result.studentId || "Unknown Student")}
+                </h3>
 
                 <p>
+                    Course:
+                    ${escapeHTML(course?.title || "Unknown Course")}
+                </p>
 
+                <p>
                     Score:
-
-                    ${Number(result.score || 0)}
-
-                    /
-
-                    ${Number(result.totalQuestions || 0)}
-
+                    ${escapeHTML(result.score ?? "Not available")}
                 </p>
-
-                <p>Percentage: ${Number(result.percentage || 0)}%</p>
 
                 <p>
-
                     Date:
-
-                    ${escapeHTML(
-
-                        result.submittedAt
-
-                            ? new Date(result.submittedAt).toLocaleString()
-
-                            : "Not available"
-
-                    )}
-
+                    ${escapeHTML(result.date || "Not available")}
                 </p>
-
-
-                <button
-
-                    type="button"
-
-                    class="delete-result-btn"
-
-                    data-id="${escapeHTML(result.id)}"
-
-                >
-
-                    Delete Result
-
-                </button>
 
             </div>
 
@@ -1631,136 +1917,51 @@ function displayResults() {
 }
 
 
-// ========================================
-// 32. DELETE INDIVIDUAL STUDENT RESULT
-// ========================================
-
-if (adminResultList) {
-
-    adminResultList.addEventListener("click", function (event) {
-
-        const button = event.target.closest(".delete-result-btn");
-
-
-        if (!button) {
-
-            return;
-
-        }
-
-
-        const confirmDelete = confirm(
-
-            "Are you sure you want to delete this student's quiz result?"
-
-        );
-
-
-        if (!confirmDelete) {
-
-            return;
-
-        }
-
-
-        const resultId = button.dataset.id;
-
-        const results = getData(RESULTS_KEY);
-
-
-        const updatedResults = results.filter(function (result) {
-
-            return String(result.id) !== String(resultId);
-
-        });
-
-
-        saveData(RESULTS_KEY, updatedResults);
-
-
-        displayResults();
-
-        displayStatistics();
-
-
-        alert("Student result deleted successfully!");
-
-    });
-
-}
-
-
-// ========================================
-// 33. DISPLAY STUDENT CERTIFICATES
-// ========================================
+// =============================================
+// 39. DISPLAY CERTIFICATES
+// =============================================
 
 function displayCertificates() {
 
-    if (!adminCertificateList) {
+    const container = getElement("adminCertificateList");
+
+    if (!container) return;
+
+    if (!certificates.length) {
+
+        container.innerHTML = "<p>No certificates issued yet.</p>";
 
         return;
 
     }
 
+    container.innerHTML = certificates.map(certificate => {
 
-    const certificates = getData(CERTIFICATES_KEY);
+        const student = students.find(
+            item => item.id === certificate.studentId
+        );
 
-
-    if (certificates.length === 0) {
-
-        adminCertificateList.innerHTML =
-
-            "<p>No certificates have been issued yet.</p>";
-
-        return;
-
-    }
-
-
-    adminCertificateList.innerHTML = certificates.map(function (certificate) {
+        const course = courses.find(
+            item => item.id === certificate.courseId
+        );
 
         return `
 
-            <div class="content-card">
+            <div class="admin-item">
 
-                <h3>${escapeHTML(certificate.studentName || "Student")}</h3>
-
-                <p>Course: ${escapeHTML(certificate.courseTitle || "Unknown course")}</p>
-
-                <p>Certificate ID: ${escapeHTML(certificate.certificateId || "Not available")}</p>
-
-                <p>Score: ${Number(certificate.percentage || 0)}%</p>
+                <h3>
+                    ${escapeHTML(student?.fullName || "Unknown Student")}
+                </h3>
 
                 <p>
-
-                    Issued:
-
-                    ${escapeHTML(
-
-                        certificate.issuedAt
-
-                            ? new Date(certificate.issuedAt).toLocaleDateString()
-
-                            : "Not available"
-
-                    )}
-
+                    Course:
+                    ${escapeHTML(course?.title || "Unknown Course")}
                 </p>
 
-
-                <button
-
-                    type="button"
-
-                    class="delete-certificate-btn"
-
-                    data-id="${escapeHTML(certificate.id)}"
-
-                >
-
-                    Delete Certificate
-
-                </button>
+                <p>
+                    Certificate ID:
+                    ${escapeHTML(certificate.id)}
+                </p>
 
             </div>
 
@@ -1771,279 +1972,39 @@ function displayCertificates() {
 }
 
 
-// ========================================
-// 34. DELETE CERTIFICATE
-// ========================================
+// =============================================
+// 40. DASHBOARD STATISTICS
+// =============================================
 
-if (adminCertificateList) {
+function updateStatistics() {
 
-    adminCertificateList.addEventListener("click", function (event) {
+    const statistics = {
 
-        const button = event.target.closest(".delete-certificate-btn");
+        totalCourses: courses.length,
 
+        totalStudents: students.length,
 
-        if (!button) {
+        totalLessons: lessons.length,
 
-            return;
+        totalQuizzes: quizzes.length
 
-        }
+    };
 
+    Object.entries(statistics).forEach(([id, value]) => {
 
-        const confirmDelete = confirm(
+        const element = getElement(id);
 
-            "Are you sure you want to delete this certificate?"
+        if (element) {
 
-        );
-
-
-        if (!confirmDelete) {
-
-            return;
+            element.textContent = value;
 
         }
-
-
-        const certificateId = button.dataset.id;
-
-        const certificates = getData(CERTIFICATES_KEY);
-
-
-        const updatedCertificates = certificates.filter(function (certificate) {
-
-            return String(certificate.id) !== String(certificateId);
-
-        });
-
-
-        saveData(CERTIFICATES_KEY, updatedCertificates);
-
-
-        displayCertificates();
-
-        displayStatistics();
-
-
-        alert("Certificate deleted successfully!");
 
     });
 
 }
 
 
-// ========================================
-// 35. PUBLISH COURSE
-// ========================================
-
-if (publishEditorCourseBtn) {
-
-    publishEditorCourseBtn.addEventListener("click", function () {
-
-        const courseId = editCourseId.value;
-
-
-        if (!courseId) {
-
-            alert("Save the course before publishing it.");
-
-            return;
-
-        }
-
-
-        const courses = getData(COURSES_KEY);
-
-
-        const courseIndex = courses.findIndex(function (course) {
-
-            return String(course.id) === String(courseId);
-
-        });
-
-
-        if (courseIndex === -1) {
-
-            alert("Course not found.");
-
-            return;
-
-        }
-
-
-        courses[courseIndex].published = true;
-
-        courses[courseIndex].isPublished = true;
-
-
-        saveData(COURSES_KEY, courses);
-
-
-        coursePublishStatus.textContent = "Published";
-
-
-        alert("Course published successfully!");
-
-
-        displayAll();
-
-    });
-
-}
-
-
-// ========================================
-// 36. UNPUBLISH COURSE
-// ========================================
-
-if (unpublishCourseBtn) {
-
-    unpublishCourseBtn.addEventListener("click", function () {
-
-        const courseId = editCourseId.value;
-
-
-        if (!courseId) {
-
-            alert("Please save the course first.");
-
-            return;
-
-        }
-
-
-        const confirmUnpublish = confirm(
-
-            "Are you sure you want to unpublish this course?"
-
-        );
-
-
-        if (!confirmUnpublish) {
-
-            return;
-
-        }
-
-
-        const courses = getData(COURSES_KEY);
-
-
-        const courseIndex = courses.findIndex(function (course) {
-
-            return String(course.id) === String(courseId);
-
-        });
-
-
-        if (courseIndex === -1) {
-
-            alert("Course not found.");
-
-            return;
-
-        }
-
-
-        courses[courseIndex].published = false;
-
-        courses[courseIndex].isPublished = false;
-
-
-        saveData(COURSES_KEY, courses);
-
-
-        coursePublishStatus.textContent = "Unpublished";
-
-
-        alert("Course unpublished successfully!");
-
-
-        displayAll();
-
-    });
-
-}
-
-
-// ========================================
-// 37. PREVIEW COURSE
-// ========================================
-
-if (previewCourseBtn) {
-
-    previewCourseBtn.addEventListener("click", function () {
-
-        const title = editCourseTitle.value.trim();
-
-        const description = editCourseDescription.value.trim();
-
-        const department = editCourseDepartment.value;
-
-        const level = editCourseLevel.value;
-
-        const image = editCourseImage.value.trim();
-
-
-        if (!title) {
-
-            alert("Enter a course title before previewing.");
-
-            return;
-
-        }
-
-
-        coursePreviewContent.innerHTML = `
-
-            ${image ? `
-
-                <img
-
-                    src="${escapeHTML(image)}"
-
-                    alt="${escapeHTML(title)}"
-
-                    style="width:100%; max-height:250px; object-fit:cover;"
-
-                >
-
-            ` : ""}
-
-
-            <h2>${escapeHTML(title)}</h2>
-
-            <p>${escapeHTML(description)}</p>
-
-            <p>Department: ${escapeHTML(department)}</p>
-
-            <p>Level: ${escapeHTML(level)}</p>
-
-        `;
-
-
-        coursePreview.classList.remove("hidden");
-
-    });
-
-}
-
-
-// ========================================
-// 38. CLOSE COURSE PREVIEW
-// ========================================
-
-if (closePreviewBtn) {
-
-    closePreviewBtn.addEventListener("click", function () {
-
-        coursePreview.classList.add("hidden");
-
-    });
-
-}
-
-
-// ========================================
-// 39. START ADMIN DASHBOARD
-// ========================================
-
-showAdminDashboard();
+// =============================================
+// 41. END OF LEARNSPHERE ADMIN DASHBOARD
+// =============================================

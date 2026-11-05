@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Verify Certificate | LearnSphere</title>
+
+<link rel="stylesheet" href="verify-certificate.css">
+
+<link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+</head>
+
+<body>
+
+<header>
+    <h2>Learn<span>Sphere</span></h2>
+    <a href="student-dashboard.html">Dashboard</a>
+</header>
+
+<main>
+
+    <section class="verification-container">
+
+        <div class="verification-icon">
+            <i class="fa-solid fa-certificate"></i>
+        </div>
+
+        <h1>Certificate Verification</h1>
+
+        <p>
+            Verify the authenticity of a certificate issued by LearnSphere.
+        </p>
+
+        <form id="verificationForm">
+
+            <label for="certificateId">
+                Certificate ID
+            </label>
+
+            <input
+                type="text"
+                id="certificateId"
+                placeholder="Enter certificate ID"
+                required
+            >
+
+            <button type="submit" id="verifyButton">
+                <i class="fa-solid fa-shield-check"></i>
+                Verify Certificate
+            </button>
+
+        </form>
+
+        <div id="verificationMessage"></div>
+
+        <div id="certificateDetails" class="hidden">
+
+            <div class="verified-heading">
+                <i class="fa-solid fa-circle-check"></i>
+                <h2>Certificate Verified</h2>
+            </div>
+
+            <p class="verified-description">
+                This certificate exists in the LearnSphere verification database.
+            </p>
+
+            <div class="detail-row">
+                <span>Student Name</span>
+                <strong id="studentName"></strong>
+            </div>
+
+            <div class="detail-row">
+                <span>Course Title</span>
+                <strong id="courseTitle"></strong>
+            </div>
+
+            <div class="detail-row">
+                <span>Quiz Score</span>
+                <strong id="percentage"></strong>
+            </div>
+
+            <div class="detail-row">
+                <span>Certificate ID</span>
+                <strong id="displayCertificateId"></strong>
+            </div>
+
+            <div class="detail-row">
+                <span>Issue Date</span>
+                <strong id="issueDate"></strong>
+            </div>
+
+        </div>
+
+        <footer>
+            © 2026 LearnSphere. All rights reserved.
+        </footer>
+
+    </section>
+
+</main>
+
+<script type="module" src="verify-certificate.js"></script>
+
+</body>
+</html>

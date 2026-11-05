@@ -4,38 +4,38 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 
-import {
-    getAuth
-} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
-import {
-    getFirestore
-} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 
-// Firebase project configuration
+// FIREBASE CONFIGURATION
 
 const firebaseConfig = {
-    apiKey: "AIzaSyClx2M5QO3eVNbjUNqg6CESb70ZSSI9Dyg",
-    authDomain: "learnsphere-38f06.firebaseapp.com",
-    projectId: "learnsphere-38f06",
-    storageBucket: "learnsphere-38f06.firebasestorage.app",
-    messagingSenderId: "87012683633",
-    appId: "1:87012683633:web:d9151166969be006eb10d0"
+    apiKey: "AIzaSyDmRbTb9GmbdV4XewH3mWR4sCnjFjNCmNg",
+    authDomain: "learn-platform-ee239.firebaseapp.com",
+    projectId: "learn-platform-ee239",
+    storageBucket: "learn-platform-ee239.firebasestorage.app",
+    messagingSenderId: "239413628166",
+    appId: "1:239413628166:web:3171b69e94030f8cb9a287"
 };
 
 
-// Initialize Firebase
+// INITIALIZE FIREBASE
 
 const app = initializeApp(firebaseConfig);
 
 
-// Initialize Firebase services
+// INITIALIZE AUTHENTICATION
 
 const auth = getAuth(app);
+
+
+// INITIALIZE FIRESTORE
+
 const db = getFirestore(app);
 
 
-// Export services for other JavaScript files
+// EXPORT FIREBASE SERVICES
 
 export { app, auth, db };

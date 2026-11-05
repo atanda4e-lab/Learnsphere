@@ -1,10 +1,36 @@
+
 // ========================================
 // LEARNSPHERE COURSE LEARNING SYSTEM
+// COMPLETE FIREBASE VERSION
 // ========================================
 
 
 // ========================================
-// 1. GET HTML ELEMENTS
+// 1. FIREBASE IMPORTS
+// ========================================
+
+import { auth, db } from "./firebase.js";
+
+import {
+    onAuthStateChanged,
+    signOut
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+
+import {
+    doc,
+    getDoc,
+    collection,
+    query,
+    where,
+    getDocs,
+    setDoc,
+    serverTimestamp,
+    runTransaction
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+
+// ========================================
+// 2. HTML ELEMENTS
 // ========================================
 
 const courseTitle = document.getElementById("courseTitle");
@@ -47,90 +73,25 @@ const quizFeedback = document.getElementById("quizFeedback");
 
 
 // ========================================
-// 2. LOCAL STORAGE KEYS
+// 3. SETTINGS
 // ========================================
 
-const COURSES_KEY = "learnsphereCourses";
-const LESSONS_KEY = "learnsphereLessons";
-const QUIZZES_KEY = "learnsphereQuizzes";
-const ENROLLMENTS_KEY = "learnsphereEnrollments";
-const CURRENT_STUDENT_KEY = "learnsphereCurrentStudent";
-const COMPLETED_LESSONS_KEY = "learnsphereCompletedLessons";
-const RESULTS_KEY = "learnsphereResults";
-const CERTIFICATES_KEY = "learnsphereCertificates";
+const CERTIFICATE_PASS_MARK = 70;
+
+const CERTIFICATE_FOUNDER_NAME = "AKINTAYO IBRAHIM";
+
+const SECONDS_PER_QUESTION = 30;
 
 
 // ========================================
-// 3. GET DATA FROM LOCAL STORAGE
-// ========================================
-
-function getSavedData(key) {
-
-    const data = localStorage.getItem(key);
-
-    try {
-
-        return data ? JSON.parse(data) : [];
-
-    } catch (error) {
-
-        console.error("Error reading local storage:", error);
-
-        return [];
-
-    }
-
-}
-
-
-// ========================================
-// 4. GET COURSE ID FROM URL
+// 4. GLOBAL VARIABLES
 // ========================================
 
 const urlParameters = new URLSearchParams(window.location.search);
 
 const courseId = urlParameters.get("id");
 
-
-// ========================================
-// 5. GET CURRENT STUDENT
-// ========================================
-
-const currentStudentData = localStorage.getItem(CURRENT_STUDENT_KEY);
-
 let currentStudent = null;
-
-if (currentStudentData) {
-
-    try {
-
-        currentStudent = JSON.parse(currentStudentData);
-
-    } catch (error) {
-
-        currentStudent = null;
-
-    }
-
-}
-
-
-// ========================================
-// 6. CHECK STUDENT LOGIN
-// ========================================
-
-if (!currentStudent) {
-
-    alert("Please log in to access your course.");
-
-    window.location.href = "auth.html?mode=login";
-
-}
-
-
-// ========================================
-// 7. COURSE AND QUIZ VARIABLES
-// ========================================
 
 let currentCourse = null;
 
@@ -146,9 +107,6 @@ let studentAnswers = {};
 
 let quizSubmitted = false;
 
-
-// TIMER VARIABLES
-
 let quizTimer = null;
 
 let remainingTime = 0;
@@ -158,219 +116,323 @@ let quizStartTime = null;
 let quizTimerDisplay = null;
 
 
-// CERTIFICATE SETTINGS
+// ========================================
+// 5. HELPER FUNCTIONS
+// ========================================
 
-const CERTIFICATE_PASS_MARK = 70;
+function escapeHTML(value) {
 
-const CERTIFICATE_FOUNDER_NAME = "AKINTAYO IBRAHIM";
+    return String(value ?? "").replace(/[&<>"']/g, function (character) {
+
+        const characters = {
+
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+
+        };
+
+        return characters[character];
+
+    });
+
+}
 
 
-// Each question gets 30 seconds.
+function showError(message) {
 
-const SECONDS_PER_QUESTION = 30;
+    console.error(message);
+
+    alert(message);
+
+}
 
 
 // ========================================
-// 8. CHECK STUDENT ENROLLMENT
+// 6. AUTHENTICATION
 // ========================================
 
-function isStudentEnrolled() {
+onAuthStateChanged(auth, async function (user) {
 
-    const enrollments = getSavedData(ENROLLMENTS_KEY);
+    if (!user) {
 
-    return enrollments.some(function (enrollment) {
+        window.location.href = "auth.html?mode=student";
 
-        return (
+        return;
 
-            String(enrollment.studentId) === String(currentStudent.id) &&
+    }
 
-            String(enrollment.courseId) === String(courseId)
+    try {
+
+        const studentReference = doc(db, "students", user.uid);
+
+        const studentDocument = await getDoc(studentReference);
+
+        if (!studentDocument.exists()) {
+
+            alert("Student profile not found.");
+
+            await signOut(auth);
+
+            window.location.href = "auth.html?mode=student";
+
+            return;
+
+        }
+
+        const studentData = studentDocument.data();
+
+        if (studentData.role !== "student") {
+
+            alert("You do not have student access.");
+
+            await signOut(auth);
+
+            window.location.href = "auth.html";
+
+            return;
+
+        }
+
+        currentStudent = {
+
+            ...studentData,
+
+            uid: user.uid,
+
+            id: user.uid,
+
+            fullName: studentData.fullName || user.displayName || "Student"
+
+        };
+
+        await loadCourse();
+
+    }
+
+    catch (error) {
+
+        console.error("Authentication error:", error);
+
+        showError("Unable to verify your account: " + error.message);
+
+    }
+
+});
+
+
+// ========================================
+// 7. CHECK ENROLMENT
+// ========================================
+
+async function isStudentEnrolled() {
+
+    const enrollmentQuery = query(
+
+        collection(db, "enrollments"),
+
+        where("studentId", "==", currentStudent.uid)
+
+    );
+
+    const snapshot = await getDocs(enrollmentQuery);
+
+    return snapshot.docs.some(function (item) {
+
+        return String(item.data().courseId) === String(courseId);
+
+    });
+
+}
+
+
+// ========================================
+// 8. LOAD COURSE
+// ========================================
+
+async function loadCourse() {
+
+    try {
+
+        if (!courseId) {
+
+            alert("No course selected.");
+
+            window.location.href = "student-dashboard.html";
+
+            return;
+
+        }
+
+        const courseReference = doc(db, "courses", courseId);
+
+        const courseDocument = await getDoc(courseReference);
+
+        if (!courseDocument.exists()) {
+
+            alert("Course not found.");
+
+            window.location.href = "student-dashboard.html";
+
+            return;
+
+        }
+
+        currentCourse = {
+
+            ...courseDocument.data(),
+
+            id: courseDocument.id
+
+        };
+
+        if (currentCourse.published !== true) {
+
+            alert("This course is not published.");
+
+            window.location.href = "student-dashboard.html";
+
+            return;
+
+        }
+
+        const enrolled = await isStudentEnrolled();
+
+        if (!enrolled) {
+
+            alert("Please enrol in this course first.");
+
+            window.location.href = "student-dashboard.html";
+
+            return;
+
+        }
+
+        courseTitle.textContent = currentCourse.title || "Untitled Course";
+
+        courseDescription.textContent = currentCourse.description || "";
+
+        courseDepartment.textContent = currentCourse.department || "General";
+
+        courseLevel.textContent = currentCourse.level || "All Levels";
+
+
+        // LOAD LESSONS
+
+        const lessonsQuery = query(
+
+            collection(db, "lessons"),
+
+            where("courseId", "==", courseId)
 
         );
 
-    });
+        const lessonsSnapshot = await getDocs(lessonsQuery);
 
-}
+        courseLessons = lessonsSnapshot.docs.map(function (item) {
 
+            return {
 
-// ========================================
-// 9. LOAD COURSE
-// ========================================
+                ...item.data(),
 
-function loadCourse() {
+                id: item.id
 
-    if (!courseId) {
-
-        alert("No course was selected.");
-
-        window.location.href = "student-dashboard.html";
-
-        return;
-
-    }
-
-
-    const courses = getSavedData(COURSES_KEY);
-
-    currentCourse = courses.find(function (course) {
-
-        return String(course.id) === String(courseId);
-
-    });
-
-
-    if (!currentCourse || currentCourse.published !== true) {
-
-        alert("This course is unavailable.");
-
-        window.location.href = "student-dashboard.html";
-
-        return;
-
-    }
-
-
-    if (!isStudentEnrolled()) {
-
-        alert("You must enrol in this course before accessing it.");
-
-        window.location.href = "courses.html";
-
-        return;
-
-    }
-
-
-    // DISPLAY COURSE INFORMATION
-
-    courseTitle.textContent = currentCourse.title;
-
-    courseDescription.textContent = currentCourse.description || "";
-
-    courseDepartment.innerHTML =
-
-        '<i class="fa-solid fa-building"></i> ' +
-
-        escapeHTML(currentCourse.department || "General");
-
-
-    courseLevel.innerHTML =
-
-        '<i class="fa-solid fa-graduation-cap"></i> ' +
-
-        escapeHTML(currentCourse.level || "All Levels");
-
-
-    // GET COURSE LESSONS
-
-    const allLessons = getSavedData(LESSONS_KEY);
-
-    courseLessons = allLessons.filter(function (lesson) {
-
-        return String(lesson.courseId) === String(courseId);
-
-    });
-
-
-    // GET COURSE QUIZZES
-
-    const allQuizzes = getSavedData(QUIZZES_KEY);
-
-    courseQuizzes = allQuizzes.filter(function (quiz) {
-
-        return String(quiz.courseId) === String(courseId);
-
-    });
-
-
-    displayLessons();
-
-    updateProgress();
-
-
-    if (courseLessons.length > 0) {
-
-        showLesson(0);
-
-    } else {
-
-        lessonList.innerHTML =
-
-            "<p>No lessons have been added to this course yet.</p>";
-
-    }
-
-}
-
-
-// ========================================
-// 10. DISPLAY LESSON LIST
-// ========================================
-
-function displayLessons() {
-
-    lessonList.innerHTML = "";
-
-    const completedLessons = getSavedData(COMPLETED_LESSONS_KEY);
-
-
-    courseLessons.forEach(function (lesson, index) {
-
-        const isCompleted = completedLessons.some(function (item) {
-
-            return (
-
-                String(item.studentId) === String(currentStudent.id) &&
-
-                String(item.courseId) === String(courseId) &&
-
-                String(item.lessonId) === String(lesson.id)
-
-            );
+            };
 
         });
 
 
-        const lessonButton = document.createElement("button");
+        // LOAD QUIZZES
 
-        lessonButton.type = "button";
+        const quizzesQuery = query(
 
-        lessonButton.className = "lesson-item";
+            collection(db, "quizzes"),
 
+            where("courseId", "==", courseId)
 
-        if (isCompleted) {
+        );
 
-            lessonButton.classList.add("completed");
+        const quizzesSnapshot = await getDocs(quizzesQuery);
 
-        }
+        courseQuizzes = quizzesSnapshot.docs.map(function (item) {
 
+            return {
 
-        if (index === currentLessonIndex) {
+                ...item.data(),
 
-            lessonButton.classList.add("active");
+                id: item.id
 
-        }
-
-
-        lessonButton.innerHTML = `
-
-            <i class="fa-solid fa-book-open"></i>
-
-            <span>${index + 1}. ${escapeHTML(lesson.title)}</span>
-
-            <i class="fa-solid ${isCompleted ? "fa-circle-check lesson-status" : "fa-circle lesson-status"}"></i>
-
-        `;
-
-
-        lessonButton.addEventListener("click", function () {
-
-            showLesson(index);
+            };
 
         });
 
 
-        lessonList.appendChild(lessonButton);
+        displayLessons();
+
+        updateProgress();
+
+        if (courseLessons.length > 0) {
+
+            showLesson(0);
+
+        } else {
+
+            welcomeMessage.classList.remove("hidden");
+
+            lessonArea.classList.add("hidden");
+
+            lessonList.innerHTML = "<p>No lessons available yet.</p>";
+
+        }
+
+        console.log("Course loaded:", currentCourse);
+
+        console.log("Lessons:", courseLessons);
+
+        console.log("Quizzes:", courseQuizzes);
+
+    }
+
+    catch (error) {
+
+        console.error("Course loading error:", error);
+
+        showError("Unable to load course: " + error.message);
+
+    }
+
+}
+
+
+// ========================================
+// 9. LOAD COMPLETED LESSONS
+// ========================================
+
+async function getCompletedLessons() {
+
+    const completedQuery = query(
+
+        collection(db, "completedLessons"),
+
+        where("studentId", "==", currentStudent.uid),
+
+        where("courseId", "==", currentCourse.id)
+
+    );
+
+    const snapshot = await getDocs(completedQuery);
+
+    return snapshot.docs.map(function (item) {
+
+        return {
+
+            ...item.data(),
+
+            id: item.id
+
+        };
 
     });
 
@@ -378,22 +440,81 @@ function displayLessons() {
 
 
 // ========================================
-// 11. SHOW SELECTED LESSON
+// 10. DISPLAY LESSONS
 // ========================================
 
-function showLesson(index) {
+async function displayLessons() {
 
-    if (index < 0 || index >= courseLessons.length) {
+    lessonList.innerHTML = "<p>Loading lessons...</p>";
 
-        return;
+    try {
+
+        const completed = await getCompletedLessons();
+
+        lessonList.innerHTML = "";
+
+        courseLessons.forEach(function (lesson, index) {
+
+            const isCompleted = completed.some(function (item) {
+
+                return String(item.lessonId) === String(lesson.id);
+
+            });
+
+            const button = document.createElement("button");
+
+            button.type = "button";
+
+            button.className = "lesson-item";
+
+            if (isCompleted) button.classList.add("completed");
+
+            if (index === currentLessonIndex) button.classList.add("active");
+
+            button.innerHTML = `
+
+                <i class="fa-solid fa-book-open"></i>
+
+                <span>${index + 1}. ${escapeHTML(lesson.title)}</span>
+
+                <i class="fa-solid ${isCompleted ? "fa-circle-check" : "fa-circle"} lesson-status"></i>
+
+            `;
+
+            button.addEventListener("click", function () {
+
+                showLesson(index);
+
+            });
+
+            lessonList.appendChild(button);
+
+        });
 
     }
 
+    catch (error) {
+
+        console.error("Lesson display error:", error);
+
+        lessonList.innerHTML = "<p>Unable to load lesson progress.</p>";
+
+    }
+
+}
+
+
+// ========================================
+// 11. SHOW LESSON
+// ========================================
+
+async function showLesson(index) {
+
+    if (index < 0 || index >= courseLessons.length) return;
 
     currentLessonIndex = index;
 
     const lesson = courseLessons[index];
-
 
     welcomeMessage.classList.add("hidden");
 
@@ -401,15 +522,14 @@ function showLesson(index) {
 
     lessonArea.classList.remove("hidden");
 
-
-    lessonTitle.textContent = lesson.title;
+    lessonTitle.textContent = lesson.title || "";
 
     lessonDescription.textContent = lesson.description || "";
 
     lessonContent.textContent = lesson.content || "No lesson content available.";
 
 
-    // DISPLAY VIDEO
+    // VIDEO
 
     if (lesson.video) {
 
@@ -424,15 +544,15 @@ function showLesson(index) {
     }
 
 
-    // DISPLAY PDF
+    // PDF
 
-    const lessonPDF = lesson.pdf || lesson.pdfData;
+    const pdf = lesson.pdf || lesson.pdfData;
 
-    if (lessonPDF) {
+    if (pdf) {
 
         pdfArea.classList.remove("hidden");
 
-        pdfLink.href = lessonPDF;
+        pdfLink.href = pdf;
 
         pdfLink.download = lesson.pdfName || "Lesson-Material.pdf";
 
@@ -443,190 +563,156 @@ function showLesson(index) {
     }
 
 
-    // UPDATE LESSON BUTTONS
-
     previousLessonBtn.disabled = index === 0;
 
     nextLessonBtn.disabled = index === courseLessons.length - 1;
 
 
-    // CHECK COMPLETION STATUS
+    try {
 
-    const completedLessons = getSavedData(COMPLETED_LESSONS_KEY);
+        const completed = await getCompletedLessons();
 
-    const alreadyCompleted = completedLessons.some(function (item) {
+        const isCompleted = completed.some(function (item) {
 
-        return (
+            return String(item.lessonId) === String(lesson.id);
 
-            String(item.studentId) === String(currentStudent.id) &&
+        });
 
-            String(item.courseId) === String(courseId) &&
+        completeLessonBtn.disabled = isCompleted;
 
-            String(item.lessonId) === String(lesson.id)
+        completeLessonBtn.textContent = isCompleted
+
+            ? "Completed ✓"
+
+            : "Mark as Completed";
+
+        await displayLessons();
+
+        await updateProgress();
+
+    }
+
+    catch (error) {
+
+        console.error("Lesson status error:", error);
+
+    }
+
+}
+
+
+// ========================================
+// 12. COMPLETE LESSON
+// ========================================
+
+async function completeLesson() {
+
+    const lesson = courseLessons[currentLessonIndex];
+
+    if (!lesson) return;
+
+    completeLessonBtn.disabled = true;
+
+    try {
+
+        const lessonId = currentStudent.uid + "_" +
+
+            currentCourse.id + "_" + lesson.id;
+
+        const lessonReference = doc(
+
+            db,
+
+            "completedLessons",
+
+            lessonId
 
         );
 
-    });
+        const existing = await getDoc(lessonReference);
 
+        if (!existing.exists()) {
 
-    if (alreadyCompleted) {
+            await setDoc(lessonReference, {
 
-        completeLessonBtn.textContent = "Completed ✓";
+                studentId: currentStudent.uid,
 
-        completeLessonBtn.disabled = true;
+                studentName: currentStudent.fullName,
 
-    } else {
+                courseId: currentCourse.id,
 
-        completeLessonBtn.innerHTML =
+                lessonId: lesson.id,
 
-            'Mark as Completed <i class="fa-solid fa-check"></i>';
+                completedAt: serverTimestamp()
+
+            });
+
+        }
+
+        alert("Lesson marked as completed!");
+
+        await displayLessons();
+
+        await updateProgress();
+
+        await checkCourseCompletionAndIssueCertificate();
+
+        await showLesson(currentLessonIndex);
+
+    }
+
+    catch (error) {
+
+        console.error("Lesson completion error:", error);
+
+        showError("Unable to save lesson: " + error.message);
 
         completeLessonBtn.disabled = false;
 
     }
 
+}
 
-    displayLessons();
 
-    updateProgress();
+// ========================================
+// 13. UPDATE PROGRESS
+// ========================================
+
+async function updateProgress() {
+
+    if (!currentStudent || !currentCourse) return;
+
+    try {
+
+        const completed = await getCompletedLessons();
+
+        const total = courseLessons.length;
+
+        const count = completed.length;
+
+        const percentage = total > 0
+
+            ? Math.round((count / total) * 100)
+
+            : 0;
+
+        progressPercentage.textContent = percentage + "%";
+
+        progressFill.style.width = percentage + "%";
+
+    }
+
+    catch (error) {
+
+        console.error("Progress error:", error);
+
+    }
 
 }
 
 
 // ========================================
-// 12. MARK LESSON AS COMPLETED
-// ========================================
-
-function completeLesson() {
-
-    const lesson = courseLessons[currentLessonIndex];
-
-    if (!lesson) {
-
-        return;
-
-    }
-
-
-    const completedLessons = getSavedData(COMPLETED_LESSONS_KEY);
-
-
-    const alreadyCompleted = completedLessons.some(function (item) {
-
-        return (
-
-            String(item.studentId) === String(currentStudent.id) &&
-
-            String(item.courseId) === String(courseId) &&
-
-            String(item.lessonId) === String(lesson.id)
-
-        );
-
-    });
-
-
-    if (alreadyCompleted) {
-
-        return;
-
-    }
-
-
-    const completedLesson = {
-
-        id: Date.now(),
-
-        studentId: currentStudent.id,
-
-        courseId: currentCourse.id,
-
-        lessonId: lesson.id,
-
-        completedAt: new Date().toISOString()
-
-    };
-
-
-    completedLessons.push(completedLesson);
-
-
-    localStorage.setItem(
-
-        COMPLETED_LESSONS_KEY,
-
-        JSON.stringify(completedLessons)
-
-    );
-
-
-    alert("Lesson marked as completed!");
-
-
-    displayLessons();
-
-    updateProgress();
-
-    showLesson(currentLessonIndex);
-
-
-    // CHECK CERTIFICATE ELIGIBILITY
-
-    checkCourseCompletionAndIssueCertificate();
-
-}
-
-
-// ========================================
-// 13. UPDATE LEARNING PROGRESS
-// ========================================
-
-function updateProgress() {
-
-    const completedLessons = getSavedData(COMPLETED_LESSONS_KEY);
-
-
-    const studentCompletedLessons = completedLessons.filter(function (item) {
-
-        return (
-
-            String(item.studentId) === String(currentStudent.id) &&
-
-            String(item.courseId) === String(courseId)
-
-        );
-
-    });
-
-
-    const totalLessons = courseLessons.length;
-
-    const completedCount = studentCompletedLessons.length;
-
-
-    let percentage = 0;
-
-
-    if (totalLessons > 0) {
-
-        percentage = Math.round(
-
-            (completedCount / totalLessons) * 100
-
-        );
-
-    }
-
-
-    progressPercentage.textContent = percentage + "%";
-
-    progressFill.style.width = percentage + "%";
-
-}
-
-
-// ========================================
-// 14. PREVIOUS LESSON
+// 14. LESSON NAVIGATION
 // ========================================
 
 previousLessonBtn.addEventListener("click", function () {
@@ -636,10 +722,6 @@ previousLessonBtn.addEventListener("click", function () {
 });
 
 
-// ========================================
-// 15. NEXT LESSON
-// ========================================
-
 nextLessonBtn.addEventListener("click", function () {
 
     showLesson(currentLessonIndex + 1);
@@ -647,38 +729,20 @@ nextLessonBtn.addEventListener("click", function () {
 });
 
 
-// ========================================
-// 16. COMPLETE LESSON BUTTON
-// ========================================
-
-completeLessonBtn.addEventListener("click", function () {
-
-    completeLesson();
-
-});
+completeLessonBtn.addEventListener("click", completeLesson);
 
 
 // ========================================
-// 17. CREATE TIMER DISPLAY
+// 15. QUIZ TIMER
 // ========================================
 
 function createTimerDisplay() {
 
-    if (quizTimerDisplay) {
+    if (quizTimerDisplay) return;
 
-        return;
+    const heading = quizArea.querySelector(".quiz-heading");
 
-    }
-
-
-    const quizHeading = quizArea.querySelector(".quiz-heading");
-
-    if (!quizHeading) {
-
-        return;
-
-    }
-
+    if (!heading) return;
 
     quizTimerDisplay = document.createElement("div");
 
@@ -696,54 +760,27 @@ function createTimerDisplay() {
 
     quizTimerDisplay.style.textAlign = "center";
 
-    quizTimerDisplay.style.fontSize = "18px";
-
-
-    quizHeading.after(quizTimerDisplay);
+    heading.after(quizTimerDisplay);
 
 }
 
-
-// ========================================
-// 18. FORMAT TIMER
-// ========================================
 
 function formatTime(seconds) {
 
-    const minutes = Math.floor(seconds / 60);
-
-    const remainingSeconds = seconds % 60;
-
-    return (
-
-        String(minutes).padStart(2, "0") +
+    return String(Math.floor(seconds / 60)).padStart(2, "0") +
 
         ":" +
 
-        String(remainingSeconds).padStart(2, "0")
-
-    );
+        String(seconds % 60).padStart(2, "0");
 
 }
 
 
-// ========================================
-// 19. UPDATE TIMER DISPLAY
-// ========================================
-
 function updateTimerDisplay() {
 
-    if (!quizTimerDisplay) {
+    if (!quizTimerDisplay) return;
 
-        return;
-
-    }
-
-
-    quizTimerDisplay.textContent =
-
-        "Time Remaining: " + formatTime(remainingTime);
-
+    quizTimerDisplay.textContent = "Time Remaining: " + formatTime(remainingTime);
 
     if (remainingTime <= 60) {
 
@@ -762,45 +799,44 @@ function updateTimerDisplay() {
 }
 
 
-// ========================================
-// 20. START QUIZ TIMER
-// ========================================
+function stopQuizTimer() {
+
+    if (quizTimer) {
+
+        clearInterval(quizTimer);
+
+        quizTimer = null;
+
+    }
+
+}
+
 
 function startQuizTimer() {
 
     stopQuizTimer();
 
-
     remainingTime = courseQuizzes.length * SECONDS_PER_QUESTION;
 
     quizStartTime = Date.now();
-
 
     createTimerDisplay();
 
     updateTimerDisplay();
 
-
     quizTimer = setInterval(function () {
-
-        const elapsedSeconds = Math.floor(
-
-            (Date.now() - quizStartTime) / 1000
-
-        );
-
 
         remainingTime = Math.max(
 
             0,
 
-            (courseQuizzes.length * SECONDS_PER_QUESTION) - elapsedSeconds
+            courseQuizzes.length * SECONDS_PER_QUESTION -
+
+            Math.floor((Date.now() - quizStartTime) / 1000)
 
         );
 
-
         updateTimerDisplay();
-
 
         if (remainingTime <= 0) {
 
@@ -816,36 +852,18 @@ function startQuizTimer() {
 
 
 // ========================================
-// 21. STOP QUIZ TIMER
-// ========================================
-
-function stopQuizTimer() {
-
-    if (quizTimer) {
-
-        clearInterval(quizTimer);
-
-        quizTimer = null;
-
-    }
-
-}
-
-
-// ========================================
-// 22. OPEN COURSE QUIZ
+// 16. OPEN QUIZ
 // ========================================
 
 openQuizBtn.addEventListener("click", function () {
 
     if (courseQuizzes.length === 0) {
 
-        alert("No quiz has been added to this course yet.");
+        alert("No quiz questions available.");
 
         return;
 
     }
-
 
     lessonArea.classList.add("hidden");
 
@@ -853,23 +871,17 @@ openQuizBtn.addEventListener("click", function () {
 
     quizArea.classList.remove("hidden");
 
-
     currentQuestionIndex = 0;
 
     studentAnswers = {};
 
     quizSubmitted = false;
 
-
     quizResult.classList.add("hidden");
-
-    quizQuestions.innerHTML = "";
-
 
     submitQuizBtn.disabled = false;
 
     submitQuizBtn.classList.add("hidden");
-
 
     startQuizTimer();
 
@@ -879,149 +891,44 @@ openQuizBtn.addEventListener("click", function () {
 
 
 // ========================================
-// 23. CREATE QUIZ NAVIGATION
-// ========================================
-
-function createQuizNavigation() {
-
-    let navigation = document.getElementById("quizNavigation");
-
-
-    if (!navigation) {
-
-        navigation = document.createElement("div");
-
-        navigation.id = "quizNavigation";
-
-        navigation.style.display = "flex";
-
-        navigation.style.justifyContent = "space-between";
-
-        navigation.style.alignItems = "center";
-
-        navigation.style.gap = "15px";
-
-        navigation.style.marginTop = "25px";
-
-        navigation.style.flexWrap = "wrap";
-
-
-        quizQuestions.after(navigation);
-
-    }
-
-
-    navigation.innerHTML = `
-
-        <button type="button" id="previousQuestionBtn">
-
-            <i class="fa-solid fa-arrow-left"></i>
-
-            Previous
-
-        </button>
-
-
-        <span id="questionCounter"></span>
-
-
-        <button type="button" id="nextQuestionBtn">
-
-            Next
-
-            <i class="fa-solid fa-arrow-right"></i>
-
-        </button>
-
-    `;
-
-
-    document.getElementById("previousQuestionBtn")
-
-        .addEventListener("click", previousQuestion);
-
-
-    document.getElementById("nextQuestionBtn")
-
-        .addEventListener("click", nextQuestion);
-
-}
-
-
-// ========================================
-// 24. DISPLAY ONE QUIZ QUESTION
+// 17. DISPLAY QUIZ
 // ========================================
 
 function displayQuiz() {
 
     quizQuestions.innerHTML = "";
 
-    quizResult.classList.add("hidden");
-
-
-    if (courseQuizzes.length === 0) {
-
-        quizQuestions.innerHTML = "<p>No quiz questions available.</p>";
-
-        return;
-
-    }
-
-
     const quiz = courseQuizzes[currentQuestionIndex];
 
-    const questionBox = document.createElement("div");
-
-    questionBox.className = "quiz-question";
-
+    const letters = ["A", "B", "C", "D"];
 
     let optionsHTML = "";
 
-    const optionLetters = ["A", "B", "C", "D"];
+    letters.forEach(function (letter, index) {
 
-
-    optionLetters.forEach(function (option, index) {
-
-        // ADMIN SAVES OPTIONS AS AN ARRAY
-
-        const optionText = Array.isArray(quiz.options)
+        const option = Array.isArray(quiz.options)
 
             ? quiz.options[index]
 
-            : quiz.options[option];
+            : quiz.options?.[letter];
 
+        if (option === undefined || option === null || option === "") return;
 
-        if (optionText === undefined || optionText === null || optionText === "") {
-
-            return;
-
-        }
-
-
-        const isSelected = studentAnswers[quiz.id] === option;
-
+        const selected = studentAnswers[quiz.id] === letter;
 
         optionsHTML += `
 
             <label class="quiz-option">
 
-                <input
-
-                    type="radio"
+                <input type="radio"
 
                     name="question-${quiz.id}"
 
-                    value="${option}"
+                    value="${letter}"
 
-                    ${isSelected ? "checked" : ""}
+                    ${selected ? "checked" : ""}>
 
-                >
-
-                <span>
-
-                    ${option}. ${escapeHTML(optionText)}
-
-                </span>
+                <span>${letter}. ${escapeHTML(option)}</span>
 
             </label>
 
@@ -1029,41 +936,21 @@ function displayQuiz() {
 
     });
 
+    quizQuestions.innerHTML = `
 
-    questionBox.innerHTML = `
+        <div class="quiz-question">
 
-        <h3>
+            <h3>Question ${currentQuestionIndex + 1} of ${courseQuizzes.length}</h3>
 
-            Question ${currentQuestionIndex + 1}
+            <p>${escapeHTML(quiz.question)}</p>
 
-            of ${courseQuizzes.length}
+            ${optionsHTML}
 
-        </h3>
-
-
-        <p>
-
-            ${escapeHTML(quiz.question)}
-
-        </p>
-
-
-        ${optionsHTML}
+        </div>
 
     `;
 
-
-    quizQuestions.appendChild(questionBox);
-
-
-    const radioButtons = quizQuestions.querySelectorAll(
-
-        'input[type="radio"]'
-
-    );
-
-
-    radioButtons.forEach(function (radio) {
+    quizQuestions.querySelectorAll('input[type="radio"]').forEach(function (radio) {
 
         radio.addEventListener("change", function () {
 
@@ -1073,7 +960,6 @@ function displayQuiz() {
 
     });
 
-
     createQuizNavigation();
 
     updateQuizNavigation();
@@ -1082,100 +968,84 @@ function displayQuiz() {
 
 
 // ========================================
-// 25. UPDATE QUIZ NAVIGATION
+// 18. QUIZ NAVIGATION
 // ========================================
+
+function createQuizNavigation() {
+
+    let navigation = document.getElementById("quizNavigation");
+
+    if (!navigation) {
+
+        navigation = document.createElement("div");
+
+        navigation.id = "quizNavigation";
+
+        quizQuestions.after(navigation);
+
+    }
+
+    navigation.innerHTML = `
+
+        <button type="button" id="previousQuestionBtn">Previous</button>
+
+        <span id="questionCounter"></span>
+
+        <button type="button" id="nextQuestionBtn">Next</button>
+
+    `;
+
+    document.getElementById("previousQuestionBtn").addEventListener("click", function () {
+
+        if (currentQuestionIndex > 0) {
+
+            currentQuestionIndex--;
+
+            displayQuiz();
+
+        }
+
+    });
+
+    document.getElementById("nextQuestionBtn").addEventListener("click", nextQuestion);
+
+}
+
 
 function updateQuizNavigation() {
 
-    const previousButton = document.getElementById("previousQuestionBtn");
+    const previous = document.getElementById("previousQuestionBtn");
 
-    const nextButton = document.getElementById("nextQuestionBtn");
+    const next = document.getElementById("nextQuestionBtn");
 
-    const questionCounter = document.getElementById("questionCounter");
+    const counter = document.getElementById("questionCounter");
 
+    previous.disabled = currentQuestionIndex === 0;
 
-    questionCounter.textContent =
-
-        "Question " + (currentQuestionIndex + 1) +
+    counter.textContent = "Question " + (currentQuestionIndex + 1) +
 
         " of " + courseQuizzes.length;
 
+    const last = currentQuestionIndex === courseQuizzes.length - 1;
 
-    previousButton.disabled = currentQuestionIndex === 0;
+    next.classList.toggle("hidden", last);
 
-
-    const isLastQuestion =
-
-        currentQuestionIndex === courseQuizzes.length - 1;
-
-
-    if (isLastQuestion) {
-
-        nextButton.classList.add("hidden");
-
-        submitQuizBtn.classList.remove("hidden");
-
-        submitQuizBtn.disabled = false;
-
-    } else {
-
-        nextButton.classList.remove("hidden");
-
-        submitQuizBtn.classList.add("hidden");
-
-    }
+    submitQuizBtn.classList.toggle("hidden", !last);
 
 }
 
-
-// ========================================
-// 26. PREVIOUS QUESTION
-// ========================================
-
-function previousQuestion() {
-
-    if (quizSubmitted) {
-
-        return;
-
-    }
-
-
-    if (currentQuestionIndex > 0) {
-
-        currentQuestionIndex--;
-
-        displayQuiz();
-
-    }
-
-}
-
-
-// ========================================
-// 27. NEXT QUESTION
-// ========================================
 
 function nextQuestion() {
 
-    if (quizSubmitted) {
+    const quiz = courseQuizzes[currentQuestionIndex];
+
+    if (!studentAnswers[quiz.id]) {
+
+        alert("Please select an answer.");
 
         return;
 
     }
-
-
-    const currentQuiz = courseQuizzes[currentQuestionIndex];
-
-
-    if (!studentAnswers[currentQuiz.id]) {
-
-        alert("Please select an answer before continuing.");
-
-        return;
-
-    }
-
 
     if (currentQuestionIndex < courseQuizzes.length - 1) {
 
@@ -1189,367 +1059,63 @@ function nextQuestion() {
 
 
 // ========================================
-// 28. CHECK CORRECT ANSWER
+// 19. CHECK CORRECT ANSWER
 // ========================================
 
-function isCorrectAnswer(quiz, studentAnswer) {
+function isCorrectAnswer(quiz, answer) {
 
-    if (!studentAnswer) {
+    if (!answer) return false;
 
-        return false;
+    const correct = String(quiz.correctAnswer ?? "").trim();
 
-    }
+    const letters = ["A", "B", "C", "D"];
 
+    const index = letters.indexOf(String(answer).toUpperCase());
 
-    const correctAnswer = String(
+    const selectedOption = Array.isArray(quiz.options)
 
-        quiz.correctAnswer ?? ""
+        ? quiz.options[index]
 
-    ).trim();
+        : quiz.options?.[String(answer).toUpperCase()];
 
-
-    const selectedLetter = String(studentAnswer).trim().toUpperCase();
-
-    const optionLetters = ["A", "B", "C", "D"];
-
-    const selectedIndex = optionLetters.indexOf(selectedLetter);
-
-
-    // GET THE SELECTED OPTION TEXT
-
-    const selectedOptionText = Array.isArray(quiz.options)
-
-        ? quiz.options[selectedIndex]
-
-        : quiz.options[selectedLetter];
-
-
-    // ADMIN SAVED 0, 1, 2 OR 3
-
-    if (
-
-        ["0", "1", "2", "3"].includes(correctAnswer) &&
-
-        selectedIndex === Number(correctAnswer)
-
-    ) {
+    if (["0", "1", "2", "3"].includes(correct) && index === Number(correct)) {
 
         return true;
 
     }
 
-
-    // ADMIN SAVED A, B, C OR D
-
-    if (correctAnswer.toUpperCase() === selectedLetter) {
+    if (correct.toUpperCase() === String(answer).toUpperCase()) {
 
         return true;
 
     }
 
+    return Boolean(selectedOption) &&
 
-    // ADMIN SAVED THE FULL OPTION TEXT
-
-    if (
-
-        selectedOptionText &&
-
-        String(selectedOptionText).trim().toLowerCase() ===
-
-        correctAnswer.toLowerCase()
-
-    ) {
-
-        return true;
-
-    }
-
-
-    return false;
+        String(selectedOption).trim().toLowerCase() === correct.toLowerCase();
 
 }
 
 
 // ========================================
-// 29. CHECK CERTIFICATE ELIGIBILITY
+// 20. SAVE QUIZ RESULT TO FIREBASE
 // ========================================
 
-function checkCourseCompletionAndIssueCertificate() {
+async function saveQuizResult(score, totalQuestions, percentage, answers, timeExpired) {
 
-    if (!currentStudent || !currentCourse) {
+    const resultId =
 
-        return;
+        currentStudent.uid + "_" +
 
-    }
+        currentCourse.id + "_" +
 
+        Date.now();
 
-    // A COURSE MUST HAVE LESSONS AND QUIZ QUESTIONS
+    const resultReference = doc(db, "results", resultId);
 
-    if (courseLessons.length === 0 || courseQuizzes.length === 0) {
+    const resultData = {
 
-        return;
-
-    }
-
-
-    const completedLessons = getSavedData(COMPLETED_LESSONS_KEY);
-
-
-    // COUNT THIS STUDENT'S COMPLETED LESSONS
-
-    const studentCompletedLessons = completedLessons.filter(function (item) {
-
-        return (
-
-            String(item.studentId) === String(currentStudent.id) &&
-
-            String(item.courseId) === String(currentCourse.id)
-
-        );
-
-    });
-
-
-    const allLessonsCompleted = courseLessons.every(function (lesson) {
-
-        return studentCompletedLessons.some(function (item) {
-
-            return String(item.lessonId) === String(lesson.id);
-
-        });
-
-    });
-
-
-    if (!allLessonsCompleted) {
-
-        return;
-
-    }
-
-
-    // CHECK WHETHER THE STUDENT HAS A PASSING QUIZ RESULT
-
-    const results = getSavedData(RESULTS_KEY);
-
-
-    const passingResult = results.find(function (result) {
-
-        return (
-
-            String(result.studentId) === String(currentStudent.id) &&
-
-            String(result.courseId) === String(currentCourse.id) &&
-
-            Number(result.percentage) >= CERTIFICATE_PASS_MARK
-
-        );
-
-    });
-
-
-    if (!passingResult) {
-
-        return;
-
-    }
-
-
-    // CHECK FOR AN EXISTING CERTIFICATE
-
-    const certificates = getSavedData(CERTIFICATES_KEY);
-
-
-    const existingCertificate = certificates.some(function (certificate) {
-
-        return (
-
-            String(certificate.studentId) === String(currentStudent.id) &&
-
-            String(certificate.courseId) === String(currentCourse.id)
-
-        );
-
-    });
-
-
-    if (existingCertificate) {
-
-        return;
-
-    }
-
-
-    // CREATE CERTIFICATE
-
-    const certificateId =
-
-        "LS-" +
-
-        Date.now() +
-
-        "-" +
-
-        Math.floor(Math.random() * 10000);
-
-
-    const newCertificate = {
-
-        id: Date.now(),
-
-        certificateId: certificateId,
-
-        studentId: currentStudent.id,
-
-        studentName: currentStudent.fullName || "Student",
-
-        courseId: currentCourse.id,
-
-        courseTitle: currentCourse.title,
-
-        score: passingResult.score,
-
-        totalQuestions: passingResult.totalQuestions,
-
-        percentage: passingResult.percentage,
-
-        founderName: CERTIFICATE_FOUNDER_NAME,
-
-        issuedAt: new Date().toISOString(),
-
-        verificationUrl: ""
-
-    };
-
-
-    certificates.push(newCertificate);
-
-
-    localStorage.setItem(
-
-        CERTIFICATES_KEY,
-
-        JSON.stringify(certificates)
-
-    );
-
-
-    alert(
-
-        "Congratulations!\n\n" +
-
-        "You have completed " + currentCourse.title +
-
-        " and passed the quiz with " +
-
-        passingResult.percentage + "%.\n\n" +
-
-        "Your certificate has been issued. " +
-
-        "You can find it in your student dashboard."
-
-    );
-
-}
-
-
-// ========================================
-// 30. SUBMIT QUIZ
-// ========================================
-
-function submitQuiz(timeExpired = false) {
-
-    if (quizSubmitted) {
-
-        return;
-
-    }
-
-
-    const unansweredQuestions = courseQuizzes.filter(function (quiz) {
-
-        return !studentAnswers[quiz.id];
-
-    });
-
-
-    if (!timeExpired && unansweredQuestions.length > 0) {
-
-        alert(
-
-            "You have " +
-
-            unansweredQuestions.length +
-
-            " unanswered question(s). Please answer all questions."
-
-        );
-
-        return;
-
-    }
-
-
-    stopQuizTimer();
-
-
-    // CALCULATE SCORE
-
-    let score = 0;
-
-    let answers = [];
-
-
-    courseQuizzes.forEach(function (quiz) {
-
-        const studentAnswer = studentAnswers[quiz.id] || null;
-
-        const correct = isCorrectAnswer(quiz, studentAnswer);
-
-
-        if (correct) {
-
-            score++;
-
-        }
-
-
-        answers.push({
-
-            questionId: quiz.id,
-
-            answer: studentAnswer,
-
-            correctAnswer: quiz.correctAnswer,
-
-            isCorrect: correct
-
-        });
-
-    });
-
-
-    // CALCULATE PERCENTAGE
-
-    const totalQuestions = courseQuizzes.length;
-
-    const percentage = totalQuestions > 0
-
-        ? Math.round((score / totalQuestions) * 100)
-
-        : 0;
-
-
-    // SAVE RESULT
-
-    const results = getSavedData(RESULTS_KEY);
-
-
-    const newResult = {
-
-        id: Date.now(),
-
-        studentId: currentStudent.id,
+        studentId: currentStudent.uid,
 
         studentName: currentStudent.fullName,
 
@@ -1567,108 +1133,309 @@ function submitQuiz(timeExpired = false) {
 
         timeExpired: timeExpired,
 
-        submittedAt: new Date().toISOString()
+        passed: percentage >= CERTIFICATE_PASS_MARK,
+
+        submittedAt: serverTimestamp()
 
     };
 
+    await setDoc(resultReference, resultData);
 
-    results.push(newResult);
-
-
-    localStorage.setItem(
-
-        RESULTS_KEY,
-
-        JSON.stringify(results)
-
-    );
-
-
-    quizSubmitted = true;
-
-
-    // DISPLAY RESULT
-
-    quizResult.classList.remove("hidden");
-
-
-    quizScore.textContent =
-
-        "You scored " + score +
-
-        " out of " + totalQuestions +
-
-        " (" + percentage + "%)";
-
-
-    if (timeExpired) {
-
-        quizFeedback.textContent =
-
-            "Time is up! Your quiz was submitted automatically.";
-
-    } else if (percentage >= CERTIFICATE_PASS_MARK) {
-
-        quizFeedback.textContent =
-
-            "Excellent work! You have passed the quiz.";
-
-    } else if (percentage >= 50) {
-
-        quizFeedback.textContent =
-
-            "Good effort! Review your lessons and keep practising.";
-
-    } else {
-
-        quizFeedback.textContent =
-
-            "Keep learning. Review the lessons and try again.";
-
-    }
-
-
-    // CHECK CERTIFICATE ELIGIBILITY
-
-    checkCourseCompletionAndIssueCertificate();
-
-
-    if (timeExpired && quizTimerDisplay) {
-
-        quizTimerDisplay.textContent = "Time is up!";
-
-    }
-
-
-    // PREVENT DOUBLE SUBMISSION
-
-    submitQuizBtn.disabled = true;
-
-    submitQuizBtn.classList.add("hidden");
-
-
-    const navigation = document.getElementById("quizNavigation");
-
-    if (navigation) {
-
-        navigation.classList.add("hidden");
-
-    }
-
-
-    quizResult.scrollIntoView({
-
-        behavior: "smooth",
-
-        block: "center"
-
-    });
+    return resultId;
 
 }
 
 
 // ========================================
-// 31. SUBMIT BUTTON EVENT
+// 21. ISSUE CERTIFICATE
+// ========================================
+
+async function checkCourseCompletionAndIssueCertificate() {
+
+    if (!currentStudent || !currentCourse) return;
+
+    if (courseLessons.length === 0 || courseQuizzes.length === 0) return;
+
+    try {
+
+        const completed = await getCompletedLessons();
+
+        const allCompleted = courseLessons.every(function (lesson) {
+
+            return completed.some(function (item) {
+
+                return String(item.lessonId) === String(lesson.id);
+
+            });
+
+        });
+
+        if (!allCompleted) return;
+
+
+        // GET STUDENT PASSING RESULTS
+
+        const resultsQuery = query(
+
+            collection(db, "results"),
+
+            where("studentId", "==", currentStudent.uid),
+
+            where("courseId", "==", currentCourse.id)
+
+        );
+
+        const resultsSnapshot = await getDocs(resultsQuery);
+
+        const passingResults = resultsSnapshot.docs
+
+            .map(function (item) {
+
+                return item.data();
+
+            })
+
+            .filter(function (result) {
+
+                return Number(result.percentage) >= CERTIFICATE_PASS_MARK;
+
+            });
+
+        if (passingResults.length === 0) return;
+
+
+        // CHECK EXISTING CERTIFICATE
+
+        const certificateId =
+
+            "LS-" + currentStudent.uid + "-" + currentCourse.id;
+
+        const certificateReference = doc(
+
+            db,
+
+            "certificates",
+
+            certificateId
+
+        );
+
+        let newlyIssued = false;
+
+        await runTransaction(db, async function (transaction) {
+
+            const existing = await transaction.get(certificateReference);
+
+            if (existing.exists()) return;
+
+            const bestResult = passingResults.sort(function (a, b) {
+
+                return Number(b.percentage) - Number(a.percentage);
+
+            })[0];
+
+            transaction.set(certificateReference, {
+
+                certificateId: certificateId,
+
+                studentId: currentStudent.uid,
+
+                studentName: currentStudent.fullName,
+
+                courseId: currentCourse.id,
+
+                courseTitle: currentCourse.title,
+
+                score: bestResult.score,
+
+                totalQuestions: bestResult.totalQuestions,
+
+                percentage: bestResult.percentage,
+
+                founderName: CERTIFICATE_FOUNDER_NAME,
+
+                issuedAt: serverTimestamp(),
+
+                createdAt: serverTimestamp()
+
+            });
+
+            newlyIssued = true;
+
+        });
+
+        if (newlyIssued) {
+
+            alert(
+
+                "Congratulations!\n\n" +
+
+                "You have completed " + currentCourse.title +
+
+                " and earned a certificate with " +
+
+                Math.max(...passingResults.map(r => Number(r.percentage))) +
+
+                "%.\n\nYour certificate is now available in your dashboard."
+
+            );
+
+        }
+
+    }
+
+    catch (error) {
+
+        console.error("Certificate issue error:", error);
+
+        showError("Certificate generation failed: " + error.message);
+
+    }
+
+}
+
+
+// ========================================
+// 22. SUBMIT QUIZ
+// ========================================
+
+async function submitQuiz(timeExpired = false) {
+
+    if (quizSubmitted) return;
+
+    const unanswered = courseQuizzes.filter(function (quiz) {
+
+        return !studentAnswers[quiz.id];
+
+    });
+
+    if (!timeExpired && unanswered.length > 0) {
+
+        alert("Please answer all questions before submitting.");
+
+        return;
+
+    }
+
+    stopQuizTimer();
+
+    submitQuizBtn.disabled = true;
+
+    let score = 0;
+
+    const answers = [];
+
+    courseQuizzes.forEach(function (quiz) {
+
+        const answer = studentAnswers[quiz.id] || null;
+
+        const correct = isCorrectAnswer(quiz, answer);
+
+        if (correct) score++;
+
+        answers.push({
+
+            questionId: quiz.id,
+
+            answer: answer,
+
+            correctAnswer: quiz.correctAnswer,
+
+            isCorrect: correct
+
+        });
+
+    });
+
+    const totalQuestions = courseQuizzes.length;
+
+    const percentage = totalQuestions > 0
+
+        ? Math.round((score / totalQuestions) * 100)
+
+        : 0;
+
+    try {
+
+        // SAVE RESULT
+
+        await saveQuizResult(
+
+            score,
+
+            totalQuestions,
+
+            percentage,
+
+            answers,
+
+            timeExpired
+
+        );
+
+        quizSubmitted = true;
+
+        quizResult.classList.remove("hidden");
+
+        quizScore.textContent =
+
+            "You scored " + score +
+
+            " out of " + totalQuestions +
+
+            " (" + percentage + "%)";
+
+        if (timeExpired) {
+
+            quizFeedback.textContent = "Time is up! Your quiz was submitted automatically.";
+
+        } else if (percentage >= CERTIFICATE_PASS_MARK) {
+
+            quizFeedback.textContent = "Excellent work! You passed the quiz.";
+
+        } else {
+
+            quizFeedback.textContent = "Keep learning. You can try again.";
+
+        }
+
+        await checkCourseCompletionAndIssueCertificate();
+
+        if (quizTimerDisplay && timeExpired) {
+
+            quizTimerDisplay.textContent = "Time is up!";
+
+        }
+
+        const navigation = document.getElementById("quizNavigation");
+
+        if (navigation) navigation.classList.add("hidden");
+
+        quizResult.scrollIntoView({
+
+            behavior: "smooth",
+
+            block: "center"
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error("Quiz submission error:", error);
+
+        submitQuizBtn.disabled = false;
+
+        showError("Unable to save your quiz result: " + error.message);
+
+    }
+
+}
+
+
+// ========================================
+// 23. QUIZ FORM
 // ========================================
 
 quizForm.addEventListener("submit", function (event) {
@@ -1681,41 +1448,5 @@ quizForm.addEventListener("submit", function (event) {
 
 
 // ========================================
-// 32. ESCAPE HTML CONTENT
+// END OF LEARNSPHERE COURSE SYSTEM
 // ========================================
-
-function escapeHTML(value) {
-
-    return String(value ?? "").replace(/[&<>"']/g, function (character) {
-
-        const characters = {
-
-            "&": "&amp;",
-
-            "<": "&lt;",
-
-            ">": "&gt;",
-
-            '"': "&quot;",
-
-            "'": "&#039;"
-
-        };
-
-
-        return characters[character];
-
-    });
-
-}
-
-
-// ========================================
-// 33. START COURSE
-// ========================================
-
-if (currentStudent) {
-
-    loadCourse();
-
-}

@@ -1,286 +1,200 @@
 // ==========================================
-// LEARNSPHERE AUTHENTICATION
+// LEARNSPHERE FIREBASE AUTHENTICATION
 // ==========================================
+
+import { auth, db } from "./firebase.js";
+
+import {
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+
+import {
+    doc,
+    setDoc,
+    getDoc,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 
 // ==========================================
 // 1. GET HTML ELEMENTS
 // ==========================================
 
-// Account selection buttons
 const studentAccountBtn = document.getElementById("studentAccountBtn");
 const adminAccountBtn = document.getElementById("adminAccountBtn");
 
-// Authentication sections
 const studentAuthSection = document.getElementById("studentAuthSection");
 const adminAuthSection = document.getElementById("adminAuthSection");
 
-// Student login and registration tabs
 const loginTab = document.getElementById("loginTab");
 const registerTab = document.getElementById("registerTab");
 
-// Student forms
 const loginForm = document.getElementById("loginForm");
 const registerForm = document.getElementById("registerForm");
 
-// Admin form
 const adminLoginForm = document.getElementById("adminLoginForm");
 
 
 // ==========================================
-// 2. ADMIN LOGIN DETAILS
-// ==========================================
-
-const ADMIN_EMAIL = "admin@learnsphere.com";
-const ADMIN_PASSWORD = "admin123";
-
-
-// ==========================================
-// 3. LOCAL STORAGE FUNCTIONS
-// ==========================================
-
-function getStudents() {
-
-    try {
-
-        const students = localStorage.getItem("learnsphereStudents");
-
-        return students ? JSON.parse(students) : [];
-
-    } catch (error) {
-
-        console.error("Unable to load students:", error);
-
-        return [];
-
-    }
-
-}
-
-
-function saveStudents(students) {
-
-    try {
-
-        localStorage.setItem(
-            "learnsphereStudents",
-            JSON.stringify(students)
-        );
-
-        return true;
-
-    } catch (error) {
-
-        console.error("Unable to save students:", error);
-
-        alert("Unable to save your account. Please try again.");
-
-        return false;
-
-    }
-
-}
-
-
-// ==========================================
-// 4. SHOW STUDENT LOGIN
+// 2. SHOW STUDENT LOGIN
 // ==========================================
 
 function showStudentLogin() {
 
     loginForm.hidden = false;
-
     registerForm.hidden = true;
 
     loginTab.classList.add("active");
-
     registerTab.classList.remove("active");
 
 }
 
 
 // ==========================================
-// 5. SHOW STUDENT REGISTRATION
+// 3. SHOW STUDENT REGISTRATION
 // ==========================================
 
 function showStudentRegistration() {
 
     loginForm.hidden = true;
-
     registerForm.hidden = false;
 
     registerTab.classList.add("active");
-
     loginTab.classList.remove("active");
 
 }
 
 
 // ==========================================
-// 6. SELECT STUDENT ACCOUNT
+// 4. SELECT STUDENT ACCOUNT
 // ==========================================
 
-if (studentAccountBtn) {
+studentAccountBtn.addEventListener("click", function () {
 
-    studentAccountBtn.addEventListener("click", function () {
+    studentAuthSection.hidden = false;
+    adminAuthSection.hidden = true;
 
-        studentAuthSection.hidden = false;
+    studentAccountBtn.classList.add("active");
+    adminAccountBtn.classList.remove("active");
 
-        adminAuthSection.hidden = true;
+    showStudentLogin();
 
-        studentAccountBtn.classList.add("active");
-
-        adminAccountBtn.classList.remove("active");
-
-        showStudentLogin();
-
-    });
-
-}
+});
 
 
 // ==========================================
-// 7. SELECT ADMIN ACCOUNT
+// 5. SELECT ADMIN ACCOUNT
 // ==========================================
 
-if (adminAccountBtn) {
+adminAccountBtn.addEventListener("click", function () {
 
-    adminAccountBtn.addEventListener("click", function () {
+    studentAuthSection.hidden = true;
+    adminAuthSection.hidden = false;
 
-        studentAuthSection.hidden = true;
+    adminAccountBtn.classList.add("active");
+    studentAccountBtn.classList.remove("active");
 
-        adminAuthSection.hidden = false;
-
-        adminAccountBtn.classList.add("active");
-
-        studentAccountBtn.classList.remove("active");
-
-    });
-
-}
+});
 
 
 // ==========================================
-// 8. SWITCH TO LOGIN TAB
+// 6. SWITCH AUTHENTICATION TABS
 // ==========================================
 
-if (loginTab) {
+loginTab.addEventListener("click", showStudentLogin);
 
-    loginTab.addEventListener("click", showStudentLogin);
-
-}
+registerTab.addEventListener("click", showStudentRegistration);
 
 
 // ==========================================
-// 9. SWITCH TO REGISTER TAB
+// 7. STUDENT REGISTRATION
 // ==========================================
 
-if (registerTab) {
+registerForm.addEventListener("submit", async function (event) {
 
-    registerTab.addEventListener("click", showStudentRegistration);
+    event.preventDefault();
 
-}
+    const fullName = document.getElementById("fullName").value.trim();
 
+    const email = document.getElementById("registerEmail").value.trim().toLowerCase();
 
-// ==========================================
-// 10. STUDENT REGISTRATION
-// ==========================================
+    const university = document.getElementById("university").value.trim();
 
-if (registerForm) {
+    const department = document.getElementById("department").value.trim();
 
-    registerForm.addEventListener("submit", function (event) {
+    const level = document.getElementById("level").value;
 
-        event.preventDefault();
+    const password = document.getElementById("registerPassword").value;
 
-        // Get registration details
-        const fullName = document.getElementById("fullName").value.trim();
+    const confirmPassword = document.getElementById("confirmPassword").value;
 
-        const email = document.getElementById("registerEmail").value.trim().toLowerCase();
-
-        const university = document.getElementById("university").value.trim();
-
-        const department = document.getElementById("department").value;
-
-        const level = document.getElementById("level").value;
-
-        const password = document.getElementById("registerPassword").value;
-
-        const confirmPassword = document.getElementById("confirmPassword").value;
-
-        const message = document.getElementById("registerMessage");
+    const message = document.getElementById("registerMessage");
 
 
-        // Check empty fields
-        if (
-            !fullName ||
-            !email ||
-            !university ||
-            !department ||
-            !level ||
-            !password ||
-            !confirmPassword
-        ) {
+    // Check empty fields
 
-            message.textContent = "Please complete all fields.";
+    if (!fullName || !email || !university || !department || !level || !password || !confirmPassword) {
 
-            message.style.color = "red";
+        message.textContent = "Please complete all fields.";
+        message.style.color = "red";
 
-            return;
+        return;
 
-        }
+    }
 
 
-        // Check password length
-        if (password.length < 6) {
+    // Check password length
 
-            message.textContent = "Password must contain at least 6 characters.";
+    if (password.length < 6) {
 
-            message.style.color = "red";
+        message.textContent = "Password must contain at least 6 characters.";
+        message.style.color = "red";
 
-            return;
+        return;
 
-        }
-
-
-        // Check password confirmation
-        if (password !== confirmPassword) {
-
-            message.textContent = "Passwords do not match.";
-
-            message.style.color = "red";
-
-            return;
-
-        }
+    }
 
 
-        // Load existing students
-        const students = getStudents();
+    // Check password confirmation
+
+    if (password !== confirmPassword) {
+
+        message.textContent = "Passwords do not match.";
+        message.style.color = "red";
+
+        return;
+
+    }
 
 
-        // Check duplicate email
-        const existingStudent = students.find(function (student) {
+    try {
 
-            return student.email.toLowerCase() === email;
-
-        });
+        message.textContent = "Creating your account...";
+        message.style.color = "blue";
 
 
-        if (existingStudent) {
+        // Create Firebase authentication account
 
-            message.textContent = "An account with this email already exists.";
-
-            message.style.color = "red";
-
-            return;
-
-        }
+        const userCredential = await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
 
 
-        // Create student account
-        const newStudent = {
+        // Get student ID
 
-            id: Date.now().toString(),
+        const user = userCredential.user;
+
+
+        // Save student profile in Firestore
+
+        await setDoc(doc(db, "students", user.uid), {
+
+            uid: user.uid,
 
             fullName: fullName,
 
@@ -292,23 +206,16 @@ if (registerForm) {
 
             level: level,
 
-            password: password,
+            role: "student",
 
-            createdAt: new Date().toISOString()
+            createdAt: serverTimestamp()
 
-        };
-
-
-        // Add student to the list
-        students.push(newStudent);
+        });
 
 
-        // Save student account
-        if (!saveStudents(students)) {
+        // Log out after registration so student can use login form
 
-            return;
-
-        }
+        await signOut(auth);
 
 
         message.textContent = "Registration successful! You can now log in.";
@@ -316,162 +223,231 @@ if (registerForm) {
         message.style.color = "green";
 
 
-        // Clear registration form
         registerForm.reset();
 
 
-        // Switch to login after registration
         setTimeout(function () {
 
             showStudentLogin();
 
         }, 1500);
 
-    });
 
-}
+    } catch (error) {
+
+        console.error("Registration error:", error);
+
+        message.textContent = getAuthErrorMessage(error);
+
+        message.style.color = "red";
+
+    }
+
+});
 
 
 // ==========================================
-// 11. STUDENT LOGIN
+// 8. STUDENT LOGIN
 // ==========================================
 
-if (loginForm) {
+loginForm.addEventListener("submit", async function (event) {
 
-    loginForm.addEventListener("submit", function (event) {
+    event.preventDefault();
 
-        event.preventDefault();
+    const email = document.getElementById("loginEmail").value.trim().toLowerCase();
 
-        const email = document.getElementById("loginEmail").value.trim().toLowerCase();
+    const password = document.getElementById("loginPassword").value;
 
-        const password = document.getElementById("loginPassword").value;
-
-        const message = document.getElementById("loginMessage");
+    const message = document.getElementById("loginMessage");
 
 
-        // Load registered students
-        const students = getStudents();
+    try {
+
+        message.textContent = "Logging in...";
+        message.style.color = "blue";
 
 
-        // Find student account
-        const student = students.find(function (item) {
+        // Login with Firebase
 
-            return (
-                item.email.toLowerCase() === email &&
-                item.password === password
-            );
-
-        });
+        const userCredential = await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
 
 
-        if (!student) {
+        const user = userCredential.user;
 
-            message.textContent = "Incorrect email or password.";
 
-            message.style.color = "red";
+        // Get student profile
 
-            return;
+        const studentRef = doc(db, "students", user.uid);
+
+        const studentSnapshot = await getDoc(studentRef);
+
+
+        if (!studentSnapshot.exists()) {
+
+            await signOut(auth);
+
+            throw new Error("Student profile not found. Contact the administrator.");
 
         }
 
 
-        // Save logged-in student
-        const currentStudent = {
-
-            id: student.id,
-
-            fullName: student.fullName,
-
-            email: student.email,
-
-            university: student.university,
-
-            department: student.department,
-
-            level: student.level
-
-        };
+        const student = studentSnapshot.data();
 
 
-        localStorage.setItem(
-            "learnsphereCurrentStudent",
-            JSON.stringify(currentStudent)
-        );
+        // Check account role
+
+        if (student.role !== "student") {
+
+            await signOut(auth);
+
+            throw new Error("This account is not registered as a student.");
+
+        }
 
 
         message.textContent = "Login successful! Redirecting...";
-
         message.style.color = "green";
 
 
-        // Redirect to student dashboard
         setTimeout(function () {
 
             window.location.href = "student-dashboard.html";
 
         }, 1000);
 
-    });
 
-}
+    } catch (error) {
+
+        console.error("Login error:", error);
+
+        message.textContent = getAuthErrorMessage(error);
+
+        message.style.color = "red";
+
+    }
+
+});
 
 
 // ==========================================
-// 12. ADMIN LOGIN
+// 9. ADMIN LOGIN
 // ==========================================
 
-if (adminLoginForm) {
+adminLoginForm.addEventListener("submit", async function (event) {
 
-    adminLoginForm.addEventListener("submit", function (event) {
+    event.preventDefault();
 
-        event.preventDefault();
+    const email = document.getElementById("adminEmail").value.trim().toLowerCase();
 
-        const email = document.getElementById("adminEmail").value.trim().toLowerCase();
+    const password = document.getElementById("adminPassword").value;
 
-        const password = document.getElementById("adminPassword").value;
-
-        const message = document.getElementById("adminLoginMessage");
+    const message = document.getElementById("adminLoginMessage");
 
 
-        // Check admin credentials
-        if (
-            email === ADMIN_EMAIL &&
-            password === ADMIN_PASSWORD
-        ) {
+    try {
 
-            localStorage.setItem(
-                "learnsphereAdminLoggedIn",
-                "true"
-            );
+        message.textContent = "Verifying administrator...";
+        message.style.color = "blue";
 
 
-            message.textContent = "Login successful! Redirecting...";
+        // Firebase administrator login
 
-            message.style.color = "green";
+        const userCredential = await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
 
 
-            // Redirect to admin dashboard
-            setTimeout(function () {
+        const user = userCredential.user;
 
-                window.location.href = "admin.html";
 
-            }, 1000);
+        // Check administrator profile
 
-        } else {
+        const adminRef = doc(db, "admins", user.uid);
 
-            message.textContent = "Incorrect admin email or password.";
+        const adminSnapshot = await getDoc(adminRef);
 
-            message.style.color = "red";
+
+        if (!adminSnapshot.exists()) {
+
+            await signOut(auth);
+
+            throw new Error("You are not authorised to access the admin dashboard.");
 
         }
 
-    });
+
+        if (adminSnapshot.data().role !== "admin") {
+
+            await signOut(auth);
+
+            throw new Error("Administrator access denied.");
+
+        }
+
+
+        message.textContent = "Login successful! Redirecting...";
+        message.style.color = "green";
+
+
+        setTimeout(function () {
+
+            window.location.href = "admin.html";
+
+        }, 1000);
+
+
+    } catch (error) {
+
+        console.error("Admin login error:", error);
+
+        message.textContent = getAuthErrorMessage(error);
+
+        message.style.color = "red";
+
+    }
+
+});
+
+
+// ==========================================
+// 10. FIREBASE ERROR MESSAGES
+// ==========================================
+
+function getAuthErrorMessage(error) {
+
+    switch (error.code) {
+
+        case "auth/email-already-in-use":
+            return "This email already has an account.";
+
+        case "auth/invalid-email":
+            return "Please enter a valid email address.";
+
+        case "auth/weak-password":
+            return "Password must contain at least 6 characters.";
+
+        case "auth/invalid-credential":
+            return "Incorrect email or password.";
+
+        case "auth/network-request-failed":
+            return "Network error. Check your internet connection.";
+
+        default:
+            return error.message || "Something went wrong. Please try again.";
+
+    }
 
 }
 
 
 // ==========================================
-// 13. CHECK URL MODE
+// 11. CHECK URL MODE
 // ==========================================
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -483,11 +459,15 @@ if (mode === "register") {
 
     showStudentRegistration();
 
-} else if (mode === "admin") {
+}
+
+else if (mode === "admin") {
 
     adminAccountBtn.click();
 
-} else {
+}
+
+else {
 
     showStudentLogin();
 
@@ -495,5 +475,5 @@ if (mode === "register") {
 
 
 // ==========================================
-// END OF AUTHENTICATION
+// END OF LEARNSPHERE AUTHENTICATION
 // ==========================================

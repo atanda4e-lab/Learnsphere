@@ -1,85 +1,88 @@
-// ======================================
+// ==========================================
 // LEARNSPHERE STUDENT DASHBOARD
-// ======================================
+// COMPLETE FIREBASE VERSION
+// ==========================================
 
 
-// ======================================
-// GET DATA FROM LOCAL STORAGE
-// ======================================
+// ==========================================
+// 1. FIREBASE IMPORTS
+// ==========================================
 
-function getData(key) {
+import { auth, db } from "./firebase.js";
 
-    try {
+import {
+    onAuthStateChanged,
+    signOut
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
-        const data = JSON.parse(localStorage.getItem(key));
+import {
+    doc,
+    getDoc,
+    collection,
+    query,
+    where,
+    getDocs,
+    addDoc,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-        return Array.isArray(data) ? data : [];
 
-    } catch (error) {
+// ==========================================
+// 2. GLOBAL VARIABLES
+// ==========================================
 
-        console.log("Error loading " + key, error);
+let currentStudent = null;
 
-        return [];
+let studentCourses = [];
 
+let studentEnrollments = [];
+
+let studentResults = [];
+
+let studentCertificates = [];
+
+let completedLessons = [];
+
+
+// ==========================================
+// 3. HELPER FUNCTIONS
+// ==========================================
+
+// GET ELEMENT
+
+function getElement(id) {
+    return document.getElementById(id);
+}
+
+
+// GET STUDENT ID
+
+function getStudentId() {
+    return currentStudent ? currentStudent.uid : "";
+}
+
+
+// GET STUDENT NAME
+
+function getStudentName() {
+    return currentStudent ? currentStudent.fullName : "Student";
+}
+
+
+// CHECK IF ELEMENT EXISTS
+
+function setText(id, value) {
+
+    const element = getElement(id);
+
+    if (element) {
+        element.textContent = value;
     }
 
 }
 
 
-// SAVE DATA TO LOCAL STORAGE
-
-function saveData(key, data) {
-
-    localStorage.setItem(key, JSON.stringify(data));
-
-}
-
-
-// ======================================
-// CURRENT STUDENT
-// ======================================
-
-let currentStudent = null;
-
-try {
-
-    currentStudent = JSON.parse(
-        localStorage.getItem("learnsphereCurrentStudent")
-    );
-
-} catch (error) {
-
-    currentStudent = null;
-
-}
-
-
-if (!currentStudent) {
-
-    window.location.href = "auth.html?mode=student";
-
-}
-
-
-function getStudentId() {
-
-    return String(currentStudent?.id ?? currentStudent?.uid ?? "");
-
-}
-
-
-function getStudentName() {
-
-    return currentStudent?.fullName ||
-        currentStudent?.name ||
-        "Student";
-
-}
-
-
-// ======================================
-// HELPER FUNCTIONS
-// ======================================
+// ESCAPE HTML
 
 function escapeHTML(value) {
 
@@ -92,20 +95,20 @@ function escapeHTML(value) {
 }
 
 
+// FORMAT DATE
+
 function formatDate(dateValue) {
 
     if (!dateValue) {
-
         return "Date not available";
-
     }
 
-    const date = new Date(dateValue);
+    const date = typeof dateValue.toDate === "function"
+        ? dateValue.toDate()
+        : new Date(dateValue);
 
     if (isNaN(date.getTime())) {
-
         return "Date not available";
-
     }
 
     return date.toLocaleDateString("en-GB", {
@@ -117,66 +120,528 @@ function formatDate(dateValue) {
 }
 
 
-// ======================================
-// STUDENT PROFILE
-// ======================================
+// CHECK COURSE PUBLICATION STATUS
 
-function loadStudentInformation() {
+function isCoursePublished(course) {
 
-    const name = getStudentName();
+    if (typeof course.published === "boolean") {
+        return course.published;
+    }
 
-    document.getElementById("studentName").textContent = name;
-
-    document.getElementById("welcomeName").textContent =
-        name.split(" ")[0];
-
-
-    document.getElementById("profileFullName").textContent =
-        name;
-
-    document.getElementById("profileEmail").textContent =
-        currentStudent.email || "Not available";
-
-    document.getElementById("profileDepartment").textContent =
-        currentStudent.department || "Not available";
-
-    document.getElementById("profileLevel").textContent =
-        currentStudent.level || "Not available";
-
-    document.getElementById("profileUniversity").textContent =
-        currentStudent.university ||
-        currentStudent.school ||
-        "Not available";
+    return course.isPublished === true;
 
 }
 
 
-// ======================================
-// GET STUDENT ENROLLMENTS
-// ======================================
+// GET COURSE BY ID
 
-function getStudentEnrollments() {
+function getCourseById(courseId) {
 
-    const enrollments = getData("learnsphereEnrollments");
+    return studentCourses.find(function (course) {
 
-    const studentId = getStudentId();
-
-    return enrollments.filter(function (enrollment) {
-
-        return String(enrollment.studentId) === studentId;
+        return String(course.id) === String(courseId);
 
     });
 
 }
 
 
-// CHECK IF STUDENT IS ENROLLED
+// EMPTY STATE
+
+function displayEmptyState(message, icon) {
+
+    return `
+        <div class="empty-state">
+
+            <i class="${icon}"></i>
+
+            <p>${escapeHTML(message)}</p>
+
+        </div>
+    `;
+
+}
+
+
+// ==========================================
+// 4. FIREBASE AUTHENTICATION
+// ==========================================
+
+onAuthStateChanged(auth, async function (user) {
+
+    if (!user) {
+
+        window.location.href = "auth.html?mode=student";
+
+        return;
+
+    }
+
+    console.log("Checking student account...");
+
+    // DISPLAY BASIC PROFILE IMMEDIATELY
+
+    currentStudent = {
+
+        uid: user.uid,
+
+        fullName: user.displayName || "Student",
+
+        email: user.email || "",
+
+        university: "",
+
+        department: "",
+
+        level: ""
+
+    };
+
+    loadStudentInformation();
+
+    // SHOW LOADING MESSAGES
+
+    setText("enrolledCourses", "...");
+    setText("completedLessons", "...");
+    setText("completedQuizzes", "...");
+    setText("earnedCertificates", "...");
+
+    const overviewList = getElement("overviewCourseList");
+    const fullCourseList = getElement("studentCourseList");
+    const exploreList = getElement("exploreCourseList");
+
+    if (overviewList) {
+        overviewList.innerHTML = "<p>Loading your courses...</p>";
+    }
+
+    if (fullCourseList) {
+        fullCourseList.innerHTML = "<p>Loading your courses...</p>";
+    }
+
+    if (exploreList) {
+        exploreList.innerHTML = "<p>Loading available courses...</p>";
+    }
+
+    try {
+
+        // GET STUDENT PROFILE
+
+        const studentRef = doc(db, "students", user.uid);
+
+        const studentSnapshot = await getDoc(studentRef);
+
+        if (!studentSnapshot.exists()) {
+
+            alert("Student profile not found.");
+
+            await signOut(auth);
+
+            window.location.href = "auth.html?mode=student";
+
+            return;
+
+        }
+
+        const studentData = studentSnapshot.data();
+
+        // CHECK STUDENT ROLE
+
+        if (studentData.role !== "student") {
+
+            alert("You do not have student access.");
+
+            await signOut(auth);
+
+            window.location.href = "auth.html?mode=student";
+
+            return;
+
+        }
+
+        // UPDATE STUDENT INFORMATION
+
+        currentStudent = {
+
+            uid: user.uid,
+
+            fullName: studentData.fullName || user.displayName || "Student",
+
+            email: studentData.email || user.email || "",
+
+            university: studentData.university || "",
+
+            department: studentData.department || "",
+
+            level: studentData.level || ""
+
+        };
+
+        console.log("Student authenticated:", currentStudent);
+
+        // DISPLAY COMPLETE PROFILE IMMEDIATELY
+
+        loadStudentInformation();
+
+        // LOAD OTHER DATA IN THE BACKGROUND
+
+        await loadAllStudentData();
+
+        // REFRESH DASHBOARD AFTER DATA LOADS
+
+        loadDashboard();
+
+        console.log("Student dashboard loaded successfully.");
+
+    }
+
+    catch (error) {
+
+        console.error("Dashboard authentication error:", error);
+
+        alert(
+            "Unable to load your dashboard.\n\n" +
+            error.message
+        );
+
+    }
+
+});
+// ==========================================
+// 5. LOAD ALL STUDENT DATA
+// ==========================================
+
+async function loadAllStudentData() {
+
+    console.log("Loading student dashboard data...");
+
+    const loadingTasks = [
+
+        {
+            name: "Courses",
+            task: loadCourses
+        },
+
+        {
+            name: "Enrolments",
+            task: loadStudentEnrollments
+        },
+
+        {
+            name: "Results",
+            task: loadStudentResults
+        },
+
+        {
+            name: "Certificates",
+            task: loadStudentCertificates
+        },
+
+        {
+            name: "Completed Lessons",
+            task: loadCompletedLessons
+        }
+
+    ];
+
+    const results = await Promise.allSettled(
+
+        loadingTasks.map(function (item) {
+
+            return item.task();
+
+        })
+
+    );
+
+    results.forEach(function (result, index) {
+
+        if (result.status === "rejected") {
+
+            console.error(
+                loadingTasks[index].name + " failed:",
+                result.reason
+            );
+
+        }
+
+    });
+
+    console.log("Student data loading completed.");
+
+}
+
+
+// ==========================================
+// 6. LOAD COURSES FROM FIRESTORE
+// ==========================================
+
+async function loadCourses() {
+
+    try {
+
+        const coursesQuery = query(
+
+            collection(db, "courses"),
+
+            where("published", "==", true)
+
+        );
+
+        const snapshot = await getDocs(coursesQuery);
+
+        studentCourses = snapshot.docs.map(function (document) {
+
+            return {
+                ...document.data(),
+                id: document.id
+            };
+
+        });
+
+        console.log("Published courses:", studentCourses);
+
+    }
+
+    catch (error) {
+
+        console.error("Course loading error:", error);
+
+        throw error;
+
+    }
+
+}
+
+
+// ==========================================
+// 7. LOAD STUDENT ENROLMENTS
+// ==========================================
+
+async function loadStudentEnrollments() {
+
+    try {
+
+        const enrollmentQuery = query(
+
+            collection(db, "enrollments"),
+
+            where("studentId", "==", getStudentId())
+
+        );
+
+
+        const snapshot = await getDocs(enrollmentQuery);
+
+
+        studentEnrollments = snapshot.docs.map(function (document) {
+
+            return {
+
+                ...document.data(),
+
+                id: document.id
+
+            };
+
+        });
+
+
+        console.log("Student enrolments:", studentEnrollments);
+
+
+    }
+
+    catch (error) {
+
+        console.error("Enrolment loading error:", error);
+
+        throw error;
+
+    }
+
+}
+
+
+// ==========================================
+// 8. LOAD STUDENT QUIZ RESULTS
+// ==========================================
+
+async function loadStudentResults() {
+
+    try {
+
+        const resultQuery = query(
+
+            collection(db, "results"),
+
+            where("studentId", "==", getStudentId())
+
+        );
+
+
+        const snapshot = await getDocs(resultQuery);
+
+
+        studentResults = snapshot.docs.map(function (document) {
+
+            return {
+
+                ...document.data(),
+
+                id: document.id
+
+            };
+
+        });
+
+
+        console.log("Student results:", studentResults);
+
+
+    }
+
+    catch (error) {
+
+        console.error("Results loading error:", error);
+
+        throw error;
+
+    }
+
+}
+
+
+// ==========================================
+// 9. LOAD STUDENT CERTIFICATES
+// ==========================================
+
+async function loadStudentCertificates() {
+
+    try {
+
+        const certificateQuery = query(
+
+            collection(db, "certificates"),
+
+            where("studentId", "==", getStudentId())
+
+        );
+
+
+        const snapshot = await getDocs(certificateQuery);
+
+
+        studentCertificates = snapshot.docs.map(function (document) {
+
+            return {
+
+                ...document.data(),
+
+                id: document.id
+
+            };
+
+        });
+
+
+        console.log("Student certificates:", studentCertificates);
+
+
+    }
+
+    catch (error) {
+
+        console.error("Certificate loading error:", error);
+
+        throw error;
+
+    }
+
+}
+
+
+// ==========================================
+// 10. LOAD COMPLETED LESSONS
+// ==========================================
+
+async function loadCompletedLessons() {
+
+    try {
+
+        const lessonQuery = query(
+
+            collection(db, "completedLessons"),
+
+            where("studentId", "==", getStudentId())
+
+        );
+
+
+        const snapshot = await getDocs(lessonQuery);
+
+
+        completedLessons = snapshot.docs.map(function (document) {
+
+            return {
+
+                ...document.data(),
+
+                id: document.id
+
+            };
+
+        });
+
+
+        console.log("Completed lessons:", completedLessons);
+
+
+    }
+
+    catch (error) {
+
+        console.error("Completed lessons loading error:", error);
+
+        throw error;
+
+    }
+
+}
+
+
+// ==========================================
+// 11. STUDENT INFORMATION
+// ==========================================
+
+function loadStudentInformation() {
+
+    const name = getStudentName();
+
+
+    setText("studentName", name);
+
+    setText("welcomeName", name.split(" ")[0]);
+
+    setText("profileFullName", name);
+
+    setText("profileEmail", currentStudent.email);
+
+    setText("profileDepartment", currentStudent.department);
+
+    setText("profileLevel", currentStudent.level);
+
+    setText("profileUniversity", currentStudent.university);
+
+}
+
+
+// ==========================================
+// 12. CHECK STUDENT ENROLMENT
+// ==========================================
 
 function isStudentEnrolled(courseId) {
 
-    const enrollments = getStudentEnrollments();
-
-    return enrollments.some(function (enrollment) {
+    return studentEnrollments.some(function (enrollment) {
 
         return String(enrollment.courseId) === String(courseId);
 
@@ -185,13 +650,14 @@ function isStudentEnrolled(courseId) {
 }
 
 
-// ======================================
-// COURSE CARD
-// ======================================
+// ==========================================
+// 13. COURSE CARD
+// ==========================================
 
 function createCourseCard(course) {
 
     const image = course.image || course.thumbnail || "";
+
 
     return `
 
@@ -201,40 +667,68 @@ function createCourseCard(course) {
 
                 ${
                     image
+
                     ?
-                    `<img src="${escapeHTML(image)}" alt="${escapeHTML(course.title)}">`
+
+                    `<img src="${escapeHTML(image)}"
+                    alt="${escapeHTML(course.title)}">`
+
                     :
+
                     `<i class="fa-solid fa-book-open"></i>`
+
                 }
 
             </div>
+
 
             <div class="course-info">
 
                 <h3>${escapeHTML(course.title)}</h3>
 
+
                 <p>
-                    ${escapeHTML(course.description || "Learn new skills with this course.")}
+
+                    ${escapeHTML(
+                        course.description ||
+                        "Learn new skills with this course."
+                    )}
+
                 </p>
+
 
                 <div class="course-meta">
 
                     <span>
+
                         <i class="fa-solid fa-building"></i>
+
                         ${escapeHTML(course.department || "General")}
+
                     </span>
 
+
                     <span>
+
                         <i class="fa-solid fa-layer-group"></i>
+
                         ${escapeHTML(course.level || "All Levels")}
+
                     </span>
 
                 </div>
 
-                <a href="course.html?id=${encodeURIComponent(course.id)}"
-                    class="course-button">
+
+                <a
+
+                    href="course.html?id=${encodeURIComponent(course.id)}"
+
+                    class="course-button"
+
+                >
 
                     Continue Learning
+
                     <i class="fa-solid fa-arrow-right"></i>
 
                 </a>
@@ -248,69 +742,52 @@ function createCourseCard(course) {
 }
 
 
-// ======================================
-// EMPTY STATE
-// ======================================
-
-function displayEmptyState(message, icon) {
-
-    return `
-
-        <div class="empty-state">
-
-            <i class="${icon}"></i>
-
-            <p>${escapeHTML(message)}</p>
-
-        </div>
-
-    `;
-
-}
-
-
-// ======================================
-// LOAD STUDENT COURSES
-// ======================================
+// ==========================================
+// 14. LOAD STUDENT ENROLLED COURSES
+// ==========================================
 
 function loadStudentCourses() {
 
-    const courses = getData("learnsphereCourses");
+    const overviewList = getElement("overviewCourseList");
 
-    const enrollments = getStudentEnrollments();
-
-    const overviewList =
-        document.getElementById("overviewCourseList");
-
-    const fullCourseList =
-        document.getElementById("studentCourseList");
+    const fullCourseList = getElement("studentCourseList");
 
 
-    const studentCourses = enrollments.map(function (enrollment) {
+    if (!overviewList || !fullCourseList) {
+        return;
+    }
 
-        return courses.find(function (course) {
 
-            return String(course.id) === String(enrollment.courseId);
+    // GET COURSES THE STUDENT HAS ENROLLED IN
 
-        });
+    const enrolledCourses = studentEnrollments.map(function (enrollment) {
+
+        return getCourseById(enrollment.courseId);
 
     }).filter(function (course) {
 
-        return course && course.published === true;
+        return course && isCoursePublished(course);
 
     });
 
 
-    if (studentCourses.length === 0) {
+    if (enrolledCourses.length === 0) {
 
         overviewList.innerHTML = displayEmptyState(
+
             "You have not enrolled in any courses yet.",
+
             "fa-solid fa-book-open"
+
         );
 
+
         fullCourseList.innerHTML = displayEmptyState(
+
             "No enrolled courses found. Explore available courses to get started.",
+
             "fa-solid fa-book"
+
         );
 
         return;
@@ -318,45 +795,66 @@ function loadStudentCourses() {
     }
 
 
-    overviewList.innerHTML = studentCourses
+    // OVERVIEW
+
+    overviewList.innerHTML = enrolledCourses
+
         .slice(0, 2)
+
         .map(createCourseCard)
+
         .join("");
 
 
-    fullCourseList.innerHTML = studentCourses
+    // ALL ENROLLED COURSES
+
+    fullCourseList.innerHTML = enrolledCourses
+
         .map(createCourseCard)
+
         .join("");
 
 }
 
 
-// ======================================
-// EXPLORE COURSES
-// ======================================
+// ==========================================
+// 15. LOAD EXPLORE COURSES
+// ==========================================
 
 function loadExploreCourses() {
 
-    const courses = getData("learnsphereCourses");
+    const availableCourses = studentCourses.filter(function (course) {
 
-    const exploreList =
-        document.getElementById("exploreCourseList");
-
-    const availableCourses = courses.filter(function (course) {
-
-        return course.published === true;
+        return isCoursePublished(course);
 
     });
 
 
+    const count = getElement("availableCourseCount");
+
+
+    if (count) {
+
+        count.textContent = availableCourses.length;
+
+    }
+
+
     if (availableCourses.length === 0) {
 
-        exploreList.innerHTML = displayEmptyState(
-            "No published courses are available yet.",
-            "fa-solid fa-book-open"
-        );
+        const exploreList = getElement("exploreCourseList");
 
-        document.getElementById("availableCourseCount").textContent = 0;
+        if (exploreList) {
+
+            exploreList.innerHTML = displayEmptyState(
+
+                "No published courses are available yet.",
+
+                "fa-solid fa-book-open"
+
+            );
+
+        }
 
         return;
 
@@ -370,29 +868,40 @@ function loadExploreCourses() {
 }
 
 
-// ======================================
-// DEPARTMENT FILTER
-// ======================================
+// ==========================================
+// 16. DEPARTMENT FILTERS
+// ==========================================
 
 function displayDepartmentFilters(courses) {
 
-    const departmentFilter =
-        document.getElementById("departmentFilter");
+    const departmentFilter = getElement("departmentFilter");
+
+
+    if (!departmentFilter) {
+        return;
+    }
+
 
     const previousValue = departmentFilter.value;
 
+
     const departments = [
+
         ...new Set(
-            courses
-                .map(function (course) {
-                    return course.department;
-                })
-                .filter(Boolean)
+
+            courses.map(function (course) {
+
+                return course.department;
+
+            }).filter(Boolean)
+
         )
+
     ];
 
 
     departmentFilter.innerHTML =
+
         `<option value="">All Departments</option>`;
 
 
@@ -410,31 +919,39 @@ function displayDepartmentFilters(courses) {
 
 
     departmentFilter.value = departments.includes(previousValue)
+
         ? previousValue
+
         : "";
 
 }
 
 
-// ======================================
-// DISPLAY EXPLORE COURSE CARDS
-// ======================================
+// ==========================================
+// 17. DISPLAY EXPLORE COURSE CARDS
+// ==========================================
 
 function displayExploreCourseCards(courses) {
 
-    const exploreList =
-        document.getElementById("exploreCourseList");
+    const exploreList = getElement("exploreCourseList");
 
 
-    document.getElementById("availableCourseCount").textContent =
-        courses.length;
+    if (!exploreList) {
+        return;
+    }
+
+
+    setText("availableCourseCount", courses.length);
 
 
     if (courses.length === 0) {
 
         exploreList.innerHTML = displayEmptyState(
+
             "No courses match your search.",
+
             "fa-solid fa-magnifying-glass"
+
         );
 
         return;
@@ -457,10 +974,16 @@ function displayExploreCourseCards(courses) {
 
                     ${
                         image
+
                         ?
-                        `<img src="${escapeHTML(image)}" alt="${escapeHTML(course.title)}">`
+
+                        `<img src="${escapeHTML(image)}"
+                        alt="${escapeHTML(course.title)}">`
+
                         :
+
                         `<i class="fa-solid fa-book-open"></i>`
+
                     }
 
                 </div>
@@ -470,37 +993,62 @@ function displayExploreCourseCards(courses) {
 
                     <h3>${escapeHTML(course.title)}</h3>
 
+
                     <p>
-                        ${escapeHTML(course.description || "Explore this course and develop your knowledge.")}
+
+                        ${escapeHTML(
+                            course.description ||
+                            "Explore this course and develop your knowledge."
+                        )}
+
                     </p>
 
 
                     <div class="course-meta">
 
                         <span>
+
                             <i class="fa-solid fa-building"></i>
+
                             ${escapeHTML(course.department || "General")}
+
                         </span>
 
+
                         <span>
+
                             <i class="fa-solid fa-layer-group"></i>
+
                             ${escapeHTML(course.level || "All Levels")}
+
                         </span>
 
                     </div>
 
 
                     <button
+
                         class="enrol-button ${enrolled ? "enrolled" : ""}"
+
                         data-course-id="${escapeHTML(course.id)}"
-                        ${enrolled ? "disabled" : ""}>
+
+                        ${enrolled ? "disabled" : ""}
+
+                    >
 
                         ${
                             enrolled
+
                             ?
-                            `<i class="fa-solid fa-circle-check"></i> Already Enrolled`
+
+                            `<i class="fa-solid fa-circle-check"></i>
+                            Already Enrolled`
+
                             :
-                            `<i class="fa-solid fa-plus"></i> Enrol Now`
+
+                            `<i class="fa-solid fa-plus"></i>
+                            Enrol Now`
+
                         }
 
                     </button>
@@ -518,11 +1066,15 @@ function displayExploreCourseCards(courses) {
 
     document.querySelectorAll(".enrol-button").forEach(function (button) {
 
-        button.addEventListener("click", function () {
+        button.addEventListener("click", async function () {
 
-            const courseId = this.dataset.courseId;
+            await enrolStudentInCourse(
 
-            enrolStudentInCourse(courseId);
+                this.dataset.courseId,
+
+                this
+
+            );
 
         });
 
@@ -531,33 +1083,44 @@ function displayExploreCourseCards(courses) {
 }
 
 
-// ======================================
-// SEARCH AND FILTER COURSES
-// ======================================
+// ==========================================
+// 18. SEARCH AND FILTER COURSES
+// ==========================================
 
 function filterExploreCourses() {
 
-    const courses = getData("learnsphereCourses");
+    const searchInput = getElement("courseSearch");
 
-    const searchValue = document
-        .getElementById("courseSearch")
-        .value
-        .toLowerCase()
-        .trim();
+    const departmentFilter = getElement("departmentFilter");
 
-    const departmentValue =
-        document.getElementById("departmentFilter").value;
-
-    const levelValue =
-        document.getElementById("levelFilter").value;
+    const levelFilter = getElement("levelFilter");
 
 
-    const filteredCourses = courses.filter(function (course) {
+    const searchValue = searchInput
 
-        if (course.published !== true) {
+        ? searchInput.value.toLowerCase().trim()
 
+        : "";
+
+
+    const departmentValue = departmentFilter
+
+        ? departmentFilter.value
+
+        : "";
+
+
+    const levelValue = levelFilter
+
+        ? levelFilter.value
+
+        : "";
+
+
+    const filteredCourses = studentCourses.filter(function (course) {
+
+        if (!isCoursePublished(course)) {
             return false;
-
         }
 
 
@@ -568,24 +1131,30 @@ function filterExploreCourses() {
         const department = course.department || "";
 
         const level = String(course.level || "")
+
             .replace(/\s*level/i, "")
+
             .trim();
 
 
         const matchesSearch =
+
             title.includes(searchValue) ||
+
             description.includes(searchValue);
 
+
         const matchesDepartment =
+
             !departmentValue || department === departmentValue;
 
+
         const matchesLevel =
+
             !levelValue || level === levelValue;
 
 
-        return matchesSearch &&
-            matchesDepartment &&
-            matchesLevel;
+        return matchesSearch && matchesDepartment && matchesLevel;
 
     });
 
@@ -595,48 +1164,69 @@ function filterExploreCourses() {
 }
 
 
-// SEARCH EVENT
+// ==========================================
+// 19. SEARCH EVENTS
+// ==========================================
 
-document.getElementById("courseSearch").addEventListener(
-    "input",
-    filterExploreCourses
-);
+const courseSearch = getElement("courseSearch");
 
+if (courseSearch) {
 
-// DEPARTMENT FILTER EVENT
+    courseSearch.addEventListener(
 
-document.getElementById("departmentFilter").addEventListener(
-    "change",
-    filterExploreCourses
-);
+        "input",
 
+        filterExploreCourses
 
-// LEVEL FILTER EVENT
+    );
 
-document.getElementById("levelFilter").addEventListener(
-    "change",
-    filterExploreCourses
-);
+}
 
 
-// ======================================
-// ENROL STUDENT IN COURSE
-// ======================================
+const departmentFilter = getElement("departmentFilter");
 
-function enrolStudentInCourse(courseId) {
+if (departmentFilter) {
 
-    const courses = getData("learnsphereCourses");
+    departmentFilter.addEventListener(
 
-    const enrollments = getData("learnsphereEnrollments");
+        "change",
 
-    const course = courses.find(function (item) {
+        filterExploreCourses
 
-        return String(item.id) === String(courseId);
+    );
 
-    });
+}
 
 
-    if (!course || course.published !== true) {
+const levelFilter = getElement("levelFilter");
+
+if (levelFilter) {
+
+    levelFilter.addEventListener(
+
+        "change",
+
+        filterExploreCourses
+
+    );
+
+}
+
+
+// ==========================================
+// 20. ENROL STUDENT IN COURSE
+// ==========================================
+
+async function enrolStudentInCourse(courseId, button) {
+
+    // FIND COURSE IN FIRESTORE DATA
+
+    const course = getCourseById(courseId);
+
+
+    // CHECK COURSE AVAILABILITY
+
+    if (!course || !isCoursePublished(course)) {
 
         alert("This course is not currently available.");
 
@@ -644,6 +1234,21 @@ function enrolStudentInCourse(courseId) {
 
     }
 
+
+    // CHECK LOGIN
+
+    if (!getStudentId()) {
+
+        alert("Please log in before enrolling.");
+
+        window.location.href = "auth.html?mode=student";
+
+        return;
+
+    }
+
+
+    // CHECK EXISTING ENROLMENT
 
     if (isStudentEnrolled(courseId)) {
 
@@ -654,71 +1259,122 @@ function enrolStudentInCourse(courseId) {
     }
 
 
-    const newEnrollment = {
+    // DISABLE BUTTON
 
-        id: "ENR-" + Date.now(),
+    button.disabled = true;
 
-        studentId: getStudentId(),
-
-        courseId: course.id,
-
-        courseTitle: course.title,
-
-        studentName: getStudentName(),
-
-        enrolledAt: new Date().toISOString()
-
-    };
+    button.textContent = "Enrolling...";
 
 
-    enrollments.push(newEnrollment);
+    try {
+
+        // PREPARE ENROLMENT DATA
+
+        const enrollmentData = {
+
+            studentId: getStudentId(),
+
+            courseId: course.id,
+
+            courseTitle: course.title || "",
+
+            studentName: getStudentName(),
+
+            enrolledAt: serverTimestamp()
+
+        };
 
 
-    saveData("learnsphereEnrollments", enrollments);
+        console.log("Saving enrolment:", enrollmentData);
 
 
-    alert("You have successfully enrolled in " + course.title + "!");
+        // SAVE TO FIRESTORE
+
+        await addDoc(
+
+            collection(db, "enrollments"),
+
+            enrollmentData
+
+        );
 
 
-    // REFRESH COURSE LISTS
+        // RELOAD ENROLMENTS
 
-    loadExploreCourses();
+        await loadStudentEnrollments();
 
-    loadStudentCourses();
 
-    updateDashboardStatistics();
+        // UPDATE DASHBOARD
+
+        loadStudentCourses();
+
+        loadExploreCourses();
+
+        updateDashboardStatistics();
+
+
+        alert(
+
+            "You have successfully enrolled in " +
+
+            course.title +
+
+            "!"
+
+        );
+
+
+    }
+
+    catch (error) {
+
+        console.error("Enrolment error:", error);
+
+
+        alert(
+
+            "Enrolment failed.\n\n" +
+
+            "Error: " + (error.code || "Unknown") +
+
+            "\n\nMessage: " + error.message
+
+        );
+
+
+        button.disabled = false;
+
+        button.innerHTML =
+
+            '<i class="fa-solid fa-plus"></i> Enrol Now';
+
+    }
 
 }
 
 
-// ======================================
-// LOAD QUIZ RESULTS
-// ======================================
+// ==========================================
+// 21. LOAD QUIZ RESULTS
+// ==========================================
 
-function loadStudentResults() {
+function displayStudentResults() {
 
-    const results = getData("learnsphereResults");
-
-    const studentId = getStudentId();
-
-    const courses = getData("learnsphereCourses");
-
-    const resultList =
-        document.getElementById("studentResultList");
+    const resultList = getElement("studentResultList");
 
 
-    const studentResults = results.filter(function (result) {
-
-        return String(result.studentId) === studentId;
-
-    });
+    if (!resultList) {
+        return;
+    }
 
 
     if (studentResults.length === 0) {
 
         resultList.innerHTML = displayEmptyState(
+
             "You have not completed any quizzes yet.",
+
             "fa-solid fa-chart-column"
+
         );
 
         return;
@@ -726,22 +1382,21 @@ function loadStudentResults() {
     }
 
 
-    resultList.innerHTML = studentResults
-        .slice()
-        .reverse()
-        .map(function (result) {
+    resultList.innerHTML = studentResults.slice().reverse().map(
 
-            const course = courses.find(function (item) {
+        function (result) {
 
-                return String(item.id) === String(result.courseId);
-
-            });
+            const course = getCourseById(result.courseId);
 
 
             const courseTitle =
+
                 result.courseTitle ||
+
                 course?.title ||
+
                 "Course";
+
 
             const percentage = Number(result.percentage) || 0;
 
@@ -752,22 +1407,37 @@ function loadStudentResults() {
 
                     <h3>${escapeHTML(courseTitle)}</h3>
 
+
                     <div class="result-details">
 
                         <span>
+
                             Score:
+
                             ${escapeHTML(result.score ?? 0)}
+
                             /
+
                             ${escapeHTML(result.totalQuestions ?? 0)}
+
                         </span>
+
 
                         <span class="result-score">
+
                             ${percentage}%
+
                         </span>
 
+
                         <span>
+
                             Date:
-                            ${formatDate(result.submittedAt || result.date)}
+
+                            ${formatDate(
+                                result.submittedAt || result.date
+                            )}
+
                         </span>
 
                     </div>
@@ -776,37 +1446,35 @@ function loadStudentResults() {
 
             `;
 
-        }).join("");
+        }
+
+    ).join("");
 
 }
 
 
-// ======================================
-// LOAD CERTIFICATES
-// ======================================
+// ==========================================
+// 22. DISPLAY CERTIFICATES
+// ==========================================
 
-function loadStudentCertificates() {
+function displayStudentCertificates() {
 
-    const certificates = getData("learnsphereCertificates");
-
-    const studentId = getStudentId();
-
-    const certificateList =
-        document.getElementById("studentCertificateList");
+    const certificateList = getElement("studentCertificateList");
 
 
-    const studentCertificates = certificates.filter(function (certificate) {
-
-        return String(certificate.studentId) === studentId;
-
-    });
+    if (!certificateList) {
+        return;
+    }
 
 
     if (studentCertificates.length === 0) {
 
         certificateList.innerHTML = displayEmptyState(
+
             "You have not earned any certificates yet.",
+
             "fa-solid fa-certificate"
+
         );
 
         return;
@@ -814,43 +1482,71 @@ function loadStudentCertificates() {
     }
 
 
-    certificateList.innerHTML = studentCertificates
-        .slice()
-        .reverse()
-        .map(function (certificate) {
+    certificateList.innerHTML = studentCertificates.map(
+
+        function (certificate) {
 
             return `
 
                 <div class="certificate-card">
 
                     <div class="certificate-icon">
+
                         <i class="fa-solid fa-award"></i>
+
                     </div>
 
+
                     <h3>
-                        ${escapeHTML(certificate.courseTitle || "Completed Course")}
+
+                        ${escapeHTML(
+                            certificate.courseTitle ||
+                            "Completed Course"
+                        )}
+
                     </h3>
 
+
                     <p>
+
                         Certificate ID:
-                        ${escapeHTML(certificate.certificateId || certificate.id)}
+
+                        ${escapeHTML(
+                            certificate.certificateId ||
+                            certificate.id
+                        )}
+
                     </p>
 
+
                     <p>
+
                         Score:
+
                         ${escapeHTML(certificate.percentage ?? 0)}%
+
                     </p>
 
+
                     <p>
+
                         Issued:
+
                         ${formatDate(certificate.issuedAt)}
+
                     </p>
+
 
                     <button
+
                         class="download-btn"
-                        data-certificate-id="${escapeHTML(certificate.id)}">
+
+                        data-certificate-id="${escapeHTML(certificate.id)}"
+
+                    >
 
                         <i class="fa-solid fa-download"></i>
+
                         Download Certificate
 
                     </button>
@@ -859,14 +1555,22 @@ function loadStudentCertificates() {
 
             `;
 
-        }).join("");
+        }
 
+    ).join("");
+
+
+    // DOWNLOAD BUTTON EVENTS
 
     document.querySelectorAll(".download-btn").forEach(function (button) {
 
         button.addEventListener("click", function () {
 
-            downloadCertificate(this.dataset.certificateId);
+            downloadCertificate(
+
+                this.dataset.certificateId
+
+            );
 
         });
 
@@ -875,15 +1579,13 @@ function loadStudentCertificates() {
 }
 
 
-// ======================================
-// DOWNLOAD CERTIFICATE PDF
-// ======================================
+// ==========================================
+// 23. DOWNLOAD CERTIFICATE PDF
+// ==========================================
 
 function downloadCertificate(certificateId) {
 
-    const certificates = getData("learnsphereCertificates");
-
-    const certificate = certificates.find(function (item) {
+    const certificate = studentCertificates.find(function (item) {
 
         return String(item.id) === String(certificateId);
 
@@ -901,7 +1603,7 @@ function downloadCertificate(certificateId) {
 
     if (!window.jspdf || !window.jspdf.jsPDF) {
 
-        alert("PDF library could not load. Check your internet connection.");
+        alert("PDF library could not load.");
 
         return;
 
@@ -909,6 +1611,7 @@ function downloadCertificate(certificateId) {
 
 
     const { jsPDF } = window.jspdf;
+
 
     const pdf = new jsPDF({
 
@@ -921,20 +1624,17 @@ function downloadCertificate(certificateId) {
     });
 
 
-    const studentName =
-        certificate.studentName || getStudentName();
+    const studentName = certificate.studentName || getStudentName();
 
-    const courseTitle =
-        certificate.courseTitle || "Completed Course";
+    const courseTitle = certificate.courseTitle || "Completed Course";
 
     const certificateNumber =
+
         certificate.certificateId || certificate.id;
 
-    const score =
-        certificate.percentage ?? 0;
+    const score = certificate.percentage ?? 0;
 
-    const issueDate =
-        formatDate(certificate.issuedAt);
+    const issueDate = formatDate(certificate.issuedAt);
 
 
     // BACKGROUND
@@ -966,7 +1666,9 @@ function downloadCertificate(certificateId) {
     pdf.setFontSize(25);
 
     pdf.text("LearnSphere", 148.5, 37, {
+
         align: "center"
+
     });
 
 
@@ -977,7 +1679,9 @@ function downloadCertificate(certificateId) {
     pdf.setFontSize(30);
 
     pdf.text("CERTIFICATE OF COMPLETION", 148.5, 63, {
+
         align: "center"
+
     });
 
 
@@ -989,9 +1693,17 @@ function downloadCertificate(certificateId) {
 
     pdf.setTextColor(71, 85, 105);
 
-    pdf.text("This certificate is proudly presented to", 148.5, 83, {
-        align: "center"
-    });
+    pdf.text(
+
+        "This certificate is proudly presented to",
+
+        148.5,
+
+        83,
+
+        { align: "center" }
+
+    );
 
 
     // STUDENT NAME
@@ -1003,14 +1715,19 @@ function downloadCertificate(certificateId) {
     pdf.setTextColor(21, 128, 61);
 
     pdf.text(
+
         pdf.splitTextToSize(studentName, 240),
+
         148.5,
+
         105,
+
         { align: "center" }
+
     );
 
 
-    // COURSE
+    // COURSE TITLE
 
     pdf.setFont("helvetica", "normal");
 
@@ -1018,9 +1735,17 @@ function downloadCertificate(certificateId) {
 
     pdf.setTextColor(71, 85, 105);
 
-    pdf.text("For successfully completing the course", 148.5, 123, {
-        align: "center"
-    });
+    pdf.text(
+
+        "For successfully completing the course",
+
+        148.5,
+
+        123,
+
+        { align: "center" }
+
+    );
 
 
     pdf.setFont("helvetica", "bold");
@@ -1030,10 +1755,15 @@ function downloadCertificate(certificateId) {
     pdf.setTextColor(30, 41, 59);
 
     pdf.text(
+
         pdf.splitTextToSize(courseTitle, 230),
+
         148.5,
+
         138,
+
         { align: "center" }
+
     );
 
 
@@ -1045,12 +1775,20 @@ function downloadCertificate(certificateId) {
 
     pdf.setTextColor(71, 85, 105);
 
-    pdf.text("Final Quiz Score: " + score + "%", 148.5, 157, {
-        align: "center"
-    });
+    pdf.text(
+
+        "Final Quiz Score: " + score + "%",
+
+        148.5,
+
+        157,
+
+        { align: "center" }
+
+    );
 
 
-    // DATE AND CERTIFICATE ID
+    // DATE AND ID
 
     pdf.setFontSize(10);
 
@@ -1059,7 +1797,7 @@ function downloadCertificate(certificateId) {
     pdf.text("Certificate ID: " + certificateNumber, 35, 186);
 
 
-    // FOUNDER
+    // SIGNATURE
 
     pdf.setDrawColor(21, 128, 61);
 
@@ -1072,89 +1810,138 @@ function downloadCertificate(certificateId) {
     pdf.setTextColor(30, 41, 59);
 
     pdf.text("AKINTAYO IBRAHIM", 234.5, 184, {
+
         align: "center"
+
     });
+
 
     pdf.setFont("helvetica", "normal");
 
     pdf.setFontSize(10);
 
     pdf.text("Founder, LearnSphere", 234.5, 190, {
+
         align: "center"
+
     });
 
 
-    // SAVE FILE
+    // SAVE PDF
 
     const safeName = studentName.replace(/[^a-z0-9]/gi, "_");
 
-    pdf.save("LearnSphere_Certificate_" + safeName + ".pdf");
+    pdf.save(
+
+        "LearnSphere_Certificate_" + safeName + ".pdf"
+
+    );
 
 }
 
 
-// ======================================
-// DASHBOARD STATISTICS
-// ======================================
+// ==========================================
+// 24. DASHBOARD STATISTICS
+// ==========================================
 
 function updateDashboardStatistics() {
-
-    const enrollments = getStudentEnrollments();
-
-    const results = getData("learnsphereResults");
-
-    const certificates = getData("learnsphereCertificates");
-
-    const completedLessons = getData("learnsphereCompletedLessons");
 
     const studentId = getStudentId();
 
 
-    const studentResults = results.filter(function (result) {
+    const studentResults = studentResultsForCurrentStudent();
 
-        return String(result.studentId) === studentId;
+    const studentCertificateCount = studentCertificates.filter(
 
-    });
+        function (certificate) {
 
+            return String(certificate.studentId) === studentId;
 
-    const studentCertificates = certificates.filter(function (certificate) {
+        }
 
-        return String(certificate.studentId) === studentId;
-
-    });
-
-
-    const studentCompletedLessons = completedLessons.filter(function (lesson) {
-
-        return String(lesson.studentId) === studentId;
-
-    });
+    ).length;
 
 
-    document.getElementById("enrolledCourses").textContent =
-        enrollments.length;
+    const studentLessonCount = completedLessons.filter(
 
-    document.getElementById("completedLessons").textContent =
-        studentCompletedLessons.length;
+        function (lesson) {
 
-    document.getElementById("completedQuizzes").textContent =
-        studentResults.length;
+            return String(lesson.studentId) === studentId;
 
-    document.getElementById("earnedCertificates").textContent =
-        studentCertificates.length;
+        }
+
+    ).length;
+
+
+    setText(
+
+        "enrolledCourses",
+
+        studentEnrollments.length
+
+    );
+
+
+    setText(
+
+        "completedLessons",
+
+        studentLessonCount
+
+    );
+
+
+    setText(
+
+        "completedQuizzes",
+
+        studentResults.length
+
+    );
+
+
+    setText(
+
+        "earnedCertificates",
+
+        studentCertificateCount
+
+    );
 
 }
 
 
-// ======================================
-// DASHBOARD NAVIGATION
-// ======================================
+// GET CURRENT STUDENT RESULTS
+
+function studentResultsForCurrentStudent() {
+
+    return studentResults.filter(function (result) {
+
+        return String(result.studentId) === getStudentId();
+
+    });
+
+}
+
+
+// ==========================================
+// 25. DASHBOARD NAVIGATION
+// ==========================================
 
 function showDashboardSection(sectionName) {
 
-    const sections = document.querySelectorAll(".dashboard-section");
+    const sections = document.querySelectorAll(
 
-    const links = document.querySelectorAll(".sidebar-link");
+        ".dashboard-section"
+
+    );
+
+
+    const links = document.querySelectorAll(
+
+        ".sidebar-link"
+
+    );
 
 
     sections.forEach(function (section) {
@@ -1171,7 +1958,8 @@ function showDashboardSection(sectionName) {
     });
 
 
-    const selectedSection = document.getElementById(sectionName);
+    const selectedSection = getElement(sectionName);
+
 
     if (selectedSection) {
 
@@ -1181,8 +1969,11 @@ function showDashboardSection(sectionName) {
 
 
     const selectedLink = document.querySelector(
+
         `.sidebar-link[data-section="${sectionName}"]`
+
     );
+
 
     if (selectedLink) {
 
@@ -1193,7 +1984,9 @@ function showDashboardSection(sectionName) {
 }
 
 
-// SIDEBAR NAVIGATION EVENTS
+// ==========================================
+// 26. SIDEBAR EVENTS
+// ==========================================
 
 document.querySelectorAll(".sidebar-link").forEach(function (link) {
 
@@ -1208,15 +2001,16 @@ document.querySelectorAll(".sidebar-link").forEach(function (link) {
 });
 
 
-// OTHER SECTION BUTTONS
+// ==========================================
+// 27. OTHER SECTION BUTTONS
+// ==========================================
 
 document.querySelectorAll("[data-section]").forEach(function (button) {
 
     if (button.classList.contains("sidebar-link")) {
-
         return;
-
     }
+
 
     button.addEventListener("click", function () {
 
@@ -1227,61 +2021,106 @@ document.querySelectorAll("[data-section]").forEach(function (button) {
 });
 
 
-// ======================================
-// LOGOUT
-// ======================================
+// ==========================================
+// 28. LOGOUT
+// ==========================================
 
-document.getElementById("logoutBtn").addEventListener("click", function () {
-
-    const confirmLogout = confirm(
-        "Are you sure you want to log out?"
-    );
+const logoutButton = getElement("logoutBtn");
 
 
-    if (confirmLogout) {
+if (logoutButton) {
 
-        localStorage.removeItem("learnsphereCurrentStudent");
+    logoutButton.addEventListener("click", async function () {
 
-        window.location.href = "auth.html?mode=student";
+        const confirmLogout = confirm(
 
-    }
+            "Are you sure you want to log out?"
 
-});
-
-
-// ======================================
-// CURRENT YEAR
-// ======================================
-
-document.getElementById("currentYear").textContent =
-    new Date().getFullYear();
+        );
 
 
-// ======================================
-// LOAD EVERYTHING
-// ======================================
+        if (!confirmLogout) {
+            return;
+        }
+
+
+        try {
+
+            await signOut(auth);
+
+            window.location.href = "auth.html?mode=student";
+
+        }
+
+        catch (error) {
+
+            console.error("Logout error:", error);
+
+            alert("Unable to log out. Please try again.");
+
+        }
+
+    });
+
+}
+
+
+// ==========================================
+// 29. CURRENT YEAR
+// ==========================================
+
+setText(
+
+    "currentYear",
+
+    new Date().getFullYear()
+
+);
+
+
+// ==========================================
+// 30. LOAD DASHBOARD
+// ==========================================
 
 function loadDashboard() {
 
     if (!currentStudent) {
-
         return;
-
     }
+
+
+    // STUDENT PROFILE
 
     loadStudentInformation();
 
+
+    // ENROLLED COURSES
+
     loadStudentCourses();
+
+
+    // EXPLORE COURSES
 
     loadExploreCourses();
 
-    loadStudentResults();
 
-    loadStudentCertificates();
+    // QUIZ RESULTS
+
+    displayStudentResults();
+
+
+    // CERTIFICATES
+
+    displayStudentCertificates();
+
+
+    // STATISTICS
 
     updateDashboardStatistics();
 
 }
 
 
-loadDashboard();
+// ==========================================
+// END OF LEARNSPHERE STUDENT DASHBOARD
+// ==========================================
