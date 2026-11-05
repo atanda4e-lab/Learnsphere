@@ -1,12 +1,12 @@
-// =============================================
+// =====================================================
 // LEARNSPHERE ADMIN DASHBOARD
-// FIREBASE FIRESTORE INTEGRATION
-// =============================================
+// COMPLETE FIREBASE ADMIN SYSTEM
+// =====================================================
 
 
-// =============================================
+// =====================================================
 // 1. FIREBASE IMPORTS
-// =============================================
+// =====================================================
 
 import { auth, db } from "./firebase.js";
 
@@ -28,9 +28,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 
-// =============================================
+// =====================================================
 // 2. GLOBAL VARIABLES
-// =============================================
+// =====================================================
 
 let courses = [];
 let students = [];
@@ -40,25 +40,22 @@ let results = [];
 let certificates = [];
 
 let currentCourseId = null;
-let dashboardInitialized = false;
 let currentAdmin = null;
 
+let dashboardInitialized = false;
 
-// =============================================
-// 3. HTML ELEMENT HELPER
-// =============================================
+
+// =====================================================
+// 3. ELEMENT HELPERS
+// =====================================================
 
 function getElement(id) {
-
     return document.getElementById(id);
-
 }
 
 
 function getValue(id) {
-
     return getElement(id)?.value?.trim() || "";
-
 }
 
 
@@ -67,30 +64,27 @@ function setValue(id, value) {
     const element = getElement(id);
 
     if (element) {
-
         element.value = value ?? "";
-
     }
 
 }
 
 
-// =============================================
-// 4. HTML SECURITY
-// =============================================
+function notify(message) {
+    alert(message);
+}
+
 
 function escapeHTML(value) {
 
     return String(value ?? "").replace(/[&<>"']/g, character => {
 
         return {
-
             "&": "&amp;",
             "<": "&lt;",
             ">": "&gt;",
             '"': "&quot;",
             "'": "&#039;"
-
         }[character];
 
     });
@@ -98,27 +92,40 @@ function escapeHTML(value) {
 }
 
 
-// =============================================
-// 5. NOTIFICATION HELPER
-// =============================================
+function getDateValue(value) {
 
-function notify(message) {
+    if (!value) return "";
 
-    alert(message);
+    if (typeof value === "string") {
+        return value.slice(0, 16);
+    }
+
+    if (value.toDate) {
+
+        const date = value.toDate();
+
+        const offset = date.getTimezoneOffset();
+
+        return new Date(date.getTime() - offset * 60000)
+            .toISOString()
+            .slice(0, 16);
+
+    }
+
+    return "";
 
 }
 
 
-// =============================================
-// 6. ADMIN AUTHENTICATION
-// =============================================
+// =====================================================
+// 4. ADMIN AUTHENTICATION
+// =====================================================
 
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, async user => {
 
     if (!user) {
 
         window.location.href = "auth.html";
-
         return;
 
     }
@@ -129,8 +136,10 @@ onAuthStateChanged(auth, async (user) => {
 
         const adminSnapshot = await getDoc(adminRef);
 
-        if (!adminSnapshot.exists() ||
-            adminSnapshot.data().role !== "admin") {
+        if (
+            !adminSnapshot.exists() ||
+            adminSnapshot.data().role !== "admin"
+        ) {
 
             notify("You do not have administrator access.");
 
@@ -158,25 +167,24 @@ onAuthStateChanged(auth, async (user) => {
 
         console.error("Admin authentication error:", error);
 
-        notify(
-            "Unable to verify administrator access: " +
-            error.message
-        );
+        notify("Unable to verify administrator access: " + error.message);
 
     }
 
 });
 
 
-// =============================================
-// 7. INITIALIZE DASHBOARD
-// =============================================
+// =====================================================
+// 5. INITIALIZE DASHBOARD
+// =====================================================
 
 async function initializeDashboard() {
 
     setupNavigation();
 
     setupEventListeners();
+
+    prepareCourseEditorLayout();
 
     createImportButton();
 
@@ -189,26 +197,19 @@ async function initializeDashboard() {
 }
 
 
-// =============================================
-// 8. LOAD ALL DATA
-// =============================================
+// =====================================================
+// 6. LOAD ALL DATA
+// =====================================================
 
 async function loadAllData() {
-
-    console.log("Loading LearnSphere data...");
 
     const tasks = [
 
         ["Courses", loadCourses],
-
         ["Students", loadStudents],
-
         ["Lessons", loadLessons],
-
         ["Quizzes", loadQuizzes],
-
         ["Results", loadResults],
-
         ["Certificates", loadCertificates]
 
     ];
@@ -221,7 +222,7 @@ async function loadAllData() {
 
             await task();
 
-            console.log(name + " loaded successfully.");
+            console.log(name + " loaded.");
 
         } catch (error) {
 
@@ -235,7 +236,7 @@ async function loadAllData() {
 
     refreshDashboard();
 
-    if (failed.length > 0) {
+    if (failed.length) {
 
         notify(
             "Some information could not load: " +
@@ -248,9 +249,151 @@ async function loadAllData() {
 }
 
 
-// =============================================
-// 9. REFRESH DASHBOARD
-// =============================================
+// =====================================================
+// 7. LOAD COURSES
+// =====================================================
+
+async function loadCourses() {
+
+    const snapshot = await getDocs(
+        collection(db, "courses")
+    );
+
+    courses = snapshot.docs.map(item => {
+
+        const data = item.data();
+
+        let published = false;
+
+        if (typeof data.published === "boolean") {
+
+            published = data.published;
+
+        } else if (typeof data.isPublished === "boolean") {
+
+            published = data.isPublished;
+
+        }
+
+        return {
+            id: item.id,
+            ...data,
+            published
+        };
+
+    });
+
+}
+
+
+// =====================================================
+// 8. LOAD STUDENTS
+// =====================================================
+
+async function loadStudents() {
+
+    const snapshot = await getDocs(
+        collection(db, "students")
+    );
+
+    const uniqueStudents = new Map();
+
+    snapshot.docs.forEach(item => {
+
+        const student = {
+            id: item.id,
+            ...item.data()
+        };
+
+        const key =
+            student.uid ||
+            student.userId ||
+            student.id;
+
+        uniqueStudents.set(key, student);
+
+    });
+
+    students = Array.from(uniqueStudents.values());
+
+}
+
+
+// =====================================================
+// 9. LOAD LESSONS
+// =====================================================
+
+async function loadLessons() {
+
+    const snapshot = await getDocs(
+        collection(db, "lessons")
+    );
+
+    lessons = snapshot.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+    }));
+
+}
+
+
+// =====================================================
+// 10. LOAD QUIZZES
+// =====================================================
+
+async function loadQuizzes() {
+
+    const snapshot = await getDocs(
+        collection(db, "quizzes")
+    );
+
+    quizzes = snapshot.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+    }));
+
+}
+
+
+// =====================================================
+// 11. LOAD RESULTS
+// =====================================================
+
+async function loadResults() {
+
+    const snapshot = await getDocs(
+        collection(db, "results")
+    );
+
+    results = snapshot.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+    }));
+
+}
+
+
+// =====================================================
+// 12. LOAD CERTIFICATES
+// =====================================================
+
+async function loadCertificates() {
+
+    const snapshot = await getDocs(
+        collection(db, "certificates")
+    );
+
+    certificates = snapshot.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+    }));
+
+}
+
+
+// =====================================================
+// 13. REFRESH EVERYTHING
+// =====================================================
 
 function refreshDashboard() {
 
@@ -273,175 +416,9 @@ function refreshDashboard() {
 }
 
 
-// =============================================
-// 10. LOAD COURSES
-// =============================================
-
-async function loadCourses() {
-
-    const snapshot = await getDocs(
-        collection(db, "courses")
-    );
-
-    courses = snapshot.docs.map(item => {
-
-        const data = item.data();
-
-        let published = false;
-
-        // The published field takes priority.
-        // Use isPublished only for older documents
-        // that do not have the published field.
-
-        if (typeof data.published === "boolean") {
-
-            published = data.published;
-
-        } else if (typeof data.isPublished === "boolean") {
-
-            published = data.isPublished;
-
-        }
-
-        return {
-
-            id: item.id,
-
-            ...data,
-
-            published
-
-        };
-
-    });
-
-}
-
-
-// =============================================
-// 11. LOAD STUDENTS
-// =============================================
-
-async function loadStudents() {
-
-    const snapshot = await getDocs(
-        collection(db, "students")
-    );
-
-    students = snapshot.docs.map(item => ({
-
-        id: item.id,
-
-        ...item.data()
-
-    }));
-
-    // Keep student records unique.
-
-    const uniqueStudents = new Map();
-
-    students.forEach(student => {
-
-        const key = student.uid ||
-            student.userId ||
-            student.id;
-
-        uniqueStudents.set(key, student);
-
-    });
-
-    students = Array.from(uniqueStudents.values());
-
-}
-
-
-// =============================================
-// 12. LOAD LESSONS
-// =============================================
-
-async function loadLessons() {
-
-    const snapshot = await getDocs(
-        collection(db, "lessons")
-    );
-
-    lessons = snapshot.docs.map(item => ({
-
-        id: item.id,
-
-        ...item.data()
-
-    }));
-
-}
-
-
-// =============================================
-// 13. LOAD QUIZZES
-// =============================================
-
-async function loadQuizzes() {
-
-    const snapshot = await getDocs(
-        collection(db, "quizzes")
-    );
-
-    quizzes = snapshot.docs.map(item => ({
-
-        id: item.id,
-
-        ...item.data()
-
-    }));
-
-}
-
-
-// =============================================
-// 14. LOAD RESULTS
-// =============================================
-
-async function loadResults() {
-
-    const snapshot = await getDocs(
-        collection(db, "results")
-    );
-
-    results = snapshot.docs.map(item => ({
-
-        id: item.id,
-
-        ...item.data()
-
-    }));
-
-}
-
-
-// =============================================
-// 15. LOAD CERTIFICATES
-// =============================================
-
-async function loadCertificates() {
-
-    const snapshot = await getDocs(
-        collection(db, "certificates")
-    );
-
-    certificates = snapshot.docs.map(item => ({
-
-        id: item.id,
-
-        ...item.data()
-
-    }));
-
-}
-
-
-// =============================================
-// 16. NAVIGATION
-// =============================================
+// =====================================================
+// 14. NAVIGATION
+// =====================================================
 
 function setupNavigation() {
 
@@ -458,26 +435,20 @@ function setupNavigation() {
 }
 
 
-// =============================================
-// 17. SHOW PAGE
-// =============================================
+// =====================================================
+// 15. SHOW DASHBOARD PAGE
+// =====================================================
 
 function showPage(pageName) {
 
     const pages = [
 
         "overview",
-
         "manageCourses",
-
         "manageLessons",
-
         "manageQuizzes",
-
         "manageStudents",
-
         "manageResults",
-
         "manageCertificates"
 
     ];
@@ -496,23 +467,21 @@ function showPage(pageName) {
 
     });
 
-    getElement("courseEditor")?.classList.add("hidden");
-
     getElement("coursePreview")?.classList.add("hidden");
 
     const selectedPage = getElement(pageName);
 
-    if (!selectedPage) {
-
-        console.warn("Page not found:", pageName);
-
-        return;
-
-    }
+    if (!selectedPage) return;
 
     selectedPage.classList.remove("hidden");
 
     selectedPage.classList.add("active");
+
+    if (pageName !== "manageCourses") {
+
+        closeCourseEditor();
+
+    }
 
     document.querySelectorAll(".admin-nav-btn").forEach(button => {
 
@@ -526,9 +495,50 @@ function showPage(pageName) {
 }
 
 
-// =============================================
-// 18. EVENT LISTENERS
-// =============================================
+// =====================================================
+// 16. COURSE EDITOR SAME-PAGE LAYOUT
+// =====================================================
+
+function prepareCourseEditorLayout() {
+
+    const manageCourses = getElement("manageCourses");
+
+    const courseEditor = getElement("courseEditor");
+
+    if (!manageCourses || !courseEditor) return;
+
+    // Move editor inside Manage Courses.
+
+    if (courseEditor.parentElement !== manageCourses) {
+
+        manageCourses.appendChild(courseEditor);
+
+    }
+
+}
+
+
+function closeCourseEditor() {
+
+    const editor = getElement("courseEditor");
+
+    const courseList = getElement("adminCourseList");
+
+    const toolbar = getElement("manageCourses")
+        ?.querySelector(".course-toolbar");
+
+    editor?.classList.add("hidden");
+
+    courseList?.classList.remove("hidden");
+
+    toolbar?.classList.remove("hidden");
+
+}
+
+
+// =====================================================
+// 17. EVENT LISTENERS
+// =====================================================
 
 function setupEventListeners() {
 
@@ -544,9 +554,7 @@ function setupEventListeners() {
 
         } catch (error) {
 
-            console.error(error);
-
-            notify("Unable to log out.");
+            notify("Unable to log out: " + error.message);
 
         }
 
@@ -562,11 +570,11 @@ function setupEventListeners() {
     });
 
 
-    // BACK TO COURSES
+    // BACK TO COURSE LIST
 
     getElement("backToCoursesBtn")?.addEventListener("click", () => {
 
-        showPage("manageCourses");
+        closeCourseEditor();
 
     });
 
@@ -579,7 +587,7 @@ function setupEventListeners() {
     );
 
 
-    // ADD LESSON
+    // SAVE LESSON
 
     getElement("editorLessonForm")?.addEventListener(
         "submit",
@@ -587,7 +595,7 @@ function setupEventListeners() {
     );
 
 
-    // ADD QUIZ
+    // SAVE QUIZ
 
     getElement("editorQuizForm")?.addEventListener(
         "submit",
@@ -611,7 +619,31 @@ function setupEventListeners() {
     );
 
 
-    // PUBLISH
+    // STUDENT SEARCH
+
+    getElement("adminStudentSearch")?.addEventListener(
+        "input",
+        displayStudents
+    );
+
+
+    // RESULT SEARCH
+
+    getElement("adminResultSearch")?.addEventListener(
+        "input",
+        displayResults
+    );
+
+
+    // CERTIFICATE SEARCH
+
+    getElement("adminCertificateSearch")?.addEventListener(
+        "input",
+        displayCertificates
+    );
+
+
+    // PUBLISH COURSE
 
     getElement("publishEditorCourseBtn")?.addEventListener(
         "click",
@@ -619,7 +651,7 @@ function setupEventListeners() {
     );
 
 
-    // UNPUBLISH
+    // UNPUBLISH COURSE
 
     getElement("unpublishCourseBtn")?.addEventListener(
         "click",
@@ -627,7 +659,7 @@ function setupEventListeners() {
     );
 
 
-    // PREVIEW
+    // PREVIEW COURSE
 
     getElement("previewCourseBtn")?.addEventListener(
         "click",
@@ -643,12 +675,20 @@ function setupEventListeners() {
 
     });
 
+
+    // COURSE SCHEDULE
+
+    getElement("courseScheduleForm")?.addEventListener(
+        "submit",
+        saveCourseSchedule
+    );
+
 }
 
 
-// =============================================
-// 19. DISPLAY COURSES
-// =============================================
+// =====================================================
+// 18. DISPLAY COURSES
+// =====================================================
 
 function displayCourses() {
 
@@ -684,15 +724,10 @@ function displayCourses() {
     if (!filteredCourses.length) {
 
         container.innerHTML = `
-
             <div class="empty-message">
-
                 <h3>No Courses Found</h3>
-
                 <p>No courses match your search.</p>
-
             </div>
-
         `;
 
         return;
@@ -714,42 +749,29 @@ function displayCourses() {
             <div class="admin-course-card">
 
                 ${course.image ? `
-
                     <img
                         src="${escapeHTML(course.image)}"
                         alt="${escapeHTML(course.title)}"
                     >
-
                 ` : ""}
 
                 <h3>${escapeHTML(course.title)}</h3>
 
-                <p>
-                    Department:
-                    ${escapeHTML(course.department || "Not specified")}
-                </p>
+                <p>Department: ${escapeHTML(course.department || "Not specified")}</p>
 
-                <p>
-                    Category:
-                    ${escapeHTML(course.category || "Not specified")}
-                </p>
+                <p>Category: ${escapeHTML(course.category || "Not specified")}</p>
 
-                <p>
-                    Level:
-                    ${escapeHTML(course.level || "Not specified")}
-                </p>
+                <p>Level: ${escapeHTML(course.level || "Not specified")}</p>
 
                 <p>Lessons: ${lessonCount}</p>
 
-                <p>Quizzes: ${quizCount}</p>
+                <p>Quiz Questions: ${quizCount}</p>
 
                 <p>
                     Status:
-
                     <strong>
                         ${course.published ? "Published" : "Unpublished"}
                     </strong>
-
                 </p>
 
                 <button
@@ -775,29 +797,42 @@ function displayCourses() {
 }
 
 
-// =============================================
-// 20. OPEN COURSE EDITOR
-// =============================================
+// =====================================================
+// 19. OPEN COURSE EDITOR
+// =====================================================
 
 function openCourseEditor(course = null) {
 
+    prepareCourseEditorLayout();
+
     currentCourseId = course?.id || null;
 
-    document.querySelectorAll(".admin-page").forEach(page => {
+    // Keep Manage Courses active.
 
-        page.classList.remove("active");
+    showPage("manageCourses");
 
-        page.classList.add("hidden");
+    const editor = getElement("courseEditor");
 
-    });
+    const courseList = getElement("adminCourseList");
 
-    getElement("courseEditor")?.classList.remove("hidden");
+    const toolbar = getElement("manageCourses")
+        ?.querySelector(".course-toolbar");
+
+    courseList?.classList.add("hidden");
+
+    toolbar?.classList.add("hidden");
+
+    editor?.classList.remove("hidden");
+
+    // Reset forms.
 
     getElement("editCourseForm")?.reset();
 
     getElement("editorLessonForm")?.reset();
 
     getElement("editorQuizForm")?.reset();
+
+    // Course information.
 
     setValue("editCourseId", course?.id);
 
@@ -818,7 +853,7 @@ function openCourseEditor(course = null) {
     if (title) {
 
         title.textContent = course
-            ? course.title
+            ? "Edit Course: " + course.title
             : "Create New Course";
 
     }
@@ -827,18 +862,32 @@ function openCourseEditor(course = null) {
 
     setValue("editorQuizCourseId", course?.id);
 
+    // Schedule fields.
+
+    setValue(
+        "editCourseOpeningDate",
+        course?.openingDateTime
+    );
+
+    setValue(
+        "editCourseClosingDate",
+        course?.closingDateTime
+    );
+
     updateCoursePublicationStatus();
 
     displayEditorLessons();
 
     displayEditorQuizzes();
 
+    updateScheduleStatus();
+
 }
 
 
-// =============================================
-// 21. EDIT COURSE
-// =============================================
+// =====================================================
+// 20. EDIT COURSE
+// =====================================================
 
 window.editCourse = function(courseId) {
 
@@ -857,9 +906,9 @@ window.editCourse = function(courseId) {
 };
 
 
-// =============================================
-// 22. SAVE COURSE
-// =============================================
+// =====================================================
+// 21. SAVE COURSE
+// =====================================================
 
 async function saveCourse(event) {
 
@@ -927,7 +976,7 @@ async function saveCourse(event) {
 
             setValue("editorQuizCourseId", newCourse.id);
 
-            notify("Course created successfully. It is currently unpublished.");
+            notify("Course created successfully. It is unpublished.");
 
         }
 
@@ -954,9 +1003,9 @@ async function saveCourse(event) {
 }
 
 
-// =============================================
-// 23. DELETE COURSE
-// =============================================
+// =====================================================
+// 22. DELETE COURSE
+// =====================================================
 
 window.removeCourse = async function(courseId) {
 
@@ -964,13 +1013,9 @@ window.removeCourse = async function(courseId) {
 
     if (!course) return;
 
-    const confirmed = confirm(
-
+    if (!confirm(
         `Delete "${course.title}" and all its lessons and quizzes?`
-
-    );
-
-    if (!confirmed) return;
+    )) return;
 
     try {
 
@@ -1018,6 +1063,8 @@ window.removeCourse = async function(courseId) {
 
         refreshDashboard();
 
+        closeCourseEditor();
+
         notify("Course and its lessons and quizzes deleted successfully.");
 
     } catch (error) {
@@ -1031,9 +1078,9 @@ window.removeCourse = async function(courseId) {
 };
 
 
-// =============================================
-// 24. PUBLISH / UNPUBLISH COURSE
-// =============================================
+// =====================================================
+// 23. PUBLISH / UNPUBLISH
+// =====================================================
 
 async function changeCourseStatus(status) {
 
@@ -1066,6 +1113,8 @@ async function changeCourseStatus(status) {
 
         refreshDashboard();
 
+        updateCoursePublicationStatus();
+
         notify(
             status
                 ? "Course published successfully."
@@ -1076,16 +1125,16 @@ async function changeCourseStatus(status) {
 
         console.error("Publication error:", error);
 
-        notify("Unable to update publication status: " + error.message);
+        notify("Unable to update course status: " + error.message);
 
     }
 
 }
 
 
-// =============================================
-// 25. UPDATE PUBLICATION STATUS
-// =============================================
+// =====================================================
+// 24. PUBLICATION STATUS
+// =====================================================
 
 function updateCoursePublicationStatus() {
 
@@ -1104,9 +1153,102 @@ function updateCoursePublicationStatus() {
 }
 
 
-// =============================================
-// 26. IMPORT BUTTON
-// =============================================
+// =====================================================
+// 25. COURSE SCHEDULE
+// =====================================================
+
+async function saveCourseSchedule(event) {
+
+    event.preventDefault();
+
+    const courseId = getValue("editCourseId");
+
+    if (!courseId) {
+
+        notify("Save the course before setting its schedule.");
+
+        return;
+
+    }
+
+    const openingDate = getValue("editCourseOpeningDate");
+
+    const closingDate = getValue("editCourseClosingDate");
+
+    if (
+        openingDate &&
+        closingDate &&
+        new Date(closingDate) <= new Date(openingDate)
+    ) {
+
+        notify("Closing date must be later than opening date.");
+
+        return;
+
+    }
+
+    try {
+
+        await updateDoc(
+            doc(db, "courses", courseId),
+            {
+
+                openingDateTime: openingDate,
+
+                closingDateTime: closingDate,
+
+                updatedAt: serverTimestamp()
+
+            }
+        );
+
+        await loadCourses();
+
+        updateScheduleStatus();
+
+        notify("Course schedule saved successfully.");
+
+    } catch (error) {
+
+        console.error("Schedule error:", error);
+
+        notify("Unable to save schedule: " + error.message);
+
+    }
+
+}
+
+
+function updateScheduleStatus() {
+
+    const status = getElement("courseScheduleStatus");
+
+    if (!status) return;
+
+    const course = courses.find(
+        item => item.id === getValue("editCourseId")
+    );
+
+    if (!course) {
+
+        status.textContent = "Save the course before setting a schedule.";
+
+        return;
+
+    }
+
+    status.textContent =
+        "Opening: " +
+        (course.openingDateTime || "Not set") +
+        " | Closing: " +
+        (course.closingDateTime || "Not set");
+
+}
+
+
+// =====================================================
+// 26. IMPORT COURSE CATALOGUE BUTTON
+// =====================================================
 
 function createImportButton() {
 
@@ -1139,9 +1281,9 @@ function createImportButton() {
 }
 
 
-// =============================================
+// =====================================================
 // 27. IMPORT COURSE CATALOGUE
-// =============================================
+// =====================================================
 
 async function importCourseCatalogue() {
 
@@ -1157,11 +1299,7 @@ async function importCourseCatalogue() {
 
     if (!confirm(
         "Import missing catalogue courses and set catalogue courses to Unpublished?"
-    )) {
-
-        return;
-
-    }
+    )) return;
 
     try {
 
@@ -1169,15 +1307,13 @@ async function importCourseCatalogue() {
             collection(db, "courses")
         );
 
-        const existingIds = new Set(
-            snapshot.docs.map(item => item.id)
+        const existing = new Map(
+            snapshot.docs.map(item => [item.id, item.data()])
         );
 
         let imported = 0;
 
         let updated = 0;
-
-        // Firestore allows up to 500 operations per batch.
 
         let batch = writeBatch(db);
 
@@ -1205,16 +1341,9 @@ async function importCourseCatalogue() {
 
             const reference = doc(db, "courses", courseId);
 
-            if (existingIds.has(courseId)) {
+            if (existing.has(courseId)) {
 
-                const existing = snapshot.docs.find(
-                    item => item.id === courseId
-                );
-
-                const data = existing.data();
-
-                // Reset only catalogue-generated courses.
-                // Do not change manually created courses.
+                const data = existing.get(courseId);
 
                 if (
                     data.published !== false ||
@@ -1274,11 +1403,9 @@ async function importCourseCatalogue() {
         refreshDashboard();
 
         notify(
-
-            `Catalogue import completed!\n\n` +
-            `New courses: ${imported}\n` +
-            `Reset to unpublished: ${updated}`
-
+            "Catalogue import completed!\n\n" +
+            "New courses: " + imported + "\n" +
+            "Reset to unpublished: " + updated
         );
 
     } catch (error) {
@@ -1292,9 +1419,9 @@ async function importCourseCatalogue() {
 }
 
 
-// =============================================
+// =====================================================
 // 28. DISPLAY EDITOR LESSONS
-// =============================================
+// =====================================================
 
 function displayEditorLessons() {
 
@@ -1324,6 +1451,13 @@ function displayEditorLessons() {
 
             <button
                 type="button"
+                onclick="editLesson('${escapeHTML(lesson.id)}')"
+            >
+                Edit Lesson
+            </button>
+
+            <button
+                type="button"
                 onclick="deleteLesson('${escapeHTML(lesson.id)}')"
             >
                 Delete Lesson
@@ -1336,9 +1470,9 @@ function displayEditorLessons() {
 }
 
 
-// =============================================
-// 29. ADD LESSON
-// =============================================
+// =====================================================
+// 29. ADD / EDIT LESSON
+// =====================================================
 
 async function saveLesson(event) {
 
@@ -1364,6 +1498,9 @@ async function saveLesson(event) {
 
     }
 
+    const lessonId = getElement("editorLessonForm")
+        ?.dataset.editingId;
+
     const lessonData = {
 
         courseId,
@@ -1378,53 +1515,87 @@ async function saveLesson(event) {
 
         video: getValue("editorLessonVideo"),
 
-        createdAt: serverTimestamp()
+        updatedAt: serverTimestamp()
 
     };
 
     try {
 
-        const newLesson = await addDoc(
-            collection(db, "lessons"),
-            lessonData
-        );
+        if (lessonId) {
 
-        lessons.push({
+            await updateDoc(
+                doc(db, "lessons", lessonId),
+                lessonData
+            );
 
-            id: newLesson.id,
+            notify("Lesson updated successfully.");
 
-            ...lessonData
+        } else {
 
-        });
+            lessonData.createdAt = serverTimestamp();
+
+            await addDoc(
+                collection(db, "lessons"),
+                lessonData
+            );
+
+            notify("Lesson added successfully.");
+
+        }
 
         getElement("editorLessonForm").reset();
 
+        delete getElement("editorLessonForm").dataset.editingId;
+
         setValue("editorLessonCourseId", courseId);
 
-        displayEditorLessons();
+        await loadLessons();
 
-        displayAllLessons();
-
-        displayCourses();
-
-        updateStatistics();
-
-        notify("Lesson added successfully.");
+        refreshDashboard();
 
     } catch (error) {
 
-        console.error("Add lesson error:", error);
+        console.error("Lesson save error:", error);
 
-        notify("Unable to add lesson: " + error.message);
+        notify("Unable to save lesson: " + error.message);
 
     }
 
 }
 
 
-// =============================================
+window.editLesson = function(lessonId) {
+
+    const lesson = lessons.find(item => item.id === lessonId);
+
+    if (!lesson) return;
+
+    const form = getElement("editorLessonForm");
+
+    if (!form) return;
+
+    form.dataset.editingId = lessonId;
+
+    setValue("editorLessonCourseId", lesson.courseId);
+
+    setValue("editorLessonTitle", lesson.title);
+
+    setValue("editorLessonDescription", lesson.description);
+
+    setValue("editorLessonContent", lesson.content);
+
+    setValue("editorLessonPDF", lesson.pdf);
+
+    setValue("editorLessonVideo", lesson.video);
+
+    notify("Edit the lesson details and click Save Lesson.");
+
+};
+
+
+// =====================================================
 // 30. DELETE LESSON
-// =============================================
+// =====================================================
 
 window.deleteLesson = async function(lessonId) {
 
@@ -1436,17 +1607,9 @@ window.deleteLesson = async function(lessonId) {
             doc(db, "lessons", lessonId)
         );
 
-        lessons = lessons.filter(
-            item => item.id !== lessonId
-        );
+        await loadLessons();
 
-        displayEditorLessons();
-
-        displayAllLessons();
-
-        displayCourses();
-
-        updateStatistics();
+        refreshDashboard();
 
         notify("Lesson deleted successfully.");
 
@@ -1461,9 +1624,9 @@ window.deleteLesson = async function(lessonId) {
 };
 
 
-// =============================================
+// =====================================================
 // 31. DISPLAY EDITOR QUIZZES
-// =============================================
+// =====================================================
 
 function displayEditorQuizzes() {
 
@@ -1483,11 +1646,20 @@ function displayEditorQuizzes() {
 
     }
 
-    container.innerHTML = courseQuizzes.map(quiz => `
+    container.innerHTML = courseQuizzes.map((quiz, index) => `
 
         <div class="admin-item">
 
-            <h4>${escapeHTML(quiz.question)}</h4>
+            <h4>${index + 1}. ${escapeHTML(quiz.question)}</h4>
+
+            <p>Marks: ${escapeHTML(quiz.marks ?? 1)}</p>
+
+            <button
+                type="button"
+                onclick="editQuiz('${escapeHTML(quiz.id)}')"
+            >
+                Edit Question
+            </button>
 
             <button
                 type="button"
@@ -1503,9 +1675,9 @@ function displayEditorQuizzes() {
 }
 
 
-// =============================================
-// 32. ADD QUIZ
-// =============================================
+// =====================================================
+// 32. ADD / EDIT QUIZ
+// =====================================================
 
 async function saveQuiz(event) {
 
@@ -1535,15 +1707,40 @@ async function saveQuiz(event) {
 
     ];
 
-    const correctAnswer = getValue("editorCorrectAnswer");
+    const correctAnswer = Number(
+        getValue("editorCorrectAnswer")
+    );
 
-    if (!question || options.some(option => !option) || !correctAnswer) {
+    const marks = Number(
+        getValue("editorQuestionMark") || 1
+    );
 
-        notify("Complete the question, all four options and correct answer.");
+    if (!question || options.some(option => !option)) {
+
+        notify("Complete the question and all four options.");
 
         return;
 
     }
+
+    if (![0, 1, 2, 3].includes(correctAnswer)) {
+
+        notify("Select the correct answer.");
+
+        return;
+
+    }
+
+    if (!Number.isFinite(marks) || marks <= 0) {
+
+        notify("Enter valid marks for this question.");
+
+        return;
+
+    }
+
+    const quizId = getElement("editorQuizForm")
+        ?.dataset.editingId;
 
     const quizData = {
 
@@ -1551,57 +1748,103 @@ async function saveQuiz(event) {
 
         question,
 
+        questionText: question,
+
         options,
 
         correctAnswer,
 
-        createdAt: serverTimestamp()
+        marks,
+
+        updatedAt: serverTimestamp()
 
     };
 
     try {
 
-        const newQuiz = await addDoc(
-            collection(db, "quizzes"),
-            quizData
-        );
+        if (quizId) {
 
-        quizzes.push({
+            await updateDoc(
+                doc(db, "quizzes", quizId),
+                quizData
+            );
 
-            id: newQuiz.id,
+            notify("Quiz question updated successfully.");
 
-            ...quizData
+        } else {
 
-        });
+            quizData.createdAt = serverTimestamp();
+
+            await addDoc(
+                collection(db, "quizzes"),
+                quizData
+            );
+
+            notify("Quiz question added successfully.");
+
+        }
 
         getElement("editorQuizForm").reset();
 
+        delete getElement("editorQuizForm").dataset.editingId;
+
         setValue("editorQuizCourseId", courseId);
 
-        displayEditorQuizzes();
+        await loadQuizzes();
 
-        displayAllQuizzes();
-
-        displayCourses();
-
-        updateStatistics();
-
-        notify("Quiz question added successfully.");
+        refreshDashboard();
 
     } catch (error) {
 
-        console.error("Add quiz error:", error);
+        console.error("Quiz save error:", error);
 
-        notify("Unable to add quiz: " + error.message);
+        notify("Unable to save quiz: " + error.message);
 
     }
 
 }
 
 
-// =============================================
+window.editQuiz = function(quizId) {
+
+    const quiz = quizzes.find(item => item.id === quizId);
+
+    if (!quiz) return;
+
+    const form = getElement("editorQuizForm");
+
+    if (!form) return;
+
+    form.dataset.editingId = quizId;
+
+    const options = Array.isArray(quiz.options)
+        ? quiz.options
+        : [];
+
+    setValue("editorQuizCourseId", quiz.courseId);
+
+    setValue("editorQuestionText", quiz.question || quiz.questionText);
+
+    setValue("editorOptionA", options[0]);
+
+    setValue("editorOptionB", options[1]);
+
+    setValue("editorOptionC", options[2]);
+
+    setValue("editorOptionD", options[3]);
+
+    setValue("editorCorrectAnswer", quiz.correctAnswer);
+
+    setValue("editorQuestionMark", quiz.marks ?? 1);
+
+    notify("Edit the question and click Save Question.");
+
+};
+
+
+// =====================================================
 // 33. DELETE QUIZ
-// =============================================
+// =====================================================
 
 window.deleteQuiz = async function(quizId) {
 
@@ -1613,19 +1856,11 @@ window.deleteQuiz = async function(quizId) {
             doc(db, "quizzes", quizId)
         );
 
-        quizzes = quizzes.filter(
-            item => item.id !== quizId
-        );
+        await loadQuizzes();
 
-        displayEditorQuizzes();
+        refreshDashboard();
 
-        displayAllQuizzes();
-
-        displayCourses();
-
-        updateStatistics();
-
-        notify("Quiz deleted successfully.");
+        notify("Quiz question deleted successfully.");
 
     } catch (error) {
 
@@ -1638,9 +1873,9 @@ window.deleteQuiz = async function(quizId) {
 };
 
 
-// =============================================
-// 34. PREVIEW COURSE
-// =============================================
+// =====================================================
+// 34. COURSE PREVIEW
+// =====================================================
 
 function previewCourse() {
 
@@ -1663,12 +1898,10 @@ function previewCourse() {
     container.innerHTML = `
 
         ${image ? `
-
             <img
                 src="${escapeHTML(image)}"
                 alt="${escapeHTML(title)}"
             >
-
         ` : ""}
 
         <h2>${escapeHTML(title)}</h2>
@@ -1688,9 +1921,9 @@ function previewCourse() {
 }
 
 
-// =============================================
+// =====================================================
 // 35. DISPLAY ALL LESSONS
-// =============================================
+// =====================================================
 
 function displayAllLessons() {
 
@@ -1718,10 +1951,7 @@ function displayAllLessons() {
 
                 <h3>${escapeHTML(lesson.title)}</h3>
 
-                <p>
-                    Course:
-                    ${escapeHTML(course?.title || "Unknown Course")}
-                </p>
+                <p>Course: ${escapeHTML(course?.title || "Unknown Course")}</p>
 
                 <p>${escapeHTML(lesson.description || "")}</p>
 
@@ -1741,9 +1971,9 @@ function displayAllLessons() {
 }
 
 
-// =============================================
+// =====================================================
 // 36. DISPLAY ALL QUIZZES
-// =============================================
+// =====================================================
 
 function displayAllQuizzes() {
 
@@ -1769,21 +1999,16 @@ function displayAllQuizzes() {
 
             <div class="admin-item">
 
-                <h3>${escapeHTML(quiz.question)}</h3>
+                <h3>${escapeHTML(quiz.question || quiz.questionText)}</h3>
 
-                <p>
-                    Course:
-                    ${escapeHTML(course?.title || "Unknown Course")}
-                </p>
+                <p>Course: ${escapeHTML(course?.title || "Unknown Course")}</p>
 
-                <p>Options:</p>
+                <p>Marks: ${escapeHTML(quiz.marks ?? 1)}</p>
 
                 <ol>
 
                     ${(quiz.options || []).map(option => `
-
                         <li>${escapeHTML(option)}</li>
-
                     `).join("")}
 
                 </ol>
@@ -1804,9 +2029,9 @@ function displayAllQuizzes() {
 }
 
 
-// =============================================
+// =====================================================
 // 37. DISPLAY STUDENTS
-// =============================================
+// =====================================================
 
 function displayStudents() {
 
@@ -1814,41 +2039,45 @@ function displayStudents() {
 
     if (!container) return;
 
-    if (!students.length) {
+    const search = getValue("adminStudentSearch").toLowerCase();
 
-        container.innerHTML = "<p>No students registered yet.</p>";
+    const filtered = students.filter(student => {
+
+        return (
+
+            String(student.fullName || "").toLowerCase().includes(search) ||
+
+            String(student.email || "").toLowerCase().includes(search) ||
+
+            String(student.department || "").toLowerCase().includes(search) ||
+
+            String(student.level || "").toLowerCase().includes(search)
+
+        );
+
+    });
+
+    if (!filtered.length) {
+
+        container.innerHTML = "<p>No students found.</p>";
 
         return;
 
     }
 
-    container.innerHTML = students.map(student => `
+    container.innerHTML = filtered.map(student => `
 
         <div class="admin-item">
 
-            <h3>
-                ${escapeHTML(student.fullName || "Unnamed Student")}
-            </h3>
+            <h3>${escapeHTML(student.fullName || "Unnamed Student")}</h3>
 
-            <p>
-                Email:
-                ${escapeHTML(student.email || "Not available")}
-            </p>
+            <p>Email: ${escapeHTML(student.email || "Not available")}</p>
 
-            <p>
-                University:
-                ${escapeHTML(student.university || "Not available")}
-            </p>
+            <p>University: ${escapeHTML(student.university || "Not available")}</p>
 
-            <p>
-                Department:
-                ${escapeHTML(student.department || "Not available")}
-            </p>
+            <p>Department: ${escapeHTML(student.department || "Not available")}</p>
 
-            <p>
-                Level:
-                ${escapeHTML(student.level || "Not available")}
-            </p>
+            <p>Level: ${escapeHTML(student.level || "Not available")}</p>
 
         </div>
 
@@ -1857,9 +2086,9 @@ function displayStudents() {
 }
 
 
-// =============================================
+// =====================================================
 // 38. DISPLAY RESULTS
-// =============================================
+// =====================================================
 
 function displayResults() {
 
@@ -1867,15 +2096,39 @@ function displayResults() {
 
     if (!container) return;
 
-    if (!results.length) {
+    const search = getValue("adminResultSearch").toLowerCase();
 
-        container.innerHTML = "<p>No student results available yet.</p>";
+    const filtered = results.filter(result => {
+
+        const student = students.find(
+            item => item.id === result.studentId
+        );
+
+        const course = courses.find(
+            item => item.id === result.courseId
+        );
+
+        return (
+
+            String(student?.fullName || result.studentName || "")
+                .toLowerCase().includes(search) ||
+
+            String(course?.title || result.courseTitle || "")
+                .toLowerCase().includes(search)
+
+        );
+
+    });
+
+    if (!filtered.length) {
+
+        container.innerHTML = "<p>No student results found.</p>";
 
         return;
 
     }
 
-    container.innerHTML = results.map(result => {
+    container.innerHTML = filtered.map(result => {
 
         const student = students.find(
             item => item.id === result.studentId
@@ -1889,24 +2142,22 @@ function displayResults() {
 
             <div class="admin-item">
 
-                <h3>
-                    ${escapeHTML(student?.fullName || result.studentId || "Unknown Student")}
-                </h3>
+                <h3>${escapeHTML(student?.fullName || result.studentName || "Unknown Student")}</h3>
 
-                <p>
-                    Course:
-                    ${escapeHTML(course?.title || "Unknown Course")}
-                </p>
+                <p>Course: ${escapeHTML(course?.title || result.courseTitle || "Unknown Course")}</p>
 
-                <p>
-                    Score:
-                    ${escapeHTML(result.score ?? "Not available")}
-                </p>
+                <p>Score: ${escapeHTML(result.score ?? "Not available")}</p>
 
-                <p>
-                    Date:
-                    ${escapeHTML(result.date || "Not available")}
-                </p>
+                <p>Percentage: ${escapeHTML(result.percentage ?? "Not available")}%</p>
+
+                <p>Status: ${result.passed ? "Passed" : "Not passed"}</p>
+
+                <button
+                    type="button"
+                    onclick="editResult('${escapeHTML(result.id)}')"
+                >
+                    Edit Marks
+                </button>
 
             </div>
 
@@ -1917,9 +2168,109 @@ function displayResults() {
 }
 
 
-// =============================================
-// 39. DISPLAY CERTIFICATES
-// =============================================
+// =====================================================
+// 39. EDIT STUDENT MARKS
+// =====================================================
+
+window.editResult = async function(resultId) {
+
+    const result = results.find(item => item.id === resultId);
+
+    if (!result) {
+
+        notify("Result not found.");
+
+        return;
+
+    }
+
+    const totalMarks = Number(
+        result.totalMarks ||
+        result.totalQuestions ||
+        0
+    );
+
+    if (!totalMarks || totalMarks <= 0) {
+
+        notify(
+            "This result does not contain a valid totalMarks or totalQuestions value."
+        );
+
+        return;
+
+    }
+
+    const newScore = prompt(
+        `Enter the new score for ${result.studentName || "this student"}.\nMaximum: ${totalMarks}`,
+        result.score ?? 0
+    );
+
+    if (newScore === null) return;
+
+    const score = Number(newScore);
+
+    if (
+        !Number.isFinite(score) ||
+        score < 0 ||
+        score > totalMarks
+    ) {
+
+        notify("Enter a valid score between 0 and " + totalMarks);
+
+        return;
+
+    }
+
+    const percentage = Math.round(
+        (score / totalMarks) * 100
+    );
+
+    const passed = percentage >= 70;
+
+    try {
+
+        await updateDoc(
+            doc(db, "results", resultId),
+            {
+
+                score,
+
+                percentage,
+
+                passed,
+
+                updatedAt: serverTimestamp(),
+
+                updatedBy: currentAdmin.uid
+
+            }
+        );
+
+        await loadResults();
+
+        displayResults();
+
+        notify(
+            "Student marks updated successfully.\n\n" +
+            "Score: " + score + "/" + totalMarks + "\n" +
+            "Percentage: " + percentage + "%\n" +
+            "Status: " + (passed ? "Passed" : "Not passed")
+        );
+
+    } catch (error) {
+
+        console.error("Edit result error:", error);
+
+        notify("Unable to update marks: " + error.message);
+
+    }
+
+};
+
+
+// =====================================================
+// 40. DISPLAY CERTIFICATES
+// =====================================================
 
 function displayCertificates() {
 
@@ -1927,15 +2278,41 @@ function displayCertificates() {
 
     if (!container) return;
 
-    if (!certificates.length) {
+    const search = getValue("adminCertificateSearch").toLowerCase();
 
-        container.innerHTML = "<p>No certificates issued yet.</p>";
+    const filtered = certificates.filter(certificate => {
+
+        const student = students.find(
+            item => item.id === certificate.studentId
+        );
+
+        const course = courses.find(
+            item => item.id === certificate.courseId
+        );
+
+        return (
+
+            String(student?.fullName || certificate.studentName || "")
+                .toLowerCase().includes(search) ||
+
+            String(course?.title || certificate.courseTitle || "")
+                .toLowerCase().includes(search) ||
+
+            String(certificate.id).toLowerCase().includes(search)
+
+        );
+
+    });
+
+    if (!filtered.length) {
+
+        container.innerHTML = "<p>No certificates found.</p>";
 
         return;
 
     }
 
-    container.innerHTML = certificates.map(certificate => {
+    container.innerHTML = filtered.map(certificate => {
 
         const student = students.find(
             item => item.id === certificate.studentId
@@ -1949,19 +2326,30 @@ function displayCertificates() {
 
             <div class="admin-item">
 
-                <h3>
-                    ${escapeHTML(student?.fullName || "Unknown Student")}
-                </h3>
+                <h3>${escapeHTML(student?.fullName || certificate.studentName || "Unknown Student")}</h3>
+
+                <p>Course: ${escapeHTML(course?.title || certificate.courseTitle || "Unknown Course")}</p>
+
+                <p>Certificate ID: ${escapeHTML(certificate.id)}</p>
 
                 <p>
-                    Course:
-                    ${escapeHTML(course?.title || "Unknown Course")}
+                    Status:
+                    ${certificate.revoked ? "Revoked" : "Valid"}
                 </p>
 
-                <p>
-                    Certificate ID:
-                    ${escapeHTML(certificate.id)}
-                </p>
+                <button
+                    type="button"
+                    onclick="editCertificate('${escapeHTML(certificate.id)}')"
+                >
+                    Edit Certificate
+                </button>
+
+                <button
+                    type="button"
+                    onclick="toggleCertificate('${escapeHTML(certificate.id)}')"
+                >
+                    ${certificate.revoked ? "Restore Certificate" : "Revoke Certificate"}
+                </button>
 
             </div>
 
@@ -1972,9 +2360,141 @@ function displayCertificates() {
 }
 
 
-// =============================================
-// 40. DASHBOARD STATISTICS
-// =============================================
+// =====================================================
+// 41. EDIT CERTIFICATE
+// =====================================================
+
+window.editCertificate = async function(certificateId) {
+
+    const certificate = certificates.find(
+        item => item.id === certificateId
+    );
+
+    if (!certificate) {
+
+        notify("Certificate not found.");
+
+        return;
+
+    }
+
+    const newName = prompt(
+        "Enter the certificate holder's name:",
+        certificate.studentName || ""
+    );
+
+    if (newName === null) return;
+
+    const newCourseTitle = prompt(
+        "Enter the course title:",
+        certificate.courseTitle || ""
+    );
+
+    if (newCourseTitle === null) return;
+
+    if (!newName.trim() || !newCourseTitle.trim()) {
+
+        notify("Name and course title cannot be empty.");
+
+        return;
+
+    }
+
+    try {
+
+        await updateDoc(
+            doc(db, "certificates", certificateId),
+            {
+
+                studentName: newName.trim(),
+
+                courseTitle: newCourseTitle.trim(),
+
+                updatedAt: serverTimestamp(),
+
+                updatedBy: currentAdmin.uid
+
+            }
+        );
+
+        await loadCertificates();
+
+        displayCertificates();
+
+        notify("Certificate details updated successfully.");
+
+    } catch (error) {
+
+        console.error("Certificate edit error:", error);
+
+        notify("Unable to edit certificate: " + error.message);
+
+    }
+
+};
+
+
+// =====================================================
+// 42. REVOKE / RESTORE CERTIFICATE
+// =====================================================
+
+window.toggleCertificate = async function(certificateId) {
+
+    const certificate = certificates.find(
+        item => item.id === certificateId
+    );
+
+    if (!certificate) return;
+
+    const newStatus = !certificate.revoked;
+
+    const action = newStatus ? "revoke" : "restore";
+
+    if (!confirm(`Are you sure you want to ${action} this certificate?`)) {
+
+        return;
+
+    }
+
+    try {
+
+        await updateDoc(
+            doc(db, "certificates", certificateId),
+            {
+
+                revoked: newStatus,
+
+                updatedAt: serverTimestamp(),
+
+                updatedBy: currentAdmin.uid
+
+            }
+        );
+
+        await loadCertificates();
+
+        displayCertificates();
+
+        notify(
+            newStatus
+                ? "Certificate revoked successfully."
+                : "Certificate restored successfully."
+        );
+
+    } catch (error) {
+
+        console.error("Certificate status error:", error);
+
+        notify("Unable to update certificate: " + error.message);
+
+    }
+
+};
+
+
+// =====================================================
+// 43. DASHBOARD STATISTICS
+// =====================================================
 
 function updateStatistics() {
 
@@ -2005,6 +2525,6 @@ function updateStatistics() {
 }
 
 
-// =============================================
-// 41. END OF LEARNSPHERE ADMIN DASHBOARD
-// =============================================
+// =====================================================
+// 44. END OF LEARNSPHERE ADMIN DASHBOARD
+// =====================================================

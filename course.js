@@ -1,4 +1,3 @@
-
 // ========================================
 // LEARNSPHERE COURSE LEARNING SYSTEM
 // COMPLETE FIREBASE VERSION
@@ -82,6 +81,8 @@ const CERTIFICATE_FOUNDER_NAME = "AKINTAYO IBRAHIM";
 
 const SECONDS_PER_QUESTION = 30;
 
+const DEFAULT_MAX_ATTEMPTS = 3;
+
 
 // ========================================
 // 4. GLOBAL VARIABLES
@@ -107,6 +108,8 @@ let studentAnswers = {};
 
 let quizSubmitted = false;
 
+let quizSubmissionInProgress = false;
+
 let quizTimer = null;
 
 let remainingTime = 0;
@@ -114,6 +117,10 @@ let remainingTime = 0;
 let quizStartTime = null;
 
 let quizTimerDisplay = null;
+
+let maxQuizAttempts = DEFAULT_MAX_ATTEMPTS;
+
+let usedQuizAttempts = 0;
 
 
 // ========================================
@@ -150,8 +157,95 @@ function showError(message) {
 }
 
 
+// GET CURRENT LOCAL DATE
+
+function getCurrentLocalDate() {
+
+    const today = new Date();
+
+    const year = today.getFullYear();
+
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+
+    const day = String(today.getDate()).padStart(2, "0");
+
+    return year + "-" + month + "-" + day;
+
+}
+
+
 // ========================================
-// 6. AUTHENTICATION
+// 6. COURSE OPENING AND CLOSING DATES
+// ========================================
+
+function checkCourseSchedule() {
+
+    if (!currentCourse) {
+
+        return {
+
+            allowed: false,
+
+            message: "Course information is unavailable."
+
+        };
+
+    }
+
+    const today = getCurrentLocalDate();
+
+    const openingDate = currentCourse.openingDate || "";
+
+    const closingDate = currentCourse.closingDate || "";
+
+
+    // CHECK OPENING DATE
+
+    if (openingDate && today < openingDate) {
+
+        return {
+
+            allowed: false,
+
+            message: "This course has not opened yet. It will open on " +
+
+                openingDate + "."
+
+        };
+
+    }
+
+
+    // CHECK CLOSING DATE
+
+    if (closingDate && today > closingDate) {
+
+        return {
+
+            allowed: false,
+
+            message: "This course closed on " + closingDate + "."
+
+        };
+
+    }
+
+
+    // COURSE IS AVAILABLE
+
+    return {
+
+        allowed: true,
+
+        message: ""
+
+    };
+
+}
+
+
+// ========================================
+// 7. AUTHENTICATION
 // ========================================
 
 onAuthStateChanged(auth, async function (user) {
@@ -224,7 +318,7 @@ onAuthStateChanged(auth, async function (user) {
 
 
 // ========================================
-// 7. CHECK ENROLMENT
+// 8. CHECK ENROLMENT
 // ========================================
 
 async function isStudentEnrolled() {
@@ -249,7 +343,7 @@ async function isStudentEnrolled() {
 
 
 // ========================================
-// 8. LOAD COURSE
+// 9. LOAD COURSE
 // ========================================
 
 async function loadCourse() {
@@ -288,6 +382,9 @@ async function loadCourse() {
 
         };
 
+
+        // CHECK PUBLICATION
+
         if (currentCourse.published !== true) {
 
             alert("This course is not published.");
@@ -297,6 +394,24 @@ async function loadCourse() {
             return;
 
         }
+
+
+        // CHECK COURSE DATES
+
+        const schedule = checkCourseSchedule();
+
+        if (!schedule.allowed) {
+
+            alert(schedule.message);
+
+            window.location.href = "student-dashboard.html";
+
+            return;
+
+        }
+
+
+        // CHECK ENROLMENT
 
         const enrolled = await isStudentEnrolled();
 
@@ -310,6 +425,9 @@ async function loadCourse() {
 
         }
 
+
+        // DISPLAY COURSE INFORMATION
+
         courseTitle.textContent = currentCourse.title || "Untitled Course";
 
         courseDescription.textContent = currentCourse.description || "";
@@ -317,6 +435,17 @@ async function loadCourse() {
         courseDepartment.textContent = currentCourse.department || "General";
 
         courseLevel.textContent = currentCourse.level || "All Levels";
+
+
+        // LOAD MAXIMUM QUIZ ATTEMPTS
+
+        maxQuizAttempts = Number(currentCourse.maxAttempts);
+
+        if (!Number.isInteger(maxQuizAttempts) || maxQuizAttempts < 1) {
+
+            maxQuizAttempts = DEFAULT_MAX_ATTEMPTS;
+
+        }
 
 
         // LOAD LESSONS
@@ -369,13 +498,15 @@ async function loadCourse() {
         });
 
 
+        // DISPLAY CONTENT
+
         displayLessons();
 
-        updateProgress();
+        await updateProgress();
 
         if (courseLessons.length > 0) {
 
-            showLesson(0);
+            await showLesson(0);
 
         } else {
 
@@ -387,11 +518,18 @@ async function loadCourse() {
 
         }
 
+
         console.log("Course loaded:", currentCourse);
 
         console.log("Lessons:", courseLessons);
 
         console.log("Quizzes:", courseQuizzes);
+
+        console.log("Maximum attempts:", maxQuizAttempts);
+
+        console.log("Opening date:", currentCourse.openingDate || "No restriction");
+
+        console.log("Closing date:", currentCourse.closingDate || "No restriction");
 
     }
 
@@ -407,7 +545,7 @@ async function loadCourse() {
 
 
 // ========================================
-// 9. LOAD COMPLETED LESSONS
+// 10. LOAD COMPLETED LESSONS
 // ========================================
 
 async function getCompletedLessons() {
@@ -440,7 +578,7 @@ async function getCompletedLessons() {
 
 
 // ========================================
-// 10. DISPLAY LESSONS
+// 11. DISPLAY LESSONS
 // ========================================
 
 async function displayLessons() {
@@ -467,9 +605,17 @@ async function displayLessons() {
 
             button.className = "lesson-item";
 
-            if (isCompleted) button.classList.add("completed");
+            if (isCompleted) {
 
-            if (index === currentLessonIndex) button.classList.add("active");
+                button.classList.add("completed");
+
+            }
+
+            if (index === currentLessonIndex) {
+
+                button.classList.add("active");
+
+            }
 
             button.innerHTML = `
 
@@ -505,12 +651,27 @@ async function displayLessons() {
 
 
 // ========================================
-// 11. SHOW LESSON
+// 12. SHOW LESSON
 // ========================================
 
 async function showLesson(index) {
 
     if (index < 0 || index >= courseLessons.length) return;
+
+
+    // RECHECK COURSE SCHEDULE
+
+    const schedule = checkCourseSchedule();
+
+    if (!schedule.allowed) {
+
+        alert(schedule.message);
+
+        window.location.href = "student-dashboard.html";
+
+        return;
+
+    }
 
     currentLessonIndex = index;
 
@@ -602,10 +763,22 @@ async function showLesson(index) {
 
 
 // ========================================
-// 12. COMPLETE LESSON
+// 13. COMPLETE LESSON
 // ========================================
 
 async function completeLesson() {
+
+    const schedule = checkCourseSchedule();
+
+    if (!schedule.allowed) {
+
+        alert(schedule.message);
+
+        window.location.href = "student-dashboard.html";
+
+        return;
+
+    }
 
     const lesson = courseLessons[currentLessonIndex];
 
@@ -675,7 +848,7 @@ async function completeLesson() {
 
 
 // ========================================
-// 13. UPDATE PROGRESS
+// 14. UPDATE PROGRESS
 // ========================================
 
 async function updateProgress() {
@@ -712,7 +885,7 @@ async function updateProgress() {
 
 
 // ========================================
-// 14. LESSON NAVIGATION
+// 15. LESSON NAVIGATION
 // ========================================
 
 previousLessonBtn.addEventListener("click", function () {
@@ -733,7 +906,7 @@ completeLessonBtn.addEventListener("click", completeLesson);
 
 
 // ========================================
-// 15. QUIZ TIMER
+// 16. QUIZ TIMER
 // ========================================
 
 function createTimerDisplay() {
@@ -826,6 +999,14 @@ function startQuizTimer() {
 
     quizTimer = setInterval(function () {
 
+        if (quizSubmitted || quizSubmissionInProgress) {
+
+            stopQuizTimer();
+
+            return;
+
+        }
+
         remainingTime = Math.max(
 
             0,
@@ -852,10 +1033,96 @@ function startQuizTimer() {
 
 
 // ========================================
-// 16. OPEN QUIZ
+// 17. CHECK QUIZ ATTEMPTS
 // ========================================
 
-openQuizBtn.addEventListener("click", function () {
+async function checkQuizAttempts() {
+
+    try {
+
+        const resultsQuery = query(
+
+            collection(db, "results"),
+
+            where("studentId", "==", currentStudent.uid),
+
+            where("courseId", "==", currentCourse.id)
+
+        );
+
+        const snapshot = await getDocs(resultsQuery);
+
+        usedQuizAttempts = snapshot.size;
+
+        const remainingAttempts = Math.max(
+
+            0,
+
+            maxQuizAttempts - usedQuizAttempts
+
+        );
+
+        console.log("Used attempts:", usedQuizAttempts);
+
+        console.log("Maximum attempts:", maxQuizAttempts);
+
+        console.log("Remaining attempts:", remainingAttempts);
+
+        if (remainingAttempts <= 0) {
+
+            alert(
+
+                "You have used all " +
+
+                maxQuizAttempts +
+
+                " quiz attempts for this course."
+
+            );
+
+            return false;
+
+        }
+
+        return true;
+
+    }
+
+    catch (error) {
+
+        console.error("Quiz attempt checking error:", error);
+
+        showError("Unable to check your quiz attempts: " + error.message);
+
+        return false;
+
+    }
+
+}
+
+
+// ========================================
+// 18. OPEN QUIZ
+// ========================================
+
+openQuizBtn.addEventListener("click", async function () {
+
+    // CHECK COURSE DATES
+
+    const schedule = checkCourseSchedule();
+
+    if (!schedule.allowed) {
+
+        alert(schedule.message);
+
+        window.location.href = "student-dashboard.html";
+
+        return;
+
+    }
+
+
+    // CHECK QUIZ QUESTIONS
 
     if (courseQuizzes.length === 0) {
 
@@ -864,6 +1131,20 @@ openQuizBtn.addEventListener("click", function () {
         return;
 
     }
+
+
+    // CHECK ATTEMPTS
+
+    openQuizBtn.disabled = true;
+
+    const canAttempt = await checkQuizAttempts();
+
+    openQuizBtn.disabled = false;
+
+    if (!canAttempt) return;
+
+
+    // OPEN QUIZ
 
     lessonArea.classList.add("hidden");
 
@@ -877,9 +1158,13 @@ openQuizBtn.addEventListener("click", function () {
 
     quizSubmitted = false;
 
+    quizSubmissionInProgress = false;
+
     quizResult.classList.add("hidden");
 
     submitQuizBtn.disabled = false;
+
+    submitQuizBtn.textContent = "Submit Quiz";
 
     submitQuizBtn.classList.add("hidden");
 
@@ -891,7 +1176,7 @@ openQuizBtn.addEventListener("click", function () {
 
 
 // ========================================
-// 17. DISPLAY QUIZ
+// 19. DISPLAY QUIZ
 // ========================================
 
 function displayQuiz() {
@@ -899,6 +1184,8 @@ function displayQuiz() {
     quizQuestions.innerHTML = "";
 
     const quiz = courseQuizzes[currentQuestionIndex];
+
+    if (!quiz) return;
 
     const letters = ["A", "B", "C", "D"];
 
@@ -968,7 +1255,7 @@ function displayQuiz() {
 
 
 // ========================================
-// 18. QUIZ NAVIGATION
+// 20. QUIZ NAVIGATION
 // ========================================
 
 function createQuizNavigation() {
@@ -984,6 +1271,8 @@ function createQuizNavigation() {
         quizQuestions.after(navigation);
 
     }
+
+    navigation.classList.remove("hidden");
 
     navigation.innerHTML = `
 
@@ -1019,6 +1308,8 @@ function updateQuizNavigation() {
     const next = document.getElementById("nextQuestionBtn");
 
     const counter = document.getElementById("questionCounter");
+
+    if (!previous || !next || !counter) return;
 
     previous.disabled = currentQuestionIndex === 0;
 
@@ -1059,7 +1350,7 @@ function nextQuestion() {
 
 
 // ========================================
-// 19. CHECK CORRECT ANSWER
+// 21. CHECK CORRECT ANSWER
 // ========================================
 
 function isCorrectAnswer(quiz, answer) {
@@ -1098,10 +1389,22 @@ function isCorrectAnswer(quiz, answer) {
 
 
 // ========================================
-// 20. SAVE QUIZ RESULT TO FIREBASE
+// 22. SAVE QUIZ RESULT TO FIREBASE
 // ========================================
 
-async function saveQuizResult(score, totalQuestions, percentage, answers, timeExpired) {
+async function saveQuizResult(
+
+    score,
+
+    totalQuestions,
+
+    percentage,
+
+    answers,
+
+    timeExpired
+
+) {
 
     const resultId =
 
@@ -1147,7 +1450,7 @@ async function saveQuizResult(score, totalQuestions, percentage, answers, timeEx
 
 
 // ========================================
-// 21. ISSUE CERTIFICATE
+// 23. ISSUE CERTIFICATE
 // ========================================
 
 async function checkCourseCompletionAndIssueCertificate() {
@@ -1228,7 +1531,7 @@ async function checkCourseCompletionAndIssueCertificate() {
 
             if (existing.exists()) return;
 
-            const bestResult = passingResults.sort(function (a, b) {
+            const bestResult = [...passingResults].sort(function (a, b) {
 
                 return Number(b.percentage) - Number(a.percentage);
 
@@ -1288,20 +1591,36 @@ async function checkCourseCompletionAndIssueCertificate() {
 
         console.error("Certificate issue error:", error);
 
-        showError("Certificate generation failed: " + error.message);
-
     }
 
 }
 
 
 // ========================================
-// 22. SUBMIT QUIZ
+// 24. SUBMIT QUIZ
 // ========================================
 
 async function submitQuiz(timeExpired = false) {
 
-    if (quizSubmitted) return;
+    if (quizSubmitted || quizSubmissionInProgress) return;
+
+
+    // CHECK COURSE SCHEDULE
+
+    const schedule = checkCourseSchedule();
+
+    if (!schedule.allowed) {
+
+        alert(schedule.message);
+
+        window.location.href = "student-dashboard.html";
+
+        return;
+
+    }
+
+
+    // CHECK UNANSWERED QUESTIONS
 
     const unanswered = courseQuizzes.filter(function (quiz) {
 
@@ -1317,9 +1636,19 @@ async function submitQuiz(timeExpired = false) {
 
     }
 
+
+    // PREVENT DOUBLE SUBMISSION
+
+    quizSubmissionInProgress = true;
+
     stopQuizTimer();
 
     submitQuizBtn.disabled = true;
+
+    submitQuizBtn.textContent = "Submitting...";
+
+
+    // CALCULATE SCORE
 
     let score = 0;
 
@@ -1347,6 +1676,7 @@ async function submitQuiz(timeExpired = false) {
 
     });
 
+
     const totalQuestions = courseQuizzes.length;
 
     const percentage = totalQuestions > 0
@@ -1354,6 +1684,7 @@ async function submitQuiz(timeExpired = false) {
         ? Math.round((score / totalQuestions) * 100)
 
         : 0;
+
 
     try {
 
@@ -1375,6 +1706,16 @@ async function submitQuiz(timeExpired = false) {
 
         quizSubmitted = true;
 
+        usedQuizAttempts++;
+
+
+        // CHECK CERTIFICATE
+
+        await checkCourseCompletionAndIssueCertificate();
+
+
+        // SHOW RESULT FEEDBACK
+
         quizResult.classList.remove("hidden");
 
         quizScore.textContent =
@@ -1387,37 +1728,55 @@ async function submitQuiz(timeExpired = false) {
 
         if (timeExpired) {
 
-            quizFeedback.textContent = "Time is up! Your quiz was submitted automatically.";
+            quizFeedback.textContent =
+
+                "Time is up! Your quiz was submitted automatically.";
 
         } else if (percentage >= CERTIFICATE_PASS_MARK) {
 
-            quizFeedback.textContent = "Excellent work! You passed the quiz.";
+            quizFeedback.textContent =
+
+                "Excellent work! You passed the quiz.";
 
         } else {
 
-            quizFeedback.textContent = "Keep learning. You can try again.";
+            quizFeedback.textContent =
+
+                "Keep learning. You can try again.";
 
         }
 
-        await checkCourseCompletionAndIssueCertificate();
 
-        if (quizTimerDisplay && timeExpired) {
-
-            quizTimerDisplay.textContent = "Time is up!";
-
-        }
+        // HIDE QUIZ NAVIGATION
 
         const navigation = document.getElementById("quizNavigation");
 
-        if (navigation) navigation.classList.add("hidden");
+        if (navigation) {
 
-        quizResult.scrollIntoView({
+            navigation.classList.add("hidden");
 
-            behavior: "smooth",
+        }
 
-            block: "center"
 
-        });
+        // REDIRECT TO DASHBOARD
+
+        alert(
+
+            "Quiz submitted successfully!\n\n" +
+
+            "Your score: " + score + "/" + totalQuestions +
+
+            "\nPercentage: " + percentage + "%" +
+
+            "\nAttempts used: " + usedQuizAttempts +
+
+            " of " + maxQuizAttempts +
+
+            "\n\nReturning to your dashboard..."
+
+        );
+
+        window.location.href = "student-dashboard.html";
 
     }
 
@@ -1425,9 +1784,17 @@ async function submitQuiz(timeExpired = false) {
 
         console.error("Quiz submission error:", error);
 
+        quizSubmissionInProgress = false;
+
         submitQuizBtn.disabled = false;
 
-        showError("Unable to save your quiz result: " + error.message);
+        submitQuizBtn.textContent = "Submit Quiz";
+
+        showError(
+
+            "Unable to save your quiz result: " + error.message
+
+        );
 
     }
 
@@ -1435,7 +1802,7 @@ async function submitQuiz(timeExpired = false) {
 
 
 // ========================================
-// 23. QUIZ FORM
+// 25. QUIZ FORM
 // ========================================
 
 quizForm.addEventListener("submit", function (event) {
