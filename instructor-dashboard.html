@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>LearnSphere Instructor Dashboard</title>
+
+    <link rel="stylesheet" href="instructor-dashboard.css">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+    <header class="topbar">
+        <div class="brand">
+            <i class="fa-solid fa-graduation-cap"></i>
+            LearnSphere
+        </div>
+
+        <div class="top-actions">
+            <span id="instructorName">Loading...</span>
+            <button id="logoutBtn">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                Logout
+            </button>
+        </div>
+    </header>
+
+    <div class="layout">
+
+        <aside class="sidebar">
+
+            <div class="profile-box">
+                <div class="profile-icon">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+
+                <h3 id="profileName">Instructor</h3>
+                <p id="profileDepartment">Department</p>
+            </div>
+
+            <button class="nav-link active" data-section="overview">
+                <i class="fa-solid fa-chart-pie"></i>
+                Overview
+            </button>
+
+            <button class="nav-link" data-section="courses">
+                <i class="fa-solid fa-book"></i>
+                My Department Courses
+            </button>
+
+            <button class="nav-link" data-section="lessons">
+                <i class="fa-solid fa-book-open"></i>
+                Lessons
+            </button>
+
+            <button class="nav-link" data-section="quizzes">
+                <i class="fa-solid fa-circle-question"></i>
+                Quizzes
+            </button>
+
+            <button class="nav-link" data-section="students">
+                <i class="fa-solid fa-users"></i>
+                Department Students
+            </button>
+
+        </aside>
+
+
+        <main class="main-content">
+
+            <!-- OVERVIEW -->
+
+            <section class="page-section active" id="overview">
+
+                <div class="page-heading">
+                    <h1>Instructor Dashboard</h1>
+                    <p>Manage your department's courses and students.</p>
+                </div>
+
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+                        <i class="fa-solid fa-book"></i>
+                        <h2 id="courseCount">0</h2>
+                        <p>Department Courses</p>
+                    </div>
+
+                    <div class="stat-card">
+                        <i class="fa-solid fa-book-open"></i>
+                        <h2 id="lessonCount">0</h2>
+                        <p>Total Lessons</p>
+                    </div>
+
+                    <div class="stat-card">
+                        <i class="fa-solid fa-circle-question"></i>
+                        <h2 id="questionCount">0</h2>
+                        <p>Quiz Questions</p>
+                    </div>
+
+                    <div class="stat-card">
+                        <i class="fa-solid fa-users"></i>
+                        <h2 id="studentCount">0</h2>
+                        <p>Enrolled Students</p>
+                    </div>
+
+                </div>
+
+                <div class="panel">
+                    <h2>Department Information</h2>
+
+                    <p><strong>Instructor:</strong>
+                        <span id="overviewName"></span>
+                    </p>
+
+                    <p><strong>Email:</strong>
+                        <span id="overviewEmail"></span>
+                    </p>
+
+                    <p><strong>University:</strong>
+                        <span id="overviewUniversity"></span>
+                    </p>
+
+                    <p><strong>Department:</strong>
+                        <span id="overviewDepartment"></span>
+                    </p>
+                </div>
+
+            </section>
+
+
+            <!-- COURSES -->
+
+            <section class="page-section" id="courses">
+
+                <div class="page-heading">
+                    <h1>Department Courses</h1>
+                    <p>Manage all courses assigned to your department.</p>
+                </div>
+
+                <div class="panel">
+
+                    <h2 id="courseFormTitle">Create New Course</h2>
+
+                    <form id="courseForm">
+
+                        <input type="hidden" id="courseId">
+
+                        <label>Course Title</label>
+                        <input type="text" id="courseTitle" required>
+
+                        <label>Category</label>
+                        <select id="courseCategory" required>
+                            <option value="">Select category</option>
+                            <option>Technology</option>
+                            <option>Business</option>
+                            <option>Design</option>
+                            <option>Science</option>
+                            <option>Networking</option>
+                        </select>
+
+                        <label>Level</label>
+                        <select id="courseLevel" required>
+                            <option value="">Select level</option>
+                            <option>100 Level</option>
+                            <option>200 Level</option>
+                            <option>300 Level</option>
+                            <option>400 Level</option>
+                            <option>500 Level</option>
+                            <option>All Levels</option>
+                        </select>
+
+                        <label>Course Description</label>
+                        <textarea id="courseDescription" rows="4" required></textarea>
+
+                        <label>Course Image URL</label>
+                        <input type="url" id="courseImage">
+
+                        <div class="form-actions">
+                            <button type="submit" id="saveCourseBtn">
+                                Save Course
+                            </button>
+
+                            <button type="button" class="secondary-btn"
+                                id="cancelCourseEdit">
+                                Clear
+                            </button>
+                        </div>
+
+                    </form>
+
+                </div>
+
+                <div class="panel">
+                    <h2>Available Department Courses</h2>
+                    <div id="courseList">Loading courses...</div>
+                </div>
+
+            </section>
+
+
+            <!-- LESSONS -->
+
+            <section class="page-section" id="lessons">
+
+                <div class="page-heading">
+                    <h1>Course Lessons</h1>
+                    <p>Add and manage lessons for your department's courses.</p>
+                </div>
+
+                <div class="panel">
+
+                    <h2 id="lessonFormTitle">Add Lesson</h2>
+
+                    <form id="lessonForm">
+
+                        <input type="hidden" id="lessonId">
+
+                        <label>Select Course</label>
+                        <select id="lessonCourse" required></select>
+
+                        <label>Lesson Title</label>
+                        <input type="text" id="lessonTitle" required>
+
+                        <label>Lesson Description</label>
+                        <textarea id="lessonDescription" rows="3"></textarea>
+
+                        <label>Student Instructions</label>
+                        <textarea id="lessonInstructions" rows="3"></textarea>
+
+                        <label>Lesson Content</label>
+                        <textarea id="lessonContent" rows="10" required></textarea>
+
+                        <label>PDF Resource Link</label>
+                        <input type="url" id="lessonPdf">
+
+                        <label>YouTube Video Link</label>
+                        <input type="url" id="lessonVideo">
+
+                        <label class="check-label">
+                            <input type="checkbox" id="lessonPublished">
+                            Publish lesson
+                        </label>
+
+                        <div class="form-actions">
+                            <button type="submit" id="saveLessonBtn">
+                                Save Lesson
+                            </button>
+
+                            <button type="button" class="secondary-btn"
+                                id="cancelLessonEdit">
+                                Clear
+                            </button>
+                        </div>
+
+                    </form>
+
+                </div>
+
+                <div class="panel">
+                    <h2>Existing Lessons</h2>
+                    <div id="lessonList">Select a course to view lessons.</div>
+                </div>
+
+            </section>
+
+
+            <!-- QUIZZES -->
+
+            <section class="page-section" id="quizzes">
+
+                <div class="page-heading">
+                    <h1>Quiz Management</h1>
+                    <p>Configure quizzes and manage their questions.</p>
+                </div>
+
+                <div class="panel">
+
+                    <h2>Quiz Settings</h2>
+
+                    <form id="quizSettingsForm">
+
+                        <input type="hidden" id="quizSettingsId">
+
+                        <label>Select Course</label>
+                        <select id="quizCourse" required></select>
+
+                        <label>Quiz Title</label>
+                        <input type="text" id="quizTitle" required>
+
+                        <label>Quiz Type</label>
+                        <select id="quizType" required>
+                            <option value="course">Course Quiz</option>
+                            <option value="lesson">Lesson Quiz</option>
+                        </select>
+
+                        <label>Lesson</label>
+                        <select id="quizLesson">
+                            <option value="">Select lesson if applicable</option>
+                        </select>
+
+                        <label>Instructions</label>
+                        <textarea id="quizInstructions" rows="3"></textarea>
+
+                        <label>Time Limit (Minutes)</label>
+                        <input type="number" id="quizTime" min="1" value="30" required>
+
+                        <label>Maximum Attempts</label>
+                        <input type="number" id="quizAttempts" min="1" value="2" required>
+
+                        <label>Number of Questions</label>
+                        <input type="number" id="quizQuestionLimit" min="1" value="10" required>
+
+                        <label>Opening Date and Time</label>
+                        <input type="datetime-local" id="quizOpening">
+
+                        <label>Closing Date and Time</label>
+                        <input type="datetime-local" id="quizClosing">
+
+                        <label class="check-label">
+                            <input type="checkbox" id="shuffleQuestions">
+                            Shuffle questions
+                        </label>
+
+                        <label class="check-label">
+                            <input type="checkbox" id="shuffleOptions">
+                            Shuffle answer options
+                        </label>
+
+                        <label class="check-label">
+                            <input type="checkbox" id="quizPublished">
+                            Publish quiz
+                        </label>
+
+                        <button type="submit" id="saveQuizSettingsBtn">
+                            Save Quiz Settings
+                        </button>
+
+                    </form>
+
+                </div>
+
+
+                <div class="panel">
+
+                    <h2>Add Quiz Question</h2>
+
+                    <form id="questionForm">
+
+                        <label>Select Quiz</label>
+                        <select id="questionQuiz" required></select>
+
+                        <label>Question</label>
+                        <textarea id="questionText" rows="4" required></textarea>
+
+                        <label>Option A</label>
+                        <input type="text" id="optionA" required>
+
+                        <label>Option B</label>
+                        <input type="text" id="optionB" required>
+
+                        <label>Option C</label>
+                        <input type="text" id="optionC" required>
+
+                        <label>Option D</label>
+                        <input type="text" id="optionD" required>
+
+                        <label>Correct Answer</label>
+                        <select id="correctAnswer" required>
+                            <option value="">Select answer</option>
+                            <option value="0">Option A</option>
+                            <option value="1">Option B</option>
+                            <option value="2">Option C</option>
+                            <option value="3">Option D</option>
+                        </select>
+
+                        <label>Marks</label>
+                        <input type="number" id="questionMarks"
+                            min="1" value="1" required>
+
+                        <button type="submit">
+                            Save Question
+                        </button>
+
+                    </form>
+
+                </div>
+
+
+                <div class="panel">
+                    <h2>Existing Quiz Settings</h2>
+                    <div id="quizSettingsList">Loading quizzes...</div>
+                </div>
+
+                <div class="panel">
+                    <h2>Quiz Questions</h2>
+                    <div id="questionList">Select a quiz to view questions.</div>
+                </div>
+
+            </section>
+
+
+            <!-- STUDENTS -->
+
+            <section class="page-section" id="students">
+
+                <div class="page-heading">
+                    <h1>Department Students</h1>
+                    <p>Students enrolled in courses belonging to your department.</p>
+                </div>
+
+                <div class="panel">
+
+                    <input type="search" id="studentSearch"
+                        placeholder="Search by name, email or course">
+
+                    <div id="studentList">Loading enrolled students...</div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+    <script type="module" src="instructor-dashboard.js"></script>
+
+</body>
+</html>

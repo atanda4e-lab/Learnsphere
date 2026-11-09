@@ -21,7 +21,6 @@
 
     <div class="auth-container">
 
-        <!-- LEFT SIDE -->
         <div class="auth-left">
 
             <a href="index.html" class="logo">
@@ -71,7 +70,6 @@
         </div>
 
 
-        <!-- RIGHT SIDE -->
         <div class="auth-right">
 
             <div class="auth-box">
@@ -92,23 +90,33 @@
                 </div>
 
 
-                <!-- ACCOUNT TYPE SELECTION -->
+                <!-- ACCOUNT SELECTOR -->
+
                 <div class="account-selector">
 
-                    <button type="button" class="account-option active"
+                    <button type="button"
+                        class="account-option active"
                         id="studentAccountBtn">
 
                         <i class="fa-solid fa-user-graduate"></i>
-
                         <span>Student</span>
 
                     </button>
 
-                    <button type="button" class="account-option"
+                    <button type="button"
+                        class="account-option"
+                        id="instructorAccountBtn">
+
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                        <span>Instructor</span>
+
+                    </button>
+
+                    <button type="button"
+                        class="account-option"
                         id="adminAccountBtn">
 
                         <i class="fa-solid fa-user-shield"></i>
-
                         <span>Admin</span>
 
                     </button>
@@ -116,17 +124,20 @@
                 </div>
 
 
-                <!-- STUDENT AUTHENTICATION -->
+                <!-- STUDENT SECTION -->
+
                 <div id="studentAuthSection">
 
                     <div class="auth-tabs">
 
-                        <button type="button" class="auth-tab active"
+                        <button type="button"
+                            class="auth-tab active"
                             id="loginTab">
                             Student Login
                         </button>
 
-                        <button type="button" class="auth-tab"
+                        <button type="button"
+                            class="auth-tab"
                             id="registerTab">
                             Create Account
                         </button>
@@ -134,7 +145,6 @@
                     </div>
 
 
-                    <!-- STUDENT LOGIN FORM -->
                     <form id="loginForm">
 
                         <div class="form-group">
@@ -145,8 +155,10 @@
 
                                 <i class="fa-solid fa-envelope"></i>
 
-                                <input type="email" id="loginEmail"
-                                    placeholder="Enter your email" required>
+                                <input type="email"
+                                    id="loginEmail"
+                                    placeholder="Enter your email"
+                                    required>
 
                             </div>
 
@@ -161,25 +173,27 @@
 
                                 <i class="fa-solid fa-lock"></i>
 
-                                <input type="password" id="loginPassword"
-                                    placeholder="Enter your password" required>
+                                <input type="password"
+                                    id="loginPassword"
+                                    placeholder="Enter your password"
+                                    required>
 
                             </div>
 
                         </div>
 
-
                         <p class="form-message" id="loginMessage"></p>
 
                         <button type="submit" class="auth-submit">
+
                             Login as Student
                             <i class="fa-solid fa-arrow-right"></i>
+
                         </button>
 
                     </form>
 
 
-                    <!-- STUDENT REGISTRATION FORM -->
                     <form id="registerForm" hidden>
 
                         <div class="form-group">
@@ -190,8 +204,10 @@
 
                                 <i class="fa-solid fa-user"></i>
 
-                                <input type="text" id="fullName"
-                                    placeholder="Enter your full name" required>
+                                <input type="text"
+                                    id="fullName"
+                                    placeholder="Enter your full name"
+                                    required>
 
                             </div>
 
@@ -206,8 +222,10 @@
 
                                 <i class="fa-solid fa-envelope"></i>
 
-                                <input type="email" id="registerEmail"
-                                    placeholder="Enter your email" required>
+                                <input type="email"
+                                    id="registerEmail"
+                                    placeholder="Enter your email"
+                                    required>
 
                             </div>
 
@@ -222,8 +240,10 @@
 
                                 <i class="fa-solid fa-building-columns"></i>
 
-                                <input type="text" id="university"
-                                    placeholder="Enter your university" required>
+                                <input type="text"
+                                    id="university"
+                                    placeholder="Enter your university"
+                                    required>
 
                             </div>
 
@@ -238,8 +258,10 @@
 
                                 <i class="fa-solid fa-book"></i>
 
-                                <input type="text" id="department"
-                                    placeholder="Enter your department" required>
+                                <input type="text"
+                                    id="department"
+                                    placeholder="Enter your department"
+                                    required>
 
                             </div>
 
@@ -278,8 +300,10 @@
 
                                 <i class="fa-solid fa-lock"></i>
 
-                                <input type="password" id="registerPassword"
-                                    placeholder="Create a password" required>
+                                <input type="password"
+                                    id="registerPassword"
+                                    placeholder="Create a password"
+                                    required>
 
                             </div>
 
@@ -294,8 +318,10 @@
 
                                 <i class="fa-solid fa-lock"></i>
 
-                                <input type="password" id="confirmPassword"
-                                    placeholder="Confirm your password" required>
+                                <input type="password"
+                                    id="confirmPassword"
+                                    placeholder="Confirm your password"
+                                    required>
 
                             </div>
 
@@ -305,8 +331,10 @@
                         <p class="form-message" id="registerMessage"></p>
 
                         <button type="submit" class="auth-submit">
+
                             Create Student Account
                             <i class="fa-solid fa-arrow-right"></i>
+
                         </button>
 
                     </form>
@@ -314,7 +342,239 @@
                 </div>
 
 
-                <!-- ADMIN LOGIN -->
+                <!-- INSTRUCTOR SECTION -->
+
+                <div id="instructorAuthSection" hidden>
+
+                    <div class="auth-tabs">
+
+                        <button type="button"
+                            class="auth-tab active"
+                            id="instructorLoginTab">
+                            Instructor Login
+                        </button>
+
+                        <button type="button"
+                            class="auth-tab"
+                            id="instructorRegisterTab">
+                            Apply as Instructor
+                        </button>
+
+                    </div>
+
+
+                    <!-- INSTRUCTOR LOGIN -->
+
+                    <form id="instructorLoginForm">
+
+                        <div class="form-group">
+
+                            <label for="instructorLoginEmail">
+                                Email Address
+                            </label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-envelope"></i>
+
+                                <input type="email"
+                                    id="instructorLoginEmail"
+                                    placeholder="Enter your email"
+                                    required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="instructorLoginPassword">
+                                Password
+                            </label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-lock"></i>
+
+                                <input type="password"
+                                    id="instructorLoginPassword"
+                                    placeholder="Enter your password"
+                                    required>
+
+                            </div>
+
+                        </div>
+
+
+                        <p class="form-message"
+                            id="instructorLoginMessage"></p>
+
+                        <button type="submit" class="auth-submit">
+
+                            Login as Instructor
+                            <i class="fa-solid fa-arrow-right"></i>
+
+                        </button>
+
+                    </form>
+
+
+                    <!-- INSTRUCTOR REGISTRATION -->
+
+                    <form id="instructorRegisterForm" hidden>
+
+                        <div class="admin-heading">
+
+                            <div class="admin-icon">
+                                <i class="fa-solid fa-chalkboard-user"></i>
+                            </div>
+
+                            <h3>Instructor Application</h3>
+
+                            <p>
+                                Register to become a LearnSphere instructor.
+                                Your application requires admin approval.
+                            </p>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="instructorFullName">Full Name</label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-user"></i>
+
+                                <input type="text"
+                                    id="instructorFullName"
+                                    placeholder="Enter your full name"
+                                    required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="instructorRegisterEmail">
+                                Email Address
+                            </label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-envelope"></i>
+
+                                <input type="email"
+                                    id="instructorRegisterEmail"
+                                    placeholder="Enter your email"
+                                    required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="instructorUniversity">
+                                University
+                            </label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-building-columns"></i>
+
+                                <input type="text"
+                                    id="instructorUniversity"
+                                    placeholder="Enter your university"
+                                    required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="instructorDepartment">
+                                Department
+                            </label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-book"></i>
+
+                                <input type="text"
+                                    id="instructorDepartment"
+                                    placeholder="Enter your department"
+                                    required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="instructorRegisterPassword">
+                                Password
+                            </label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-lock"></i>
+
+                                <input type="password"
+                                    id="instructorRegisterPassword"
+                                    placeholder="Create a password"
+                                    required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="instructorConfirmPassword">
+                                Confirm Password
+                            </label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-lock"></i>
+
+                                <input type="password"
+                                    id="instructorConfirmPassword"
+                                    placeholder="Confirm your password"
+                                    required>
+
+                            </div>
+
+                        </div>
+
+
+                        <p class="form-message"
+                            id="instructorRegisterMessage"></p>
+
+                        <button type="submit" class="auth-submit">
+
+                            Submit Instructor Application
+                            <i class="fa-solid fa-arrow-right"></i>
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+
+                <!-- ADMIN SECTION -->
+
                 <div id="adminAuthSection" hidden>
 
                     <div class="admin-heading">
@@ -342,8 +602,10 @@
 
                                 <i class="fa-solid fa-envelope"></i>
 
-                                <input type="email" id="adminEmail"
-                                    placeholder="Enter admin email" required>
+                                <input type="email"
+                                    id="adminEmail"
+                                    placeholder="Enter admin email"
+                                    required>
 
                             </div>
 
@@ -358,8 +620,10 @@
 
                                 <i class="fa-solid fa-lock"></i>
 
-                                <input type="password" id="adminPassword"
-                                    placeholder="Enter admin password" required>
+                                <input type="password"
+                                    id="adminPassword"
+                                    placeholder="Enter admin password"
+                                    required>
 
                             </div>
 
@@ -368,9 +632,12 @@
 
                         <p class="form-message" id="adminLoginMessage"></p>
 
-                        <button type="submit" class="auth-submit admin-submit">
+                        <button type="submit"
+                            class="auth-submit admin-submit">
+
                             Login as Administrator
                             <i class="fa-solid fa-arrow-right"></i>
+
                         </button>
 
                     </form>
@@ -394,7 +661,7 @@
     </div>
 
 
-  <script type="module" src="auth.js"></script>
-</body>
+    <script type="module" src="auth.js"></script>
 
+</body>
 </html>

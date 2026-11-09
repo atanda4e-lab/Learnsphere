@@ -1,14 +1,19 @@
-// ==========================================
-// LEARNSPHERE FIREBASE AUTHENTICATION
-// ==========================================
+// ========================================
+// LEARNSPHERE AUTHENTICATION SYSTEM
+// STUDENT, INSTRUCTOR AND ADMIN
+// ========================================
+
+
+// ========================================
+// 1. FIREBASE IMPORTS
+// ========================================
 
 import { auth, db } from "./firebase.js";
 
 import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged
+    signOut
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
 import {
@@ -19,178 +24,387 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 
-// ==========================================
-// 1. GET HTML ELEMENTS
-// ==========================================
+// ========================================
+// 2. GET HTML ELEMENTS
+// ========================================
 
-const studentAccountBtn = document.getElementById("studentAccountBtn");
-const adminAccountBtn = document.getElementById("adminAccountBtn");
+// Account buttons
 
-const studentAuthSection = document.getElementById("studentAuthSection");
-const adminAuthSection = document.getElementById("adminAuthSection");
+const studentAccountBtn =
+    document.getElementById("studentAccountBtn");
 
-const loginTab = document.getElementById("loginTab");
-const registerTab = document.getElementById("registerTab");
+const instructorAccountBtn =
+    document.getElementById("instructorAccountBtn");
 
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
-
-const adminLoginForm = document.getElementById("adminLoginForm");
+const adminAccountBtn =
+    document.getElementById("adminAccountBtn");
 
 
-// ==========================================
-// 2. SHOW STUDENT LOGIN
-// ==========================================
+// Account sections
+
+const studentAuthSection =
+    document.getElementById("studentAuthSection");
+
+const instructorAuthSection =
+    document.getElementById("instructorAuthSection");
+
+const adminAuthSection =
+    document.getElementById("adminAuthSection");
+
+
+// Student tabs
+
+const loginTab =
+    document.getElementById("loginTab");
+
+const registerTab =
+    document.getElementById("registerTab");
+
+
+// Instructor tabs
+
+const instructorLoginTab =
+    document.getElementById("instructorLoginTab");
+
+const instructorRegisterTab =
+    document.getElementById("instructorRegisterTab");
+
+
+// Student forms
+
+const loginForm =
+    document.getElementById("loginForm");
+
+const registerForm =
+    document.getElementById("registerForm");
+
+
+// Instructor forms
+
+const instructorLoginForm =
+    document.getElementById("instructorLoginForm");
+
+const instructorRegisterForm =
+    document.getElementById("instructorRegisterForm");
+
+
+// Admin form
+
+const adminLoginForm =
+    document.getElementById("adminLoginForm");
+
+
+// ========================================
+// 3. MESSAGE FUNCTION
+// ========================================
+
+function showMessage(elementId, message, success = false) {
+
+    const element = document.getElementById(elementId);
+
+    if (!element) return;
+
+    element.textContent = message;
+
+    element.style.color = success
+        ? "#13a889"
+        : "#e04444";
+
+}
+
+
+// ========================================
+// 4. CLEAR MESSAGES
+// ========================================
+
+function clearMessages() {
+
+    const messageIds = [
+        "loginMessage",
+        "registerMessage",
+        "adminLoginMessage",
+        "instructorLoginMessage",
+        "instructorRegisterMessage"
+    ];
+
+    messageIds.forEach(id => {
+
+        const element = document.getElementById(id);
+
+        if (element) {
+            element.textContent = "";
+        }
+
+    });
+
+}
+
+
+// ========================================
+// 5. FIREBASE ERROR MESSAGES
+// ========================================
+
+function getAuthErrorMessage(error) {
+
+    switch (error.code) {
+
+        case "auth/email-already-in-use":
+            return "This email address is already registered.";
+
+        case "auth/invalid-email":
+            return "Please enter a valid email address.";
+
+        case "auth/weak-password":
+            return "Your password must contain at least 6 characters.";
+
+        case "auth/user-not-found":
+        case "auth/wrong-password":
+        case "auth/invalid-credential":
+            return "Incorrect email address or password.";
+
+        case "auth/too-many-requests":
+            return "Too many attempts. Please try again later.";
+
+        case "auth/network-request-failed":
+            return "Network error. Please check your internet connection.";
+
+        default:
+            return error.message || "Something went wrong. Please try again.";
+
+    }
+
+}
+
+
+// ========================================
+// 6. ACCOUNT TYPE SWITCHING
+// ========================================
+
+function selectAccount(type) {
+
+    clearMessages();
+
+    studentAuthSection.hidden = type !== "student";
+
+    instructorAuthSection.hidden = type !== "instructor";
+
+    adminAuthSection.hidden = type !== "admin";
+
+
+    studentAccountBtn.classList.toggle(
+        "active",
+        type === "student"
+    );
+
+    instructorAccountBtn.classList.toggle(
+        "active",
+        type === "instructor"
+    );
+
+    adminAccountBtn.classList.toggle(
+        "active",
+        type === "admin"
+    );
+
+}
+
+
+// ========================================
+// 7. STUDENT LOGIN AND REGISTRATION TABS
+// ========================================
 
 function showStudentLogin() {
 
     loginForm.hidden = false;
+
     registerForm.hidden = true;
 
     loginTab.classList.add("active");
+
     registerTab.classList.remove("active");
 
+    clearMessages();
+
 }
 
 
-// ==========================================
-// 3. SHOW STUDENT REGISTRATION
-// ==========================================
-
-function showStudentRegistration() {
+function showStudentRegister() {
 
     loginForm.hidden = true;
+
     registerForm.hidden = false;
 
-    registerTab.classList.add("active");
     loginTab.classList.remove("active");
+
+    registerTab.classList.add("active");
+
+    clearMessages();
 
 }
 
 
-// ==========================================
-// 4. SELECT STUDENT ACCOUNT
-// ==========================================
+// ========================================
+// 8. INSTRUCTOR LOGIN AND REGISTRATION TABS
+// ========================================
 
-studentAccountBtn.addEventListener("click", function () {
+function showInstructorLogin() {
 
-    studentAuthSection.hidden = false;
-    adminAuthSection.hidden = true;
+    instructorLoginForm.hidden = false;
 
-    studentAccountBtn.classList.add("active");
-    adminAccountBtn.classList.remove("active");
+    instructorRegisterForm.hidden = true;
+
+    instructorLoginTab.classList.add("active");
+
+    instructorRegisterTab.classList.remove("active");
+
+    clearMessages();
+
+}
+
+
+function showInstructorRegister() {
+
+    instructorLoginForm.hidden = true;
+
+    instructorRegisterForm.hidden = false;
+
+    instructorLoginTab.classList.remove("active");
+
+    instructorRegisterTab.classList.add("active");
+
+    clearMessages();
+
+}
+
+
+// ========================================
+// 9. ACCOUNT BUTTON EVENTS
+// ========================================
+
+studentAccountBtn.addEventListener("click", () => {
+
+    selectAccount("student");
 
     showStudentLogin();
 
 });
 
 
-// ==========================================
-// 5. SELECT ADMIN ACCOUNT
-// ==========================================
+instructorAccountBtn.addEventListener("click", () => {
 
-adminAccountBtn.addEventListener("click", function () {
+    selectAccount("instructor");
 
-    studentAuthSection.hidden = true;
-    adminAuthSection.hidden = false;
-
-    adminAccountBtn.classList.add("active");
-    studentAccountBtn.classList.remove("active");
+    showInstructorLogin();
 
 });
 
 
-// ==========================================
-// 6. SWITCH AUTHENTICATION TABS
-// ==========================================
+adminAccountBtn.addEventListener("click", () => {
+
+    selectAccount("admin");
+
+});
+
+
+// ========================================
+// 10. STUDENT TAB EVENTS
+// ========================================
 
 loginTab.addEventListener("click", showStudentLogin);
 
-registerTab.addEventListener("click", showStudentRegistration);
+registerTab.addEventListener("click", showStudentRegister);
 
 
-// ==========================================
-// 7. STUDENT REGISTRATION
-// ==========================================
+// ========================================
+// 11. INSTRUCTOR TAB EVENTS
+// ========================================
 
-registerForm.addEventListener("submit", async function (event) {
+instructorLoginTab.addEventListener(
+    "click",
+    showInstructorLogin
+);
+
+instructorRegisterTab.addEventListener(
+    "click",
+    showInstructorRegister
+);
+
+
+// ========================================
+// 12. STUDENT REGISTRATION
+// ========================================
+
+registerForm.addEventListener("submit", async (event) => {
 
     event.preventDefault();
 
-    const fullName = document.getElementById("fullName").value.trim();
+    clearMessages();
 
-    const email = document.getElementById("registerEmail").value.trim().toLowerCase();
+    const fullName =
+        document.getElementById("fullName").value.trim();
 
-    const university = document.getElementById("university").value.trim();
+    const email =
+        document.getElementById("registerEmail").value.trim();
 
-    const department = document.getElementById("department").value.trim();
+    const university =
+        document.getElementById("university").value.trim();
 
-    const level = document.getElementById("level").value;
+    const department =
+        document.getElementById("department").value.trim();
 
-    const password = document.getElementById("registerPassword").value;
+    const level =
+        document.getElementById("level").value;
 
-    const confirmPassword = document.getElementById("confirmPassword").value;
+    const password =
+        document.getElementById("registerPassword").value;
 
-    const message = document.getElementById("registerMessage");
+    const confirmPassword =
+        document.getElementById("confirmPassword").value;
 
-
-    // Check empty fields
-
-    if (!fullName || !email || !university || !department || !level || !password || !confirmPassword) {
-
-        message.textContent = "Please complete all fields.";
-        message.style.color = "red";
-
-        return;
-
-    }
-
-
-    // Check password length
-
-    if (password.length < 6) {
-
-        message.textContent = "Password must contain at least 6 characters.";
-        message.style.color = "red";
-
-        return;
-
-    }
-
-
-    // Check password confirmation
 
     if (password !== confirmPassword) {
 
-        message.textContent = "Passwords do not match.";
-        message.style.color = "red";
+        showMessage(
+            "registerMessage",
+            "Passwords do not match."
+        );
 
         return;
 
     }
+
+
+    if (password.length < 6) {
+
+        showMessage(
+            "registerMessage",
+            "Password must contain at least 6 characters."
+        );
+
+        return;
+
+    }
+
+
+    const submitButton =
+        registerForm.querySelector(".auth-submit");
+
+    submitButton.disabled = true;
+
+    submitButton.textContent = "Creating account...";
 
 
     try {
 
-        message.textContent = "Creating your account...";
-        message.style.color = "blue";
-
-
-        // Create Firebase authentication account
-
-        const userCredential = await createUserWithEmailAndPassword(
-            auth,
-            email,
-            password
-        );
-
-
-        // Get student ID
+        const userCredential =
+            await createUserWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
 
         const user = userCredential.user;
 
-
-        // Save student profile in Firestore
 
         await setDoc(doc(db, "students", user.uid), {
 
@@ -213,267 +427,538 @@ registerForm.addEventListener("submit", async function (event) {
         });
 
 
-        // Log out after registration so student can use login form
-
         await signOut(auth);
 
 
-        message.textContent = "Registration successful! You can now log in.";
-
-        message.style.color = "green";
-
+        showMessage(
+            "registerMessage",
+            "Account created successfully. You can now log in.",
+            true
+        );
 
         registerForm.reset();
 
+        showStudentLogin();
 
-        setTimeout(function () {
-
-            showStudentLogin();
-
-        }, 1500);
-
+        showMessage(
+            "loginMessage",
+            "Your account is ready. Please log in.",
+            true
+        );
 
     } catch (error) {
 
-        console.error("Registration error:", error);
+        console.error("Student registration error:", error);
 
-        message.textContent = getAuthErrorMessage(error);
+        showMessage(
+            "registerMessage",
+            getAuthErrorMessage(error)
+        );
 
-        message.style.color = "red";
+    } finally {
+
+        submitButton.disabled = false;
+
+        submitButton.innerHTML =
+            'Create Student Account <i class="fa-solid fa-arrow-right"></i>';
 
     }
 
 });
 
 
-// ==========================================
-// 8. STUDENT LOGIN
-// ==========================================
+// ========================================
+// 13. STUDENT LOGIN
+// ========================================
 
-loginForm.addEventListener("submit", async function (event) {
+loginForm.addEventListener("submit", async (event) => {
 
     event.preventDefault();
 
-    const email = document.getElementById("loginEmail").value.trim().toLowerCase();
+    clearMessages();
 
-    const password = document.getElementById("loginPassword").value;
+    const email =
+        document.getElementById("loginEmail").value.trim();
 
-    const message = document.getElementById("loginMessage");
+    const password =
+        document.getElementById("loginPassword").value;
+
+
+    const submitButton =
+        loginForm.querySelector(".auth-submit");
+
+    submitButton.disabled = true;
+
+    submitButton.textContent = "Logging in...";
 
 
     try {
 
-        message.textContent = "Logging in...";
-        message.style.color = "blue";
-
-
-        // Login with Firebase
-
-        const userCredential = await signInWithEmailAndPassword(
-            auth,
-            email,
-            password
-        );
-
+        const userCredential =
+            await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
 
         const user = userCredential.user;
 
 
-        // Get student profile
+        const studentRef =
+            doc(db, "students", user.uid);
 
-        const studentRef = doc(db, "students", user.uid);
+        const studentSnapshot =
+            await getDoc(studentRef);
 
-        const studentSnapshot = await getDoc(studentRef);
 
-
-        if (!studentSnapshot.exists()) {
+        if (
+            !studentSnapshot.exists() ||
+            studentSnapshot.data().role !== "student"
+        ) {
 
             await signOut(auth);
 
-            throw new Error("Student profile not found. Contact the administrator.");
+            showMessage(
+                "loginMessage",
+                "Student account not found or not authorised."
+            );
+
+            return;
 
         }
 
 
-        const student = studentSnapshot.data();
-
-
-        // Check account role
-
-        if (student.role !== "student") {
-
-            await signOut(auth);
-
-            throw new Error("This account is not registered as a student.");
-
-        }
-
-
-        message.textContent = "Login successful! Redirecting...";
-        message.style.color = "green";
-
-
-        setTimeout(function () {
-
-            window.location.href = "student-dashboard.html";
-
-        }, 1000);
-
+        window.location.href = "student-dashboard.html";
 
     } catch (error) {
 
-        console.error("Login error:", error);
+        console.error("Student login error:", error);
 
-        message.textContent = getAuthErrorMessage(error);
+        showMessage(
+            "loginMessage",
+            getAuthErrorMessage(error)
+        );
 
-        message.style.color = "red";
+    } finally {
+
+        submitButton.disabled = false;
+
+        submitButton.innerHTML =
+            'Login as Student <i class="fa-solid fa-arrow-right"></i>';
 
     }
 
 });
 
 
-// ==========================================
-// 9. ADMIN LOGIN
-// ==========================================
+// ========================================
+// 14. INSTRUCTOR REGISTRATION
+// ========================================
 
-adminLoginForm.addEventListener("submit", async function (event) {
+instructorRegisterForm.addEventListener(
+    "submit",
+    async (event) => {
+
+        event.preventDefault();
+
+        clearMessages();
+
+        const fullName =
+            document.getElementById("instructorFullName")
+                .value.trim();
+
+        const email =
+            document.getElementById("instructorRegisterEmail")
+                .value.trim();
+
+        const university =
+            document.getElementById("instructorUniversity")
+                .value.trim();
+
+        const department =
+            document.getElementById("instructorDepartment")
+                .value.trim();
+
+        const password =
+            document.getElementById("instructorRegisterPassword")
+                .value;
+
+        const confirmPassword =
+            document.getElementById("instructorConfirmPassword")
+                .value;
+
+
+        if (password !== confirmPassword) {
+
+            showMessage(
+                "instructorRegisterMessage",
+                "Passwords do not match."
+            );
+
+            return;
+
+        }
+
+
+        if (password.length < 6) {
+
+            showMessage(
+                "instructorRegisterMessage",
+                "Password must contain at least 6 characters."
+            );
+
+            return;
+
+        }
+
+
+        const submitButton =
+            instructorRegisterForm.querySelector(".auth-submit");
+
+        submitButton.disabled = true;
+
+        submitButton.textContent = "Submitting application...";
+
+
+        try {
+
+            const userCredential =
+                await createUserWithEmailAndPassword(
+                    auth,
+                    email,
+                    password
+                );
+
+            const user = userCredential.user;
+
+
+            // Save instructor application
+
+            await setDoc(
+                doc(db, "instructors", user.uid),
+                {
+
+                    uid: user.uid,
+
+                    fullName: fullName,
+
+                    email: email,
+
+                    university: university,
+
+                    department: department,
+
+                    role: "instructor",
+
+                    status: "pending",
+
+                    createdAt: serverTimestamp(),
+
+                    approvedAt: null
+
+                }
+            );
+
+
+            await signOut(auth);
+
+
+            instructorRegisterForm.reset();
+
+            showInstructorLogin();
+
+
+            showMessage(
+                "instructorLoginMessage",
+                "Application submitted successfully. Please wait for admin approval.",
+                true
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Instructor registration error:",
+                error
+            );
+
+            showMessage(
+                "instructorRegisterMessage",
+                getAuthErrorMessage(error)
+            );
+
+        } finally {
+
+            submitButton.disabled = false;
+
+            submitButton.innerHTML =
+                'Submit Instructor Application <i class="fa-solid fa-arrow-right"></i>';
+
+        }
+
+    }
+
+);
+
+
+// ========================================
+// 15. INSTRUCTOR LOGIN
+// ========================================
+
+instructorLoginForm.addEventListener(
+    "submit",
+    async (event) => {
+
+        event.preventDefault();
+
+        clearMessages();
+
+        const email =
+            document.getElementById("instructorLoginEmail")
+                .value.trim();
+
+        const password =
+            document.getElementById("instructorLoginPassword")
+                .value;
+
+
+        const submitButton =
+            instructorLoginForm.querySelector(".auth-submit");
+
+        submitButton.disabled = true;
+
+        submitButton.textContent = "Checking account...";
+
+
+        try {
+
+            const userCredential =
+                await signInWithEmailAndPassword(
+                    auth,
+                    email,
+                    password
+                );
+
+            const user = userCredential.user;
+
+
+            const instructorRef =
+                doc(db, "instructors", user.uid);
+
+            const instructorSnapshot =
+                await getDoc(instructorRef);
+
+
+            if (!instructorSnapshot.exists()) {
+
+                await signOut(auth);
+
+                showMessage(
+                    "instructorLoginMessage",
+                    "Instructor account not found."
+                );
+
+                return;
+
+            }
+
+
+            const instructor =
+                instructorSnapshot.data();
+
+
+            if (instructor.role !== "instructor") {
+
+                await signOut(auth);
+
+                showMessage(
+                    "instructorLoginMessage",
+                    "This account is not authorised as an instructor."
+                );
+
+                return;
+
+            }
+
+
+            if (instructor.status === "pending") {
+
+                await signOut(auth);
+
+                showMessage(
+                    "instructorLoginMessage",
+                    "Your application is awaiting admin approval."
+                );
+
+                return;
+
+            }
+
+
+            if (instructor.status !== "approved") {
+
+                await signOut(auth);
+
+                showMessage(
+                    "instructorLoginMessage",
+                    "Your instructor application has not been approved."
+                );
+
+                return;
+
+            }
+
+
+            window.location.href = "instructor-dashboard.html";
+
+
+        } catch (error) {
+
+            console.error(
+                "Instructor login error:",
+                error
+            );
+
+            showMessage(
+                "instructorLoginMessage",
+                getAuthErrorMessage(error)
+            );
+
+        } finally {
+
+            submitButton.disabled = false;
+
+            submitButton.innerHTML =
+                'Login as Instructor <i class="fa-solid fa-arrow-right"></i>';
+
+        }
+
+    }
+
+);
+
+
+// ========================================
+// 16. ADMIN LOGIN
+// ========================================
+
+adminLoginForm.addEventListener("submit", async (event) => {
 
     event.preventDefault();
 
-    const email = document.getElementById("adminEmail").value.trim().toLowerCase();
+    clearMessages();
 
-    const password = document.getElementById("adminPassword").value;
+    const email =
+        document.getElementById("adminEmail").value.trim();
 
-    const message = document.getElementById("adminLoginMessage");
+    const password =
+        document.getElementById("adminPassword").value;
+
+
+    const submitButton =
+        adminLoginForm.querySelector(".auth-submit");
+
+    submitButton.disabled = true;
+
+    submitButton.textContent = "Checking administrator...";
 
 
     try {
 
-        message.textContent = "Verifying administrator...";
-        message.style.color = "blue";
-
-
-        // Firebase administrator login
-
-        const userCredential = await signInWithEmailAndPassword(
-            auth,
-            email,
-            password
-        );
-
+        const userCredential =
+            await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
 
         const user = userCredential.user;
 
 
-        // Check administrator profile
+        const adminRef =
+            doc(db, "admins", user.uid);
 
-        const adminRef = doc(db, "admins", user.uid);
+        const adminSnapshot =
+            await getDoc(adminRef);
 
-        const adminSnapshot = await getDoc(adminRef);
 
-
-        if (!adminSnapshot.exists()) {
+        if (
+            !adminSnapshot.exists() ||
+            adminSnapshot.data().role !== "admin"
+        ) {
 
             await signOut(auth);
 
-            throw new Error("You are not authorised to access the admin dashboard.");
+            showMessage(
+                "adminLoginMessage",
+                "You are not authorised as an administrator."
+            );
+
+            return;
 
         }
 
 
-        if (adminSnapshot.data().role !== "admin") {
-
-            await signOut(auth);
-
-            throw new Error("Administrator access denied.");
-
-        }
-
-
-        message.textContent = "Login successful! Redirecting...";
-        message.style.color = "green";
-
-
-        setTimeout(function () {
-
-            window.location.href = "admin.html";
-
-        }, 1000);
+        window.location.href = "admin.html";
 
 
     } catch (error) {
 
         console.error("Admin login error:", error);
 
-        message.textContent = getAuthErrorMessage(error);
+        showMessage(
+            "adminLoginMessage",
+            getAuthErrorMessage(error)
+        );
 
-        message.style.color = "red";
+    } finally {
+
+        submitButton.disabled = false;
+
+        submitButton.innerHTML =
+            'Login as Administrator <i class="fa-solid fa-arrow-right"></i>';
 
     }
 
 });
 
 
-// ==========================================
-// 10. FIREBASE ERROR MESSAGES
-// ==========================================
+// ========================================
+// 17. INITIAL PAGE MODE
+// ========================================
 
-function getAuthErrorMessage(error) {
+const urlParams =
+    new URLSearchParams(window.location.search);
 
-    switch (error.code) {
-
-        case "auth/email-already-in-use":
-            return "This email already has an account.";
-
-        case "auth/invalid-email":
-            return "Please enter a valid email address.";
-
-        case "auth/weak-password":
-            return "Password must contain at least 6 characters.";
-
-        case "auth/invalid-credential":
-            return "Incorrect email or password.";
-
-        case "auth/network-request-failed":
-            return "Network error. Check your internet connection.";
-
-        default:
-            return error.message || "Something went wrong. Please try again.";
-
-    }
-
-}
-
-
-// ==========================================
-// 11. CHECK URL MODE
-// ==========================================
-
-const urlParams = new URLSearchParams(window.location.search);
-
-const mode = urlParams.get("mode");
+const mode =
+    urlParams.get("mode");
 
 
 if (mode === "register") {
 
-    showStudentRegistration();
+    selectAccount("student");
 
-}
+    showStudentRegister();
 
-else if (mode === "admin") {
+} else if (mode === "admin") {
 
-    adminAccountBtn.click();
+    selectAccount("admin");
 
-}
+} else if (mode === "instructor") {
 
-else {
+    selectAccount("instructor");
+
+    showInstructorLogin();
+
+} else {
+
+    selectAccount("student");
 
     showStudentLogin();
 
 }
 
 
-// ==========================================
-// END OF LEARNSPHERE AUTHENTICATION
-// ==========================================
+// ========================================
+// END OF AUTHENTICATION SYSTEM
+// ========================================

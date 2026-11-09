@@ -1,6 +1,6 @@
 // =====================================================
 // LEARNSPHERE ADMIN DASHBOARD
-// COMPLETE FIREBASE ADMIN SYSTEM
+// FIREBASE ADMIN SYSTEM
 // =====================================================
 
 
@@ -38,9 +38,13 @@ let lessons = [];
 let quizzes = [];
 let results = [];
 let certificates = [];
+let instructors = [];
+let quizSettings = [];
 
 let currentCourseId = null;
 let currentAdmin = null;
+
+let activeQuizId = null;
 
 let dashboardInitialized = false;
 
@@ -54,14 +58,31 @@ function getElement(id) {
 }
 
 
+// The course title ID exists twice in the supplied HTML.
+// This function specifically selects the input inside its form.
+
+function getInput(id) {
+
+    if (id === "editCourseTitle") {
+        return document.querySelector("#editCourseForm input#editCourseTitle");
+    }
+
+    return getElement(id);
+}
+
+
 function getValue(id) {
-    return getElement(id)?.value?.trim() || "";
+
+    const element = getInput(id);
+
+    return element?.value?.trim() || "";
+
 }
 
 
 function setValue(id, value) {
 
-    const element = getElement(id);
+    const element = getInput(id);
 
     if (element) {
         element.value = value ?? "";
@@ -103,7 +124,6 @@ function getDateValue(value) {
     if (value.toDate) {
 
         const date = value.toDate();
-
         const offset = date.getTimezoneOffset();
 
         return new Date(date.getTime() - offset * 60000)
@@ -113,6 +133,27 @@ function getDateValue(value) {
     }
 
     return "";
+
+}
+
+
+function formatDate(value) {
+
+    if (!value) return "Not available";
+
+    let date;
+
+    if (value.toDate) {
+        date = value.toDate();
+    } else {
+        date = new Date(value);
+    }
+
+    if (Number.isNaN(date.getTime())) {
+        return "Not available";
+    }
+
+    return date.toLocaleString();
 
 }
 
@@ -133,7 +174,6 @@ onAuthStateChanged(auth, async user => {
     try {
 
         const adminRef = doc(db, "admins", user.uid);
-
         const adminSnapshot = await getDoc(adminRef);
 
         if (
@@ -210,7 +250,9 @@ async function loadAllData() {
         ["Lessons", loadLessons],
         ["Quizzes", loadQuizzes],
         ["Results", loadResults],
-        ["Certificates", loadCertificates]
+        ["Certificates", loadCertificates],
+        ["Instructors", loadInstructors],
+        ["Quiz Settings", loadQuizSettings]
 
     ];
 
@@ -255,9 +297,7 @@ async function loadAllData() {
 
 async function loadCourses() {
 
-    const snapshot = await getDocs(
-        collection(db, "courses")
-    );
+    const snapshot = await getDocs(collection(db, "courses"));
 
     courses = snapshot.docs.map(item => {
 
@@ -266,13 +306,9 @@ async function loadCourses() {
         let published = false;
 
         if (typeof data.published === "boolean") {
-
             published = data.published;
-
         } else if (typeof data.isPublished === "boolean") {
-
             published = data.isPublished;
-
         }
 
         return {
@@ -292,9 +328,7 @@ async function loadCourses() {
 
 async function loadStudents() {
 
-    const snapshot = await getDocs(
-        collection(db, "students")
-    );
+    const snapshot = await getDocs(collection(db, "students"));
 
     const uniqueStudents = new Map();
 
@@ -325,9 +359,7 @@ async function loadStudents() {
 
 async function loadLessons() {
 
-    const snapshot = await getDocs(
-        collection(db, "lessons")
-    );
+    const snapshot = await getDocs(collection(db, "lessons"));
 
     lessons = snapshot.docs.map(item => ({
         id: item.id,
@@ -343,9 +375,7 @@ async function loadLessons() {
 
 async function loadQuizzes() {
 
-    const snapshot = await getDocs(
-        collection(db, "quizzes")
-    );
+    const snapshot = await getDocs(collection(db, "quizzes"));
 
     quizzes = snapshot.docs.map(item => ({
         id: item.id,
@@ -361,9 +391,7 @@ async function loadQuizzes() {
 
 async function loadResults() {
 
-    const snapshot = await getDocs(
-        collection(db, "results")
-    );
+    const snapshot = await getDocs(collection(db, "results"));
 
     results = snapshot.docs.map(item => ({
         id: item.id,
@@ -379,9 +407,7 @@ async function loadResults() {
 
 async function loadCertificates() {
 
-    const snapshot = await getDocs(
-        collection(db, "certificates")
-    );
+    const snapshot = await getDocs(collection(db, "certificates"));
 
     certificates = snapshot.docs.map(item => ({
         id: item.id,
@@ -392,7 +418,39 @@ async function loadCertificates() {
 
 
 // =====================================================
-// 13. REFRESH EVERYTHING
+// 13. LOAD INSTRUCTORS
+// =====================================================
+
+async function loadInstructors() {
+
+    const snapshot = await getDocs(collection(db, "instructors"));
+
+    instructors = snapshot.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+    }));
+
+}
+
+
+// =====================================================
+// 14. LOAD QUIZ SETTINGS
+// =====================================================
+
+async function loadQuizSettings() {
+
+    const snapshot = await getDocs(collection(db, "quizSettings"));
+
+    quizSettings = snapshot.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+    }));
+
+}
+
+
+// =====================================================
+// 15. REFRESH DASHBOARD
 // =====================================================
 
 function refreshDashboard() {
@@ -409,6 +467,8 @@ function refreshDashboard() {
 
     displayCertificates();
 
+    displayInstructors();
+
     updateStatistics();
 
     updateCoursePublicationStatus();
@@ -417,7 +477,7 @@ function refreshDashboard() {
 
 
 // =====================================================
-// 14. NAVIGATION
+// 16. NAVIGATION
 // =====================================================
 
 function setupNavigation() {
@@ -436,7 +496,7 @@ function setupNavigation() {
 
 
 // =====================================================
-// 15. SHOW DASHBOARD PAGE
+// 17. SHOW DASHBOARD PAGE
 // =====================================================
 
 function showPage(pageName) {
@@ -444,6 +504,7 @@ function showPage(pageName) {
     const pages = [
 
         "overview",
+        "manageInstructors",
         "manageCourses",
         "manageLessons",
         "manageQuizzes",
@@ -460,7 +521,6 @@ function showPage(pageName) {
         if (section) {
 
             section.classList.remove("active");
-
             section.classList.add("hidden");
 
         }
@@ -474,13 +534,10 @@ function showPage(pageName) {
     if (!selectedPage) return;
 
     selectedPage.classList.remove("hidden");
-
     selectedPage.classList.add("active");
 
     if (pageName !== "manageCourses") {
-
         closeCourseEditor();
-
     }
 
     document.querySelectorAll(".admin-nav-btn").forEach(button => {
@@ -496,23 +553,18 @@ function showPage(pageName) {
 
 
 // =====================================================
-// 16. COURSE EDITOR SAME-PAGE LAYOUT
+// 18. COURSE EDITOR LAYOUT
 // =====================================================
 
 function prepareCourseEditorLayout() {
 
     const manageCourses = getElement("manageCourses");
-
     const courseEditor = getElement("courseEditor");
 
     if (!manageCourses || !courseEditor) return;
 
-    // Move editor inside Manage Courses.
-
     if (courseEditor.parentElement !== manageCourses) {
-
         manageCourses.appendChild(courseEditor);
-
     }
 
 }
@@ -521,23 +573,20 @@ function prepareCourseEditorLayout() {
 function closeCourseEditor() {
 
     const editor = getElement("courseEditor");
-
     const courseList = getElement("adminCourseList");
 
     const toolbar = getElement("manageCourses")
         ?.querySelector(".course-toolbar");
 
     editor?.classList.add("hidden");
-
     courseList?.classList.remove("hidden");
-
     toolbar?.classList.remove("hidden");
 
 }
 
 
 // =====================================================
-// 17. EVENT LISTENERS
+// 19. EVENT LISTENERS
 // =====================================================
 
 function setupEventListeners() {
@@ -561,133 +610,146 @@ function setupEventListeners() {
     });
 
 
-    // ADD COURSE
+    // COURSE MANAGEMENT
 
     getElement("addNewCourseBtn")?.addEventListener("click", () => {
-
         openCourseEditor();
-
     });
 
+    getElement("backToCoursesBtn")?.addEventListener("click", closeCourseEditor);
 
-    // BACK TO COURSE LIST
-
-    getElement("backToCoursesBtn")?.addEventListener("click", () => {
-
-        closeCourseEditor();
-
-    });
-
-
-    // SAVE COURSE
-
-    getElement("editCourseForm")?.addEventListener(
-        "submit",
-        saveCourse
-    );
-
-
-    // SAVE LESSON
-
-    getElement("editorLessonForm")?.addEventListener(
-        "submit",
-        saveLesson
-    );
-
-
-    // SAVE QUIZ
-
-    getElement("editorQuizForm")?.addEventListener(
-        "submit",
-        saveQuiz
-    );
-
-
-    // COURSE SEARCH
-
-    getElement("adminCourseSearch")?.addEventListener(
-        "input",
-        displayCourses
-    );
-
-
-    // COURSE FILTER
-
-    getElement("adminCourseFilter")?.addEventListener(
-        "change",
-        displayCourses
-    );
-
-
-    // STUDENT SEARCH
-
-    getElement("adminStudentSearch")?.addEventListener(
-        "input",
-        displayStudents
-    );
-
-
-    // RESULT SEARCH
-
-    getElement("adminResultSearch")?.addEventListener(
-        "input",
-        displayResults
-    );
-
-
-    // CERTIFICATE SEARCH
-
-    getElement("adminCertificateSearch")?.addEventListener(
-        "input",
-        displayCertificates
-    );
-
-
-    // PUBLISH COURSE
-
-    getElement("publishEditorCourseBtn")?.addEventListener(
-        "click",
-        () => changeCourseStatus(true)
-    );
-
-
-    // UNPUBLISH COURSE
-
-    getElement("unpublishCourseBtn")?.addEventListener(
-        "click",
-        () => changeCourseStatus(false)
-    );
-
-
-    // PREVIEW COURSE
-
-    getElement("previewCourseBtn")?.addEventListener(
-        "click",
-        previewCourse
-    );
-
-
-    // CLOSE PREVIEW
-
-    getElement("closePreviewBtn")?.addEventListener("click", () => {
-
-        getElement("coursePreview")?.classList.add("hidden");
-
-    });
-
-
-    // COURSE SCHEDULE
+    getElement("editCourseForm")?.addEventListener("submit", saveCourse);
 
     getElement("courseScheduleForm")?.addEventListener(
         "submit",
         saveCourseSchedule
     );
 
+
+    // LESSON MANAGEMENT
+
+    getElement("editorLessonForm")?.addEventListener(
+        "submit",
+        saveLesson
+    );
+
+    getElement("cancelLessonEditBtn")?.addEventListener(
+        "click",
+        resetLessonForm
+    );
+
+
+    // QUIZ MANAGEMENT
+
+    getElement("editorQuizForm")?.addEventListener(
+        "submit",
+        saveQuiz
+    );
+
+    getElement("editorQuizSettingsForm")?.addEventListener(
+        "submit",
+        saveQuizSettings
+    );
+
+    getElement("cancelQuizEditBtn")?.addEventListener(
+        "click",
+        resetQuizQuestionForm
+    );
+
+    getElement("editorQuizType")?.addEventListener(
+        "change",
+        updateQuizTypeDisplay
+    );
+
+
+    // SEARCH
+
+    getElement("adminCourseSearch")?.addEventListener(
+        "input",
+        displayCourses
+    );
+
+    getElement("adminCourseFilter")?.addEventListener(
+        "change",
+        displayCourses
+    );
+
+    getElement("adminStudentSearch")?.addEventListener(
+        "input",
+        displayStudents
+    );
+
+    getElement("adminResultSearch")?.addEventListener(
+        "input",
+        displayResults
+    );
+
+    getElement("adminCertificateSearch")?.addEventListener(
+        "input",
+        displayCertificates
+    );
+
+    getElement("adminInstructorSearch")?.addEventListener(
+        "input",
+        displayInstructors
+    );
+
+    getElement("adminInstructorFilter")?.addEventListener(
+        "change",
+        displayInstructors
+    );
+
+
+    // REFRESH INSTRUCTORS
+
+    getElement("refreshInstructorsBtn")?.addEventListener(
+        "click",
+        async () => {
+
+            try {
+
+                await loadInstructors();
+
+                displayInstructors();
+
+                notify("Instructor applications refreshed.");
+
+            } catch (error) {
+
+                notify("Unable to refresh instructors: " + error.message);
+
+            }
+
+        }
+    );
+
+
+    // COURSE PUBLICATION
+
+    getElement("publishEditorCourseBtn")?.addEventListener(
+        "click",
+        () => changeCourseStatus(true)
+    );
+
+    getElement("unpublishCourseBtn")?.addEventListener(
+        "click",
+        () => changeCourseStatus(false)
+    );
+
+    getElement("previewCourseBtn")?.addEventListener(
+        "click",
+        previewCourse
+    );
+
+    getElement("closePreviewBtn")?.addEventListener("click", () => {
+        getElement("coursePreview")?.classList.add("hidden");
+    });
+
 }
 
 
 // =====================================================
-// 18. DISPLAY COURSES
+// 20. DISPLAY COURSES
 // =====================================================
 
 function displayCourses() {
@@ -704,9 +766,7 @@ function displayCourses() {
 
         const title = String(course.title || "").toLowerCase();
 
-        const department = String(
-            course.department || ""
-        ).toLowerCase();
+        const department = String(course.department || "").toLowerCase();
 
         const matchesSearch =
             title.includes(search) ||
@@ -798,7 +858,7 @@ function displayCourses() {
 
 
 // =====================================================
-// 19. OPEN COURSE EDITOR
+// 21. OPEN COURSE EDITOR
 // =====================================================
 
 function openCourseEditor(course = null) {
@@ -806,79 +866,67 @@ function openCourseEditor(course = null) {
     prepareCourseEditorLayout();
 
     currentCourseId = course?.id || null;
-
-    // Keep Manage Courses active.
+    activeQuizId = null;
 
     showPage("manageCourses");
 
     const editor = getElement("courseEditor");
-
     const courseList = getElement("adminCourseList");
 
     const toolbar = getElement("manageCourses")
         ?.querySelector(".course-toolbar");
 
     courseList?.classList.add("hidden");
-
     toolbar?.classList.add("hidden");
-
     editor?.classList.remove("hidden");
 
-    // Reset forms.
-
     getElement("editCourseForm")?.reset();
-
     getElement("editorLessonForm")?.reset();
-
     getElement("editorQuizForm")?.reset();
+    getElement("editorQuizSettingsForm")?.reset();
 
-    // Course information.
+    if (getElement("editorLessonPublished")) {
+        getElement("editorLessonPublished").checked = true;
+    }
+
+    if (getElement("editorQuizPublished")) {
+        getElement("editorQuizPublished").checked = false;
+    }
 
     setValue("editCourseId", course?.id);
-
     setValue("editCourseTitle", course?.title);
-
     setValue("editCourseCategory", course?.category);
-
     setValue("editCourseDepartment", course?.department);
-
     setValue("editCourseLevel", course?.level);
-
     setValue("editCourseDescription", course?.description);
-
     setValue("editCourseImage", course?.image);
 
     const title = getElement("editorCourseTitle");
 
     if (title) {
-
         title.textContent = course
             ? "Edit Course: " + course.title
             : "Create New Course";
-
     }
 
     setValue("editorLessonCourseId", course?.id);
-
     setValue("editorQuizCourseId", course?.id);
+    setValue("editorSettingsCourseId", course?.id);
 
-    // Schedule fields.
+    setValue("editCourseOpeningDate", course?.openingDateTime);
+    setValue("editCourseClosingDate", course?.closingDateTime);
 
-    setValue(
-        "editCourseOpeningDate",
-        course?.openingDateTime
-    );
-
-    setValue(
-        "editCourseClosingDate",
-        course?.closingDateTime
-    );
+    resetLessonForm();
+    resetQuizQuestionForm();
 
     updateCoursePublicationStatus();
 
     displayEditorLessons();
-
     displayEditorQuizzes();
+
+    populateLessonSelector();
+
+    updateQuizTypeDisplay();
 
     updateScheduleStatus();
 
@@ -886,7 +934,7 @@ function openCourseEditor(course = null) {
 
 
 // =====================================================
-// 20. EDIT COURSE
+// 22. EDIT COURSE
 // =====================================================
 
 window.editCourse = function(courseId) {
@@ -894,11 +942,8 @@ window.editCourse = function(courseId) {
     const course = courses.find(item => item.id === courseId);
 
     if (!course) {
-
         notify("Course not found.");
-
         return;
-
     }
 
     openCourseEditor(course);
@@ -907,7 +952,7 @@ window.editCourse = function(courseId) {
 
 
 // =====================================================
-// 21. SAVE COURSE
+// 23. SAVE COURSE
 // =====================================================
 
 async function saveCourse(event) {
@@ -915,31 +960,21 @@ async function saveCourse(event) {
     event.preventDefault();
 
     const courseId = getValue("editCourseId");
-
     const title = getValue("editCourseTitle");
 
     if (!title) {
-
         notify("Please enter a course title.");
-
         return;
-
     }
 
     const courseData = {
 
         title,
-
         category: getValue("editCourseCategory"),
-
         department: getValue("editCourseDepartment"),
-
         level: getValue("editCourseLevel"),
-
         description: getValue("editCourseDescription"),
-
         image: getValue("editCourseImage"),
-
         updatedAt: serverTimestamp()
 
     };
@@ -958,9 +993,7 @@ async function saveCourse(event) {
         } else {
 
             courseData.published = false;
-
             courseData.isPublished = false;
-
             courseData.createdAt = serverTimestamp();
 
             const newCourse = await addDoc(
@@ -971,10 +1004,9 @@ async function saveCourse(event) {
             currentCourseId = newCourse.id;
 
             setValue("editCourseId", newCourse.id);
-
             setValue("editorLessonCourseId", newCourse.id);
-
             setValue("editorQuizCourseId", newCourse.id);
+            setValue("editorSettingsCourseId", newCourse.id);
 
             notify("Course created successfully. It is unpublished.");
 
@@ -987,9 +1019,7 @@ async function saveCourse(event) {
         const editorTitle = getElement("editorCourseTitle");
 
         if (editorTitle) {
-
             editorTitle.textContent = title;
-
         }
 
     } catch (error) {
@@ -1004,7 +1034,7 @@ async function saveCourse(event) {
 
 
 // =====================================================
-// 22. DELETE COURSE
+// 24. DELETE COURSE
 // =====================================================
 
 window.removeCourse = async function(courseId) {
@@ -1027,6 +1057,10 @@ window.removeCourse = async function(courseId) {
             item => item.courseId === courseId
         );
 
+        const relatedSettings = quizSettings.filter(
+            item => item.courseId === courseId
+        );
+
         const references = [
 
             doc(db, "courses", courseId),
@@ -1037,6 +1071,10 @@ window.removeCourse = async function(courseId) {
 
             ...relatedQuizzes.map(item =>
                 doc(db, "quizzes", item.id)
+            ),
+
+            ...relatedSettings.map(item =>
+                doc(db, "quizSettings", item.id)
             )
 
         ];
@@ -1046,9 +1084,7 @@ window.removeCourse = async function(courseId) {
             const batch = writeBatch(db);
 
             references.slice(i, i + 450).forEach(reference => {
-
                 batch.delete(reference);
-
             });
 
             await batch.commit();
@@ -1056,10 +1092,9 @@ window.removeCourse = async function(courseId) {
         }
 
         await loadCourses();
-
         await loadLessons();
-
         await loadQuizzes();
+        await loadQuizSettings();
 
         refreshDashboard();
 
@@ -1079,7 +1114,7 @@ window.removeCourse = async function(courseId) {
 
 
 // =====================================================
-// 23. PUBLISH / UNPUBLISH
+// 25. PUBLISH / UNPUBLISH COURSE
 // =====================================================
 
 async function changeCourseStatus(status) {
@@ -1087,11 +1122,8 @@ async function changeCourseStatus(status) {
     const courseId = getValue("editCourseId");
 
     if (!courseId) {
-
         notify("Save the course before publishing it.");
-
         return;
-
     }
 
     try {
@@ -1099,13 +1131,9 @@ async function changeCourseStatus(status) {
         await updateDoc(
             doc(db, "courses", courseId),
             {
-
                 published: status,
-
                 isPublished: status,
-
                 updatedAt: serverTimestamp()
-
             }
         );
 
@@ -1133,7 +1161,7 @@ async function changeCourseStatus(status) {
 
 
 // =====================================================
-// 24. PUBLICATION STATUS
+// 26. COURSE PUBLICATION STATUS
 // =====================================================
 
 function updateCoursePublicationStatus() {
@@ -1154,7 +1182,7 @@ function updateCoursePublicationStatus() {
 
 
 // =====================================================
-// 25. COURSE SCHEDULE
+// 27. COURSE SCHEDULE
 // =====================================================
 
 async function saveCourseSchedule(event) {
@@ -1164,15 +1192,11 @@ async function saveCourseSchedule(event) {
     const courseId = getValue("editCourseId");
 
     if (!courseId) {
-
         notify("Save the course before setting its schedule.");
-
         return;
-
     }
 
     const openingDate = getValue("editCourseOpeningDate");
-
     const closingDate = getValue("editCourseClosingDate");
 
     if (
@@ -1182,7 +1206,6 @@ async function saveCourseSchedule(event) {
     ) {
 
         notify("Closing date must be later than opening date.");
-
         return;
 
     }
@@ -1192,13 +1215,9 @@ async function saveCourseSchedule(event) {
         await updateDoc(
             doc(db, "courses", courseId),
             {
-
                 openingDateTime: openingDate,
-
                 closingDateTime: closingDate,
-
                 updatedAt: serverTimestamp()
-
             }
         );
 
@@ -1232,7 +1251,6 @@ function updateScheduleStatus() {
     if (!course) {
 
         status.textContent = "Save the course before setting a schedule.";
-
         return;
 
     }
@@ -1247,7 +1265,7 @@ function updateScheduleStatus() {
 
 
 // =====================================================
-// 26. IMPORT COURSE CATALOGUE BUTTON
+// 28. IMPORT COURSE CATALOGUE BUTTON
 // =====================================================
 
 function createImportButton() {
@@ -1259,21 +1277,15 @@ function createImportButton() {
     const button = document.createElement("button");
 
     button.id = "importCatalogueBtn";
-
     button.className = "primary-btn";
-
     button.textContent = "Import Course Catalogue";
 
     const toolbar = container.querySelector(".course-toolbar");
 
     if (toolbar) {
-
         toolbar.appendChild(button);
-
     } else {
-
         container.prepend(button);
-
     }
 
     button.addEventListener("click", importCourseCatalogue);
@@ -1282,7 +1294,7 @@ function createImportButton() {
 
 
 // =====================================================
-// 27. IMPORT COURSE CATALOGUE
+// 29. IMPORT COURSE CATALOGUE
 // =====================================================
 
 async function importCourseCatalogue() {
@@ -1292,7 +1304,6 @@ async function importCourseCatalogue() {
     if (!catalogue.length) {
 
         notify("Course catalogue is empty or course-catalog.js is missing.");
-
         return;
 
     }
@@ -1303,20 +1314,16 @@ async function importCourseCatalogue() {
 
     try {
 
-        const snapshot = await getDocs(
-            collection(db, "courses")
-        );
+        const snapshot = await getDocs(collection(db, "courses"));
 
         const existing = new Map(
             snapshot.docs.map(item => [item.id, item.data()])
         );
 
         let imported = 0;
-
         let updated = 0;
 
         let batch = writeBatch(db);
-
         let operations = 0;
 
         async function commitBatch() {
@@ -1326,7 +1333,6 @@ async function importCourseCatalogue() {
                 await batch.commit();
 
                 batch = writeBatch(db);
-
                 operations = 0;
 
             }
@@ -1336,7 +1342,6 @@ async function importCourseCatalogue() {
         for (let index = 0; index < catalogue.length; index++) {
 
             const course = catalogue[index];
-
             const courseId = `catalogue_${index}`;
 
             const reference = doc(db, "courses", courseId);
@@ -1351,17 +1356,12 @@ async function importCourseCatalogue() {
                 ) {
 
                     batch.update(reference, {
-
                         published: false,
-
                         isPublished: false,
-
                         updatedAt: serverTimestamp()
-
                     });
 
                     updated++;
-
                     operations++;
 
                 }
@@ -1369,29 +1369,20 @@ async function importCourseCatalogue() {
             } else {
 
                 batch.set(reference, {
-
                     ...course,
-
                     published: false,
-
                     isPublished: false,
-
                     createdAt: serverTimestamp(),
-
                     updatedAt: serverTimestamp()
-
                 });
 
                 imported++;
-
                 operations++;
 
             }
 
             if (operations >= 450) {
-
                 await commitBatch();
-
             }
 
         }
@@ -1420,7 +1411,260 @@ async function importCourseCatalogue() {
 
 
 // =====================================================
-// 28. DISPLAY EDITOR LESSONS
+// 30. LESSON SELECTOR FOR QUIZZES
+// =====================================================
+
+function populateLessonSelector() {
+
+    const selector = getElement("editorQuizLessonId");
+
+    if (!selector) return;
+
+    const courseLessons = lessons.filter(
+        item => item.courseId === currentCourseId
+    );
+
+    selector.innerHTML = `
+        <option value="">Select a lesson</option>
+        ${courseLessons.map(lesson => `
+            <option value="${escapeHTML(lesson.id)}">
+                ${escapeHTML(lesson.title)}
+            </option>
+        `).join("")}
+    `;
+
+}
+
+
+function updateQuizTypeDisplay() {
+
+    const type = getElement("editorQuizType")?.value || "course";
+
+    const group = getElement("lessonQuizSelectorGroup");
+
+    if (group) {
+        group.style.display = type === "lesson" ? "block" : "none";
+    }
+
+}
+
+
+// =====================================================
+// 31. SAVE QUIZ SETTINGS
+// =====================================================
+
+async function saveQuizSettings(event) {
+
+    event.preventDefault();
+
+    const courseId = getValue("editorSettingsCourseId");
+
+    if (!courseId) {
+
+        notify("Save the course before configuring its quiz.");
+        return;
+
+    }
+
+    const title = getValue("editorQuizTitle");
+
+    const type = getValue("editorQuizType") || "course";
+
+    const lessonId = getValue("editorQuizLessonId");
+
+    const timeLimit = Number(getValue("editorQuizTimeLimit") || 0);
+
+    const maxAttempts = Number(getValue("editorQuizMaxAttempts") || 1);
+
+    const questionLimitValue = getValue("editorQuizQuestionLimit");
+
+    const questionLimit = questionLimitValue
+        ? Number(questionLimitValue)
+        : 0;
+
+    const openingDate = getValue("editorQuizOpeningDate");
+
+    const closingDate = getValue("editorQuizClosingDate");
+
+    if (type === "lesson" && !lessonId) {
+
+        notify("Select the lesson this quiz belongs to.");
+        return;
+
+    }
+
+    if (type === "lesson") {
+
+        const selectedLesson = lessons.find(
+            item => item.id === lessonId && item.courseId === courseId
+        );
+
+        if (!selectedLesson) {
+
+            notify("The selected lesson does not belong to this course.");
+            return;
+
+        }
+
+    }
+
+    if (
+        !Number.isInteger(timeLimit) ||
+        timeLimit < 0
+    ) {
+
+        notify("Enter a valid time limit. Use 0 for no time limit.");
+        return;
+
+    }
+
+    if (
+        !Number.isInteger(maxAttempts) ||
+        maxAttempts < 1
+    ) {
+
+        notify("Maximum attempts must be at least 1.");
+        return;
+
+    }
+
+    if (
+        questionLimitValue &&
+        (!Number.isInteger(questionLimit) || questionLimit < 1)
+    ) {
+
+        notify("Enter a valid number of questions.");
+        return;
+
+    }
+
+    if (
+        openingDate &&
+        closingDate &&
+        new Date(closingDate) <= new Date(openingDate)
+    ) {
+
+        notify("Quiz closing date must be later than its opening date.");
+        return;
+
+    }
+
+    const settingsData = {
+
+        courseId,
+
+        title: title || "Course Quiz",
+
+        type,
+
+        lessonId: type === "lesson" ? lessonId : null,
+
+        instructions: getValue("editorQuizInstructions"),
+
+        timeLimitMinutes: timeLimit,
+
+        maxAttempts,
+
+        questionLimit,
+
+        openingDateTime: openingDate,
+
+        closingDateTime: closingDate,
+
+        shuffleQuestions: Boolean(
+            getElement("editorShuffleQuestions")?.checked
+        ),
+
+        shuffleOptions: Boolean(
+            getElement("editorShuffleOptions")?.checked
+        ),
+
+        published: Boolean(
+            getElement("editorQuizPublished")?.checked
+        ),
+
+        updatedAt: serverTimestamp(),
+
+        updatedBy: currentAdmin.uid
+
+    };
+
+    try {
+
+        let settingsId = activeQuizId;
+
+        if (settingsId) {
+
+            await updateDoc(
+                doc(db, "quizSettings", settingsId),
+                settingsData
+            );
+
+        } else {
+
+            settingsData.createdAt = serverTimestamp();
+            settingsData.createdBy = currentAdmin.uid;
+
+            const newSettings = await addDoc(
+                collection(db, "quizSettings"),
+                settingsData
+            );
+
+            settingsId = newSettings.id;
+            activeQuizId = settingsId;
+
+        }
+
+        setValue("editorQuizId", settingsId);
+
+        await loadQuizSettings();
+
+        updateQuizSettingsStatus();
+
+        notify(
+            "Quiz settings saved successfully.\n\n" +
+            "Add the questions for this quiz below."
+        );
+
+    } catch (error) {
+
+        console.error("Quiz settings error:", error);
+
+        notify("Unable to save quiz settings: " + error.message);
+
+    }
+
+}
+
+
+function updateQuizSettingsStatus() {
+
+    const status = getElement("quizSettingsStatus");
+
+    if (!status) return;
+
+    const settings = quizSettings.find(
+        item => item.id === activeQuizId
+    );
+
+    if (!settings) {
+
+        status.textContent = "Configure your quiz settings.";
+        return;
+
+    }
+
+    status.textContent =
+        "Quiz: " + (settings.title || "Course Quiz") +
+        " | Time limit: " + settings.timeLimitMinutes + " minutes" +
+        " | Attempts: " + settings.maxAttempts +
+        " | Status: " + (settings.published ? "Published" : "Unpublished");
+
+}
+
+
+// =====================================================
+// 32. DISPLAY EDITOR LESSONS
 // =====================================================
 
 function displayEditorLessons() {
@@ -1436,7 +1680,7 @@ function displayEditorLessons() {
     if (!courseLessons.length) {
 
         container.innerHTML = "<p>No lessons added yet.</p>";
-
+        populateLessonSelector();
         return;
 
     }
@@ -1448,6 +1692,13 @@ function displayEditorLessons() {
             <h4>${escapeHTML(lesson.title)}</h4>
 
             <p>${escapeHTML(lesson.description || "")}</p>
+
+            <p>
+                Publication:
+                <strong>
+                    ${lesson.published === false ? "Unpublished" : "Published"}
+                </strong>
+            </p>
 
             <button
                 type="button"
@@ -1467,11 +1718,37 @@ function displayEditorLessons() {
 
     `).join("");
 
+    populateLessonSelector();
+
 }
 
 
 // =====================================================
-// 29. ADD / EDIT LESSON
+// 33. RESET LESSON FORM
+// =====================================================
+
+function resetLessonForm() {
+
+    const form = getElement("editorLessonForm");
+
+    if (!form) return;
+
+    form.reset();
+
+    setValue("editorLessonCourseId", currentCourseId);
+    setValue("editorLessonId", "");
+
+    delete form.dataset.editingId;
+
+    if (getElement("editorLessonPublished")) {
+        getElement("editorLessonPublished").checked = true;
+    }
+
+}
+
+
+// =====================================================
+// 34. SAVE LESSON
 // =====================================================
 
 async function saveLesson(event) {
@@ -1483,7 +1760,6 @@ async function saveLesson(event) {
     if (!courseId) {
 
         notify("Save the course before adding lessons.");
-
         return;
 
     }
@@ -1493,13 +1769,16 @@ async function saveLesson(event) {
     if (!title) {
 
         notify("Enter a lesson title.");
-
         return;
 
     }
 
-    const lessonId = getElement("editorLessonForm")
-        ?.dataset.editingId;
+    const form = getElement("editorLessonForm");
+
+    const lessonId =
+        getValue("editorLessonId") ||
+        form?.dataset.editingId ||
+        "";
 
     const lessonData = {
 
@@ -1509,11 +1788,17 @@ async function saveLesson(event) {
 
         description: getValue("editorLessonDescription"),
 
+        instructions: getValue("editorLessonInstructions"),
+
         content: getValue("editorLessonContent"),
 
         pdf: getValue("editorLessonPDF"),
 
         video: getValue("editorLessonVideo"),
+
+        published: Boolean(
+            getElement("editorLessonPublished")?.checked
+        ),
 
         updatedAt: serverTimestamp()
 
@@ -1543,15 +1828,13 @@ async function saveLesson(event) {
 
         }
 
-        getElement("editorLessonForm").reset();
-
-        delete getElement("editorLessonForm").dataset.editingId;
-
-        setValue("editorLessonCourseId", courseId);
+        resetLessonForm();
 
         await loadLessons();
 
         refreshDashboard();
+
+        displayEditorLessons();
 
     } catch (error) {
 
@@ -1564,11 +1847,20 @@ async function saveLesson(event) {
 }
 
 
+// =====================================================
+// 35. EDIT LESSON
+// =====================================================
+
 window.editLesson = function(lessonId) {
 
     const lesson = lessons.find(item => item.id === lessonId);
 
-    if (!lesson) return;
+    if (!lesson) {
+
+        notify("Lesson not found.");
+        return;
+
+    }
 
     const form = getElement("editorLessonForm");
 
@@ -1576,17 +1868,19 @@ window.editLesson = function(lessonId) {
 
     form.dataset.editingId = lessonId;
 
+    setValue("editorLessonId", lessonId);
     setValue("editorLessonCourseId", lesson.courseId);
-
     setValue("editorLessonTitle", lesson.title);
-
     setValue("editorLessonDescription", lesson.description);
-
+    setValue("editorLessonInstructions", lesson.instructions);
     setValue("editorLessonContent", lesson.content);
-
     setValue("editorLessonPDF", lesson.pdf);
-
     setValue("editorLessonVideo", lesson.video);
+
+    if (getElement("editorLessonPublished")) {
+        getElement("editorLessonPublished").checked =
+            lesson.published !== false;
+    }
 
     notify("Edit the lesson details and click Save Lesson.");
 
@@ -1594,7 +1888,7 @@ window.editLesson = function(lessonId) {
 
 
 // =====================================================
-// 30. DELETE LESSON
+// 36. DELETE LESSON
 // =====================================================
 
 window.deleteLesson = async function(lessonId) {
@@ -1603,13 +1897,13 @@ window.deleteLesson = async function(lessonId) {
 
     try {
 
-        await deleteDoc(
-            doc(db, "lessons", lessonId)
-        );
+        await deleteDoc(doc(db, "lessons", lessonId));
 
         await loadLessons();
 
         refreshDashboard();
+
+        displayEditorLessons();
 
         notify("Lesson deleted successfully.");
 
@@ -1625,7 +1919,7 @@ window.deleteLesson = async function(lessonId) {
 
 
 // =====================================================
-// 31. DISPLAY EDITOR QUIZZES
+// 37. DISPLAY EDITOR QUIZZES
 // =====================================================
 
 function displayEditorQuizzes() {
@@ -1642,41 +1936,103 @@ function displayEditorQuizzes() {
 
         container.innerHTML = "<p>No quiz questions added yet.</p>";
 
+        updateQuizSummary([]);
         return;
 
     }
 
-    container.innerHTML = courseQuizzes.map((quiz, index) => `
+    container.innerHTML = courseQuizzes.map((quiz, index) => {
 
-        <div class="admin-item">
+        const settings = quizSettings.find(
+            item => item.id === quiz.quizId
+        );
 
-            <h4>${index + 1}. ${escapeHTML(quiz.question)}</h4>
+        return `
 
-            <p>Marks: ${escapeHTML(quiz.marks ?? 1)}</p>
+            <div class="admin-item">
 
-            <button
-                type="button"
-                onclick="editQuiz('${escapeHTML(quiz.id)}')"
-            >
-                Edit Question
-            </button>
+                <h4>${index + 1}. ${escapeHTML(quiz.question || quiz.questionText)}</h4>
 
-            <button
-                type="button"
-                onclick="deleteQuiz('${escapeHTML(quiz.id)}')"
-            >
-                Delete Question
-            </button>
+                <p>Quiz: ${escapeHTML(settings?.title || "Legacy / General Quiz")}</p>
 
-        </div>
+                <p>Marks: ${escapeHTML(quiz.marks ?? 1)}</p>
 
-    `).join("");
+                <button
+                    type="button"
+                    onclick="editQuiz('${escapeHTML(quiz.id)}')"
+                >
+                    Edit Question
+                </button>
+
+                <button
+                    type="button"
+                    onclick="deleteQuiz('${escapeHTML(quiz.id)}')"
+                >
+                    Delete Question
+                </button>
+
+            </div>
+
+        `;
+
+    }).join("");
+
+    updateQuizSummary(courseQuizzes);
 
 }
 
 
 // =====================================================
-// 32. ADD / EDIT QUIZ
+// 38. QUIZ MARK SUMMARY
+// =====================================================
+
+function updateQuizSummary(questionList) {
+
+    const count = getElement("editorQuizQuestionCount");
+    const total = getElement("editorQuizTotalMarks");
+
+    const questions = questionList || [];
+
+    const totalMarks = questions.reduce(
+        (sum, question) => sum + Number(question.marks || 1),
+        0
+    );
+
+    if (count) {
+        count.textContent = questions.length;
+    }
+
+    if (total) {
+        total.textContent = totalMarks;
+    }
+
+}
+
+
+// =====================================================
+// 39. RESET QUIZ QUESTION FORM
+// =====================================================
+
+function resetQuizQuestionForm() {
+
+    const form = getElement("editorQuizForm");
+
+    if (!form) return;
+
+    form.reset();
+
+    delete form.dataset.editingId;
+
+    setValue("editorQuizCourseId", currentCourseId);
+    setValue("editorQuizId", activeQuizId);
+
+    setValue("editorQuestionMark", "1");
+
+}
+
+
+// =====================================================
+// 40. SAVE QUIZ QUESTION
 // =====================================================
 
 async function saveQuiz(event) {
@@ -1687,8 +2043,7 @@ async function saveQuiz(event) {
 
     if (!courseId) {
 
-        notify("Save the course before adding quizzes.");
-
+        notify("Save the course before adding quiz questions.");
         return;
 
     }
@@ -1698,11 +2053,8 @@ async function saveQuiz(event) {
     const options = [
 
         getValue("editorOptionA"),
-
         getValue("editorOptionB"),
-
         getValue("editorOptionC"),
-
         getValue("editorOptionD")
 
     ];
@@ -1718,7 +2070,6 @@ async function saveQuiz(event) {
     if (!question || options.some(option => !option)) {
 
         notify("Complete the question and all four options.");
-
         return;
 
     }
@@ -1726,7 +2077,6 @@ async function saveQuiz(event) {
     if (![0, 1, 2, 3].includes(correctAnswer)) {
 
         notify("Select the correct answer.");
-
         return;
 
     }
@@ -1734,17 +2084,28 @@ async function saveQuiz(event) {
     if (!Number.isFinite(marks) || marks <= 0) {
 
         notify("Enter valid marks for this question.");
-
         return;
 
     }
 
-    const quizId = getElement("editorQuizForm")
-        ?.dataset.editingId;
+    const form = getElement("editorQuizForm");
+
+    const questionDocumentId =
+        form?.dataset.editingId || "";
+
+    const selectedQuizId = getValue("editorQuizId") || activeQuizId || null;
+
+    const settings = quizSettings.find(
+        item => item.id === selectedQuizId
+    );
 
     const quizData = {
 
         courseId,
+
+        quizId: selectedQuizId,
+
+        lessonId: settings?.lessonId || null,
 
         question,
 
@@ -1762,10 +2123,10 @@ async function saveQuiz(event) {
 
     try {
 
-        if (quizId) {
+        if (questionDocumentId) {
 
             await updateDoc(
-                doc(db, "quizzes", quizId),
+                doc(db, "quizzes", questionDocumentId),
                 quizData
             );
 
@@ -1784,15 +2145,13 @@ async function saveQuiz(event) {
 
         }
 
-        getElement("editorQuizForm").reset();
-
-        delete getElement("editorQuizForm").dataset.editingId;
-
-        setValue("editorQuizCourseId", courseId);
+        resetQuizQuestionForm();
 
         await loadQuizzes();
 
         refreshDashboard();
+
+        displayEditorQuizzes();
 
     } catch (error) {
 
@@ -1805,11 +2164,20 @@ async function saveQuiz(event) {
 }
 
 
+// =====================================================
+// 41. EDIT QUIZ QUESTION
+// =====================================================
+
 window.editQuiz = function(quizId) {
 
     const quiz = quizzes.find(item => item.id === quizId);
 
-    if (!quiz) return;
+    if (!quiz) {
+
+        notify("Quiz question not found.");
+        return;
+
+    }
 
     const form = getElement("editorQuizForm");
 
@@ -1822,28 +2190,27 @@ window.editQuiz = function(quizId) {
         : [];
 
     setValue("editorQuizCourseId", quiz.courseId);
+    setValue("editorQuizId", quiz.quizId || "");
 
     setValue("editorQuestionText", quiz.question || quiz.questionText);
 
     setValue("editorOptionA", options[0]);
-
     setValue("editorOptionB", options[1]);
-
     setValue("editorOptionC", options[2]);
-
     setValue("editorOptionD", options[3]);
 
     setValue("editorCorrectAnswer", quiz.correctAnswer);
-
     setValue("editorQuestionMark", quiz.marks ?? 1);
 
-    notify("Edit the question and click Save Question.");
+    activeQuizId = quiz.quizId || null;
+
+    notify("Edit the question and click Save Quiz Question.");
 
 };
 
 
 // =====================================================
-// 33. DELETE QUIZ
+// 42. DELETE QUIZ QUESTION
 // =====================================================
 
 window.deleteQuiz = async function(quizId) {
@@ -1852,13 +2219,13 @@ window.deleteQuiz = async function(quizId) {
 
     try {
 
-        await deleteDoc(
-            doc(db, "quizzes", quizId)
-        );
+        await deleteDoc(doc(db, "quizzes", quizId));
 
         await loadQuizzes();
 
         refreshDashboard();
+
+        displayEditorQuizzes();
 
         notify("Quiz question deleted successfully.");
 
@@ -1874,21 +2241,16 @@ window.deleteQuiz = async function(quizId) {
 
 
 // =====================================================
-// 34. COURSE PREVIEW
+// 43. COURSE PREVIEW
 // =====================================================
 
 function previewCourse() {
 
     const title = getValue("editCourseTitle");
-
     const description = getValue("editCourseDescription");
-
     const category = getValue("editCourseCategory");
-
     const department = getValue("editCourseDepartment");
-
     const level = getValue("editCourseLevel");
-
     const image = getValue("editCourseImage");
 
     const container = getElement("coursePreviewContent");
@@ -1922,7 +2284,7 @@ function previewCourse() {
 
 
 // =====================================================
-// 35. DISPLAY ALL LESSONS
+// 44. DISPLAY ALL LESSONS
 // =====================================================
 
 function displayAllLessons() {
@@ -1934,7 +2296,6 @@ function displayAllLessons() {
     if (!lessons.length) {
 
         container.innerHTML = "<p>No lessons available yet.</p>";
-
         return;
 
     }
@@ -1955,6 +2316,18 @@ function displayAllLessons() {
 
                 <p>${escapeHTML(lesson.description || "")}</p>
 
+                <p>
+                    Status:
+                    ${lesson.published === false ? "Unpublished" : "Published"}
+                </p>
+
+                <button
+                    type="button"
+                    onclick="editCourse('${escapeHTML(lesson.courseId)}')"
+                >
+                    Open Course
+                </button>
+
                 <button
                     type="button"
                     onclick="deleteLesson('${escapeHTML(lesson.id)}')"
@@ -1972,7 +2345,7 @@ function displayAllLessons() {
 
 
 // =====================================================
-// 36. DISPLAY ALL QUIZZES
+// 45. DISPLAY ALL QUIZZES
 // =====================================================
 
 function displayAllQuizzes() {
@@ -1984,7 +2357,6 @@ function displayAllQuizzes() {
     if (!quizzes.length) {
 
         container.innerHTML = "<p>No quizzes available yet.</p>";
-
         return;
 
     }
@@ -1995,6 +2367,10 @@ function displayAllQuizzes() {
             item => item.id === quiz.courseId
         );
 
+        const settings = quizSettings.find(
+            item => item.id === quiz.quizId
+        );
+
         return `
 
             <div class="admin-item">
@@ -2003,15 +2379,22 @@ function displayAllQuizzes() {
 
                 <p>Course: ${escapeHTML(course?.title || "Unknown Course")}</p>
 
+                <p>Quiz: ${escapeHTML(settings?.title || "Legacy / General Quiz")}</p>
+
                 <p>Marks: ${escapeHTML(quiz.marks ?? 1)}</p>
 
                 <ol>
-
                     ${(quiz.options || []).map(option => `
                         <li>${escapeHTML(option)}</li>
                     `).join("")}
-
                 </ol>
+
+                <button
+                    type="button"
+                    onclick="editQuiz('${escapeHTML(quiz.id)}')"
+                >
+                    Edit Question
+                </button>
 
                 <button
                     type="button"
@@ -2030,7 +2413,7 @@ function displayAllQuizzes() {
 
 
 // =====================================================
-// 37. DISPLAY STUDENTS
+// 46. DISPLAY STUDENTS
 // =====================================================
 
 function displayStudents() {
@@ -2060,7 +2443,6 @@ function displayStudents() {
     if (!filtered.length) {
 
         container.innerHTML = "<p>No students found.</p>";
-
         return;
 
     }
@@ -2087,7 +2469,7 @@ function displayStudents() {
 
 
 // =====================================================
-// 38. DISPLAY RESULTS
+// 47. DISPLAY RESULTS
 // =====================================================
 
 function displayResults() {
@@ -2123,7 +2505,6 @@ function displayResults() {
     if (!filtered.length) {
 
         container.innerHTML = "<p>No student results found.</p>";
-
         return;
 
     }
@@ -2169,7 +2550,7 @@ function displayResults() {
 
 
 // =====================================================
-// 39. EDIT STUDENT MARKS
+// 48. EDIT STUDENT MARKS
 // =====================================================
 
 window.editResult = async function(resultId) {
@@ -2179,7 +2560,6 @@ window.editResult = async function(resultId) {
     if (!result) {
 
         notify("Result not found.");
-
         return;
 
     }
@@ -2216,15 +2596,11 @@ window.editResult = async function(resultId) {
     ) {
 
         notify("Enter a valid score between 0 and " + totalMarks);
-
         return;
 
     }
 
-    const percentage = Math.round(
-        (score / totalMarks) * 100
-    );
-
+    const percentage = Math.round((score / totalMarks) * 100);
     const passed = percentage >= 70;
 
     try {
@@ -2232,17 +2608,11 @@ window.editResult = async function(resultId) {
         await updateDoc(
             doc(db, "results", resultId),
             {
-
                 score,
-
                 percentage,
-
                 passed,
-
                 updatedAt: serverTimestamp(),
-
                 updatedBy: currentAdmin.uid
-
             }
         );
 
@@ -2269,7 +2639,7 @@ window.editResult = async function(resultId) {
 
 
 // =====================================================
-// 40. DISPLAY CERTIFICATES
+// 49. DISPLAY CERTIFICATES
 // =====================================================
 
 function displayCertificates() {
@@ -2307,7 +2677,6 @@ function displayCertificates() {
     if (!filtered.length) {
 
         container.innerHTML = "<p>No certificates found.</p>";
-
         return;
 
     }
@@ -2332,10 +2701,7 @@ function displayCertificates() {
 
                 <p>Certificate ID: ${escapeHTML(certificate.id)}</p>
 
-                <p>
-                    Status:
-                    ${certificate.revoked ? "Revoked" : "Valid"}
-                </p>
+                <p>Status: ${certificate.revoked ? "Revoked" : "Valid"}</p>
 
                 <button
                     type="button"
@@ -2361,7 +2727,7 @@ function displayCertificates() {
 
 
 // =====================================================
-// 41. EDIT CERTIFICATE
+// 50. EDIT CERTIFICATE
 // =====================================================
 
 window.editCertificate = async function(certificateId) {
@@ -2373,7 +2739,6 @@ window.editCertificate = async function(certificateId) {
     if (!certificate) {
 
         notify("Certificate not found.");
-
         return;
 
     }
@@ -2395,7 +2760,6 @@ window.editCertificate = async function(certificateId) {
     if (!newName.trim() || !newCourseTitle.trim()) {
 
         notify("Name and course title cannot be empty.");
-
         return;
 
     }
@@ -2405,15 +2769,10 @@ window.editCertificate = async function(certificateId) {
         await updateDoc(
             doc(db, "certificates", certificateId),
             {
-
                 studentName: newName.trim(),
-
                 courseTitle: newCourseTitle.trim(),
-
                 updatedAt: serverTimestamp(),
-
                 updatedBy: currentAdmin.uid
-
             }
         );
 
@@ -2435,7 +2794,7 @@ window.editCertificate = async function(certificateId) {
 
 
 // =====================================================
-// 42. REVOKE / RESTORE CERTIFICATE
+// 51. REVOKE / RESTORE CERTIFICATE
 // =====================================================
 
 window.toggleCertificate = async function(certificateId) {
@@ -2451,9 +2810,7 @@ window.toggleCertificate = async function(certificateId) {
     const action = newStatus ? "revoke" : "restore";
 
     if (!confirm(`Are you sure you want to ${action} this certificate?`)) {
-
         return;
-
     }
 
     try {
@@ -2461,13 +2818,9 @@ window.toggleCertificate = async function(certificateId) {
         await updateDoc(
             doc(db, "certificates", certificateId),
             {
-
                 revoked: newStatus,
-
                 updatedAt: serverTimestamp(),
-
                 updatedBy: currentAdmin.uid
-
             }
         );
 
@@ -2493,7 +2846,248 @@ window.toggleCertificate = async function(certificateId) {
 
 
 // =====================================================
-// 43. DASHBOARD STATISTICS
+// 52. INSTRUCTOR MANAGEMENT
+// =====================================================
+
+function displayInstructors() {
+
+    const container = getElement("adminInstructorList");
+
+    if (!container) return;
+
+    const search = getValue("adminInstructorSearch").toLowerCase();
+
+    const filter =
+        getElement("adminInstructorFilter")?.value || "all";
+
+    const filtered = instructors.filter(instructor => {
+
+        const name = String(instructor.fullName || "").toLowerCase();
+
+        const email = String(instructor.email || "").toLowerCase();
+
+        const status = instructor.status || "pending";
+
+        const matchesSearch =
+            name.includes(search) || email.includes(search);
+
+        const matchesFilter =
+            filter === "all" || status === filter;
+
+        return matchesSearch && matchesFilter;
+
+    });
+
+    if (!filtered.length) {
+
+        container.innerHTML = "<p>No instructor applications found.</p>";
+
+        updateInstructorStatistics();
+
+        return;
+
+    }
+
+    container.innerHTML = filtered.map(instructor => {
+
+        const status = instructor.status || "pending";
+
+        return `
+
+            <div class="admin-item">
+
+                <h3>${escapeHTML(instructor.fullName || "Unnamed Instructor")}</h3>
+
+                <p>Email: ${escapeHTML(instructor.email || "Not available")}</p>
+
+                <p>University: ${escapeHTML(instructor.university || "Not provided")}</p>
+
+                <p>Department: ${escapeHTML(instructor.department || "Not provided")}</p>
+
+                <p>
+                    Status:
+                    <strong class="instructor-status ${escapeHTML(status)}">
+                        ${escapeHTML(status.toUpperCase())}
+                    </strong>
+                </p>
+
+                ${
+                    status === "pending"
+                    ? `
+                        <button
+                            type="button"
+                            onclick="approveInstructor('${escapeHTML(instructor.id)}')"
+                            class="approve-instructor-btn"
+                        >
+                            Approve Instructor
+                        </button>
+
+                        <button
+                            type="button"
+                            onclick="rejectInstructor('${escapeHTML(instructor.id)}')"
+                            class="reject-instructor-btn"
+                        >
+                            Reject Application
+                        </button>
+                    `
+                    : ""
+                }
+
+            </div>
+
+        `;
+
+    }).join("");
+
+    updateInstructorStatistics();
+
+}
+
+
+// =====================================================
+// 53. UPDATE INSTRUCTOR STATISTICS
+// =====================================================
+
+function updateInstructorStatistics() {
+
+    const pending = instructors.filter(
+        item => (item.status || "pending") === "pending"
+    ).length;
+
+    const approved = instructors.filter(
+        item => item.status === "approved"
+    ).length;
+
+    const rejected = instructors.filter(
+        item => item.status === "rejected"
+    ).length;
+
+    const values = {
+
+        pendingInstructorCount: pending,
+        approvedInstructorCount: approved,
+        rejectedInstructorCount: rejected,
+        totalInstructors: instructors.length,
+        totalPendingInstructors: pending,
+        pendingInstructorBadge: pending
+
+    };
+
+    Object.entries(values).forEach(([id, value]) => {
+
+        const element = getElement(id);
+
+        if (element) {
+            element.textContent = value;
+        }
+
+    });
+
+}
+
+
+// =====================================================
+// 54. APPROVE INSTRUCTOR
+// =====================================================
+
+window.approveInstructor = async function(instructorId) {
+
+    const instructor = instructors.find(
+        item => item.id === instructorId
+    );
+
+    if (!instructor) {
+
+        notify("Instructor application not found.");
+        return;
+
+    }
+
+    if (!confirm(
+        `Approve ${instructor.fullName || "this instructor"}?`
+    )) return;
+
+    try {
+
+        await updateDoc(
+            doc(db, "instructors", instructorId),
+            {
+                status: "approved",
+                approvedAt: serverTimestamp(),
+                approvedBy: currentAdmin.uid
+            }
+        );
+
+        await loadInstructors();
+
+        displayInstructors();
+
+        notify(
+            "Instructor approved successfully. They can now access the instructor dashboard."
+        );
+
+    } catch (error) {
+
+        console.error("Instructor approval error:", error);
+
+        notify("Unable to approve instructor: " + error.message);
+
+    }
+
+};
+
+
+// =====================================================
+// 55. REJECT INSTRUCTOR
+// =====================================================
+
+window.rejectInstructor = async function(instructorId) {
+
+    const instructor = instructors.find(
+        item => item.id === instructorId
+    );
+
+    if (!instructor) {
+
+        notify("Instructor application not found.");
+        return;
+
+    }
+
+    if (!confirm(
+        `Reject ${instructor.fullName || "this instructor"}'s application?`
+    )) return;
+
+    try {
+
+        await updateDoc(
+            doc(db, "instructors", instructorId),
+            {
+                status: "rejected",
+                rejectedAt: serverTimestamp(),
+                rejectedBy: currentAdmin.uid
+            }
+        );
+
+        await loadInstructors();
+
+        displayInstructors();
+
+        notify("Instructor application rejected.");
+
+    } catch (error) {
+
+        console.error("Instructor rejection error:", error);
+
+        notify("Unable to reject application: " + error.message);
+
+    }
+
+};
+
+
+// =====================================================
+// 56. DASHBOARD STATISTICS
 // =====================================================
 
 function updateStatistics() {
@@ -2515,16 +3109,16 @@ function updateStatistics() {
         const element = getElement(id);
 
         if (element) {
-
             element.textContent = value;
-
         }
 
     });
+
+    updateInstructorStatistics();
 
 }
 
 
 // =====================================================
-// 44. END OF LEARNSPHERE ADMIN DASHBOARD
+// 57. END OF LEARNSPHERE ADMIN DASHBOARD
 // =====================================================

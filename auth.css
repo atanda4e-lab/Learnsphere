@@ -498,3 +498,73 @@ select {
     }
 
 }
+/* THREE ACCOUNT OPTIONS */
+
+.account-selector {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.account-option {
+    padding: 15px 8px;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.account-option i {
+    font-size: 21px;
+}
+
+.account-option span {
+    font-size: 12px;
+}
+
+
+/* INSTRUCTOR APPLICATION */
+
+#instructorAuthSection .admin-heading {
+    margin: 20px 0;
+}
+
+#instructorAuthSection .admin-heading p {
+    line-height: 1.6;
+}
+
+#instructorRegisterForm .admin-heading {
+    margin-bottom: 22px;
+}
+
+#instructorRegisterForm .admin-icon {
+    background: #e7f8f3;
+    color: #13a889;
+}
+
+#instructorAuthSection .auth-tab {
+    font-size: 12px;
+}
+
+#instructorAuthSection .auth-submit {
+    background: #13a889;
+}
+
+#instructorAuthSection .auth-submit:hover {
+    background: #0e8b70;
+}
+
+
+/* MOBILE */
+
+@media screen and (max-width: 380px) {
+
+    .account-option {
+        padding: 12px 4px;
+    }
+
+    .account-option i {
+        font-size: 18px;
+    }
+
+    .account-option span {
+        font-size: 10px;
+    }
+
+}
