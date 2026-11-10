@@ -2,16 +2,84 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Explore Courses | LearnSphere</title>
+    <!-- SEO TITLE -->
+    <title>Explore Online Courses | LearnSphere Nigeria</title>
 
+    <!-- SEO DESCRIPTION -->
+    <meta name="description"
+        content="Explore LearnSphere courses for Nigerian university students. Discover courses across different departments and academic levels, study online and improve your academic knowledge.">
+
+    <!-- SEARCH ENGINE SETTINGS -->
+    <meta name="robots" content="index, follow">
+
+    <meta name="author" content="LearnSphere">
+
+    <meta name="theme-color" content="#3157d5">
+
+    <!-- CANONICAL URL -->
+    <link rel="canonical"
+        href="https://learnsphere-ng.vercel.app/courses.html">
+
+    <!-- OPEN GRAPH / SOCIAL SHARING -->
+    <meta property="og:type" content="website">
+
+    <meta property="og:title"
+        content="Explore Online Courses | LearnSphere">
+
+    <meta property="og:description"
+        content="Discover courses, learn new skills and improve your academic knowledge with LearnSphere.">
+
+    <meta property="og:url"
+        content="https://learnsphere-ng.vercel.app/courses.html">
+
+    <meta property="og:site_name" content="LearnSphere">
+
+    <meta property="og:image"
+        content="https://learnsphere-ng.vercel.app/images/learnsphere-preview.png">
+
+    <!-- TWITTER SHARING -->
+    <meta name="twitter:card" content="summary_large_image">
+
+    <meta name="twitter:title"
+        content="Explore Online Courses | LearnSphere">
+
+    <meta name="twitter:description"
+        content="Explore university courses and learning resources on LearnSphere.">
+
+    <meta name="twitter:image"
+        content="https://learnsphere-ng.vercel.app/images/learnsphere-preview.png">
+
+    <!-- FAVICON -->
+    <link rel="icon" href="favicon.ico">
+
+    <!-- STYLESHEET -->
     <link rel="stylesheet" href="courses.css">
 
+    <!-- FONT AWESOME -->
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- LEARNSPHERE STRUCTURED DATA -->
+    <script type="application/ld+json">
+
+    {
+        "@context": "https://schema.org",
+        "@type": "EducationalOrganization",
+        "name": "LearnSphere",
+        "url": "https://learnsphere-ng.vercel.app/",
+        "description": "LearnSphere is an online learning platform offering educational courses and learning resources for students.",
+        "educationalCredentialAwarded": "Online Learning Certificates"
+    }
+
+    </script>
+
 </head>
+
 
 <body>
 
@@ -19,112 +87,167 @@
     <header class="courses-header">
 
         <a href="index.html" class="logo">
+
             <i class="fa-solid fa-graduation-cap"></i>
-            LearnSphere
+
+            <span>LearnSphere</span>
+
         </a>
 
-        <nav>
+
+        <nav aria-label="Main navigation">
+
             <a href="index.html">Home</a>
+
             <a href="courses.html" class="active">Courses</a>
+
             <a href="student-dashboard.html">Dashboard</a>
+
             <a href="admin.html">Admin</a>
+
         </nav>
 
+
         <a href="auth.html?mode=login" class="login-link">
+
+            <i class="fa-solid fa-right-to-bracket"></i>
+
             Login
+
         </a>
 
     </header>
 
 
-    <!-- PAGE INTRODUCTION -->
+    <!-- HERO SECTION -->
     <section class="courses-hero">
 
-        <div>
-            <span class="hero-label">LEARN SOMETHING NEW</span>
+        <div class="hero-content">
 
-            <h1>Explore Our Courses</h1>
+            <span class="hero-label">
+                LEARN SOMETHING NEW
+            </span>
+
+            <h1>
+                Explore Courses on LearnSphere
+            </h1>
 
             <p>
-                Discover courses designed to help you develop new skills,
-                improve your knowledge and achieve your academic goals.
+                Discover educational courses designed to help Nigerian
+                university students improve their knowledge, develop
+                practical skills and achieve their academic goals.
             </p>
+
+            <a href="#available-courses" class="hero-button">
+
+                Explore Courses
+
+                <i class="fa-solid fa-arrow-down"></i>
+
+            </a>
+
         </div>
 
     </section>
 
 
-    <!-- COURSE CATALOGUE -->
-    <main class="courses-container">
+    <!-- MAIN CONTENT -->
+    <main class="courses-container" id="available-courses">
 
-        <div class="courses-heading">
+
+        <!-- COURSE HEADING -->
+        <section class="courses-heading">
 
             <div>
+
+                <span class="section-label">
+                    LEARNING RESOURCES
+                </span>
+
                 <h2>Available Courses</h2>
-                <p>Find a course that matches your interests.</p>
+
+                <p>
+                    Find courses based on your department and academic level.
+                </p>
+
             </div>
 
-            <span id="courseCount">0 Courses</span>
 
-        </div>
+            <span id="courseCount">
+                0 Courses
+            </span>
+
+        </section>
 
 
         <!-- SEARCH AND FILTER -->
-        <div class="course-filters">
+        <section class="course-filters" aria-label="Course search and filters">
+
 
             <div class="search-box">
+
                 <i class="fa-solid fa-magnifying-glass"></i>
 
                 <input
-                    type="text"
+                    type="search"
                     id="courseSearch"
-                    placeholder="Search for a course..."
+                    placeholder="Search courses, departments or topics..."
+                    aria-label="Search courses"
                 >
+
             </div>
 
 
-            <select id="departmentFilter">
+            <select id="departmentFilter" aria-label="Filter by department">
 
                 <option value="">All Departments</option>
 
             </select>
 
 
-            <select id="levelFilter">
+            <select id="levelFilter" aria-label="Filter by academic level">
 
                 <option value="">All Levels</option>
+
                 <option value="100">100 Level</option>
+
                 <option value="200">200 Level</option>
+
                 <option value="300">300 Level</option>
+
                 <option value="400">400 Level</option>
+
                 <option value="500">500 Level</option>
 
             </select>
 
-        </div>
+
+        </section>
 
 
-        <!-- COURSE CARDS -->
-        <div id="courseGrid" class="course-grid">
+        <!-- COURSE GRID -->
+        <section id="courseGrid" class="course-grid"
+            aria-label="Available courses">
 
-            <!-- Courses will be displayed here using JavaScript -->
+            <!-- Courses are displayed here using JavaScript -->
 
-        </div>
+        </section>
 
 
         <!-- EMPTY MESSAGE -->
-        <div id="emptyMessage" class="empty-message hidden">
+        <section id="emptyMessage" class="empty-message hidden">
 
             <i class="fa-solid fa-book-open"></i>
 
             <h3>No Courses Found</h3>
 
             <p>
-                No courses match your search. Try another search
-                or change your filters.
+                We could not find courses matching your search.
+                Try another keyword or change your filters.
             </p>
 
-        </div>
+        </section>
+
 
     </main>
 
@@ -132,8 +255,22 @@
     <!-- FOOTER -->
     <footer class="courses-footer">
 
+        <div class="footer-logo">
+
+            <i class="fa-solid fa-graduation-cap"></i>
+
+            LearnSphere
+
+        </div>
+
         <p>
+            Helping students learn, grow and achieve more.
+        </p>
+
+        <p class="copyright">
+
             &copy; 2026 LearnSphere. All rights reserved.
+
         </p>
 
     </footer>
