@@ -1,7 +1,8 @@
+
 // ========================================
 // LEARNSPHERE COURSE LEARNING SYSTEM
 // COMPLETE FIREBASE VERSION
-// WITH INSTRUCTOR QUIZ SETTINGS
+// PUBLIC COURSE SEO + PROTECTED LEARNING
 // ========================================
 
 
@@ -240,7 +241,330 @@ function formatDateTime(value) {
 
 
 // ========================================
-// 6. COURSE OPENING AND CLOSING DATES
+// 6. DYNAMIC COURSE SEO
+// ========================================
+
+function setMetaTag(attribute, name, content) {
+
+    let element = document.head.querySelector(
+        `meta[${attribute}="${name}"]`
+    );
+
+    if (!element) {
+
+        element = document.createElement("meta");
+
+        element.setAttribute(attribute, name);
+
+        document.head.appendChild(element);
+
+    }
+
+    element.setAttribute("content", content);
+
+}
+
+
+function updateCourseSEO(course) {
+
+    if (!course) return;
+
+    const title = course.title || "Online Course";
+
+    const description = course.description ||
+        "Explore online courses and learning resources on LearnSphere Nigeria.";
+
+    const department = course.department || "General";
+
+    const level = course.level || "All Levels";
+
+    const canonicalURL =
+        "https://learnsphere-ng.vercel.app/course.html?id=" +
+        encodeURIComponent(course.id);
+
+    const seoTitle = title + " | LearnSphere Nigeria";
+
+    const seoDescription = (
+        description +
+        " Department: " +
+        department +
+        ". Level: " +
+        level +
+        ". Learn online with LearnSphere Nigeria."
+    ).slice(0, 300);
+
+    // PAGE TITLE
+
+    document.title = seoTitle;
+
+    // BASIC SEO
+
+    setMetaTag("name", "description", seoDescription);
+
+    setMetaTag("name", "robots", "index, follow");
+
+    setMetaTag("name", "author", "LearnSphere Nigeria");
+
+    // OPEN GRAPH
+
+    setMetaTag("property", "og:type", "website");
+
+    setMetaTag("property", "og:site_name", "LearnSphere Nigeria");
+
+    setMetaTag("property", "og:title", seoTitle);
+
+    setMetaTag("property", "og:description", seoDescription);
+
+    setMetaTag("property", "og:url", canonicalURL);
+
+    // TWITTER
+
+    setMetaTag("name", "twitter:card", "summary");
+
+    setMetaTag("name", "twitter:title", seoTitle);
+
+    setMetaTag("name", "twitter:description", seoDescription);
+
+    // CANONICAL URL
+
+    let canonical = document.querySelector(
+        'link[rel="canonical"]'
+    );
+
+    if (!canonical) {
+
+        canonical = document.createElement("link");
+
+        canonical.rel = "canonical";
+
+        document.head.appendChild(canonical);
+
+    }
+
+    canonical.href = canonicalURL;
+
+    // COURSE STRUCTURED DATA
+
+    let structuredData = document.getElementById(
+        "courseStructuredData"
+    );
+
+    if (!structuredData) {
+
+        structuredData = document.createElement("script");
+
+        structuredData.type = "application/ld+json";
+
+        structuredData.id = "courseStructuredData";
+
+        document.head.appendChild(structuredData);
+
+    }
+
+    structuredData.textContent = JSON.stringify({
+
+        "@context": "https://schema.org",
+
+        "@type": "Course",
+
+        "name": title,
+
+        "description": description,
+
+        "url": canonicalURL,
+
+        "provider": {
+
+            "@type": "Organization",
+
+            "name": "LearnSphere Nigeria",
+
+            "url": "https://learnsphere-ng.vercel.app/"
+
+        },
+
+        "educationalLevel": level,
+
+        "about": department
+
+    });
+
+}
+
+
+// ========================================
+// 7. LOAD PUBLIC COURSE INFORMATION
+// ========================================
+
+async function loadPublicCourseInformation() {
+
+    if (!courseId) {
+
+        courseTitle.textContent = "Course Not Found";
+
+        courseDescription.textContent =
+            "No course was selected.";
+
+        return false;
+
+    }
+
+    try {
+
+        const courseReference = doc(db, "courses", courseId);
+
+        const courseDocument = await getDoc(courseReference);
+
+        if (!courseDocument.exists()) {
+
+            courseTitle.textContent = "Course Not Found";
+
+            courseDescription.textContent =
+                "This course could not be found.";
+
+            return false;
+
+        }
+
+        const courseData = {
+
+            ...courseDocument.data(),
+
+            id: courseDocument.id
+
+        };
+
+        if (
+            courseData.published !== true &&
+            courseData.isPublished !== true
+        ) {
+
+            courseTitle.textContent = "Course Unavailable";
+
+            courseDescription.textContent =
+                "This course is not currently published.";
+
+            return false;
+
+        }
+
+        currentCourse = courseData;
+
+        courseTitle.textContent =
+            currentCourse.title || "Untitled Course";
+
+        courseDescription.textContent =
+            currentCourse.description || "";
+
+        courseDepartment.textContent =
+            currentCourse.department || "General";
+
+        courseLevel.textContent =
+            currentCourse.level || "All Levels";
+
+        updateCourseSEO(currentCourse);
+
+        return true;
+
+    }
+
+    catch (error) {
+
+        console.error("Public course loading error:", error);
+
+        courseTitle.textContent = "Unable to Load Course";
+
+        courseDescription.textContent =
+            "Please try again later.";
+
+        return false;
+
+    }
+
+}
+
+
+// ========================================
+// 8. PUBLIC VISITOR MESSAGE
+// ========================================
+
+function showPublicCourseAccessMessage() {
+
+    if (welcomeMessage) {
+
+        welcomeMessage.classList.remove("hidden");
+
+        welcomeMessage.innerHTML = `
+
+            <i class="fa-solid fa-book-open"></i>
+
+            <h2>Welcome to ${escapeHTML(
+                currentCourse?.title || "LearnSphere"
+            )}</h2>
+
+            <p>
+                Explore this course on LearnSphere Nigeria.
+                Sign in as a student and enrol to access
+                the complete lessons, learning materials
+                and quizzes.
+            </p>
+
+            <a href="auth.html?mode=student"
+                class="back-link"
+                style="display:inline-block;margin-top:15px;">
+
+                Sign In to Start Learning
+
+            </a>
+
+        `;
+
+    }
+
+    if (lessonArea) {
+
+        lessonArea.classList.add("hidden");
+
+    }
+
+    if (quizArea) {
+
+        quizArea.classList.add("hidden");
+
+    }
+
+    if (lessonList) {
+
+        lessonList.innerHTML = `
+
+            <p>
+                Sign in and enrol in this course
+                to access the lessons.
+            </p>
+
+        `;
+
+    }
+
+    if (openQuizBtn) {
+
+        openQuizBtn.disabled = true;
+
+        openQuizBtn.innerHTML = `
+
+            <i class="fa-solid fa-lock"></i>
+
+            Student Login Required
+
+        `;
+
+    }
+
+}
+
+
+// ========================================
+// 9. COURSE OPENING AND CLOSING DATES
 // ========================================
 
 function checkCourseSchedule() {
@@ -260,7 +584,6 @@ function checkCourseSchedule() {
 
     const closingDate = currentCourse.closingDate || "";
 
-
     if (openingDate && today < openingDate) {
 
         return {
@@ -271,7 +594,6 @@ function checkCourseSchedule() {
 
     }
 
-
     if (closingDate && today > closingDate) {
 
         return {
@@ -280,7 +602,6 @@ function checkCourseSchedule() {
         };
 
     }
-
 
     return {
         allowed: true,
@@ -291,7 +612,7 @@ function checkCourseSchedule() {
 
 
 // ========================================
-// 7. CHECK INDIVIDUAL QUIZ SCHEDULE
+// 10. CHECK INDIVIDUAL QUIZ SCHEDULE
 // ========================================
 
 function checkQuizSchedule(settings) {
@@ -305,7 +626,6 @@ function checkQuizSchedule(settings) {
 
     }
 
-
     if (settings.published !== true) {
 
         return {
@@ -315,13 +635,11 @@ function checkQuizSchedule(settings) {
 
     }
 
-
     const now = new Date();
 
     const openingDate = getDateValue(settings.openingDateTime);
 
     const closingDate = getDateValue(settings.closingDateTime);
-
 
     if (openingDate && now < openingDate) {
 
@@ -333,7 +651,6 @@ function checkQuizSchedule(settings) {
 
     }
 
-
     if (closingDate && now > closingDate) {
 
         return {
@@ -344,7 +661,6 @@ function checkQuizSchedule(settings) {
 
     }
 
-
     return {
         allowed: true,
         message: ""
@@ -354,26 +670,43 @@ function checkQuizSchedule(settings) {
 
 
 // ========================================
-// 8. AUTHENTICATION
+// 11. AUTHENTICATION
 // ========================================
+
+// Load public course information before checking login.
+
+const publicCourseReady = loadPublicCourseInformation();
+
 
 onAuthStateChanged(auth, async function (user) {
 
-    if (!user) {
-
-        window.location.href = "auth.html?mode=student";
-
-        return;
-
-    }
-
-
     try {
+
+        const courseAvailable = await publicCourseReady;
+
+        if (!courseAvailable) {
+
+            return;
+
+        }
+
+        // VISITOR WITHOUT LOGIN
+
+        if (!user) {
+
+            currentStudent = null;
+
+            showPublicCourseAccessMessage();
+
+            return;
+
+        }
+
+        // VERIFY STUDENT PROFILE
 
         const studentReference = doc(db, "students", user.uid);
 
         const studentDocument = await getDoc(studentReference);
-
 
         if (!studentDocument.exists()) {
 
@@ -387,9 +720,7 @@ onAuthStateChanged(auth, async function (user) {
 
         }
 
-
         const studentData = studentDocument.data();
-
 
         if (studentData.role !== "student") {
 
@@ -403,7 +734,6 @@ onAuthStateChanged(auth, async function (user) {
 
         }
 
-
         currentStudent = {
 
             ...studentData,
@@ -412,10 +742,11 @@ onAuthStateChanged(auth, async function (user) {
 
             id: user.uid,
 
-            fullName: studentData.fullName || user.displayName || "Student"
+            fullName: studentData.fullName ||
+                user.displayName ||
+                "Student"
 
         };
-
 
         await loadCourse();
 
@@ -425,7 +756,9 @@ onAuthStateChanged(auth, async function (user) {
 
         console.error("Authentication error:", error);
 
-        showError("Unable to verify your account: " + error.message);
+        showError(
+            "Unable to verify your account: " + error.message
+        );
 
     }
 
@@ -433,7 +766,7 @@ onAuthStateChanged(auth, async function (user) {
 
 
 // ========================================
-// 9. CHECK ENROLMENT
+// 12. CHECK ENROLMENT
 // ========================================
 
 async function isStudentEnrolled() {
@@ -446,9 +779,7 @@ async function isStudentEnrolled() {
 
     );
 
-
     const snapshot = await getDocs(enrollmentQuery);
-
 
     return snapshot.docs.some(function (item) {
 
@@ -460,64 +791,18 @@ async function isStudentEnrolled() {
 
 
 // ========================================
-// 10. LOAD COURSE
+// 13. LOAD COURSE FOR ENROLLED STUDENTS
 // ========================================
 
 async function loadCourse() {
 
     try {
 
-        if (!courseId) {
+        if (!currentCourse) {
 
-            alert("No course selected.");
-
-            window.location.href = "student-dashboard.html";
-
-            return;
+            throw new Error("Course information is unavailable.");
 
         }
-
-
-        const courseReference = doc(db, "courses", courseId);
-
-        const courseDocument = await getDoc(courseReference);
-
-
-        if (!courseDocument.exists()) {
-
-            alert("Course not found.");
-
-            window.location.href = "student-dashboard.html";
-
-            return;
-
-        }
-
-
-        currentCourse = {
-
-            ...courseDocument.data(),
-
-            id: courseDocument.id
-
-        };
-
-
-        // CHECK COURSE PUBLICATION
-
-        if (
-            currentCourse.published !== true &&
-            currentCourse.isPublished !== true
-        ) {
-
-            alert("This course is not published.");
-
-            window.location.href = "student-dashboard.html";
-
-            return;
-
-        }
-
 
         // CHECK COURSE DATES
 
@@ -533,7 +818,6 @@ async function loadCourse() {
 
         }
 
-
         // CHECK ENROLMENT
 
         const enrolled = await isStudentEnrolled();
@@ -548,20 +832,6 @@ async function loadCourse() {
 
         }
 
-
-        // DISPLAY COURSE INFORMATION
-
-        courseTitle.textContent = currentCourse.title || "Untitled Course";
-
-        courseDescription.textContent = currentCourse.description || "";
-
-        courseDepartment.textContent =
-            currentCourse.department || "General";
-
-        courseLevel.textContent =
-            currentCourse.level || "All Levels";
-
-
         // LOAD LESSONS
 
         const lessonsQuery = query(
@@ -572,21 +842,21 @@ async function loadCourse() {
 
         );
 
-
         const lessonsSnapshot = await getDocs(lessonsQuery);
-
 
         courseLessons = lessonsSnapshot.docs.map(function (item) {
 
             return {
+
                 ...item.data(),
+
                 id: item.id
+
             };
 
         });
 
-
-        // LOAD ALL COURSE QUESTIONS
+        // LOAD COURSE QUESTIONS
 
         const quizzesQuery = query(
 
@@ -596,31 +866,29 @@ async function loadCourse() {
 
         );
 
-
         const quizzesSnapshot = await getDocs(quizzesQuery);
-
 
         courseQuizzes = quizzesSnapshot.docs.map(function (item) {
 
             return {
+
                 ...item.data(),
+
                 id: item.id
+
             };
 
         });
 
-
         // LOAD INSTRUCTOR QUIZ SETTINGS
 
         await loadQuizSettings();
-
 
         // DISPLAY CONTENT
 
         await displayLessons();
 
         await updateProgress();
-
 
         if (courseLessons.length > 0) {
 
@@ -632,15 +900,12 @@ async function loadCourse() {
 
             lessonArea.classList.add("hidden");
 
-            lessonList.innerHTML = "<p>No lessons available yet.</p>";
+            lessonList.innerHTML =
+                "<p>No lessons available yet.</p>";
 
         }
 
-
-        // DISPLAY COURSE QUIZ AVAILABILITY
-
         updateCourseQuizButton();
-
 
         console.log("Course loaded:", currentCourse);
 
@@ -666,7 +931,7 @@ async function loadCourse() {
 
 
 // ========================================
-// 11. LOAD INSTRUCTOR QUIZ SETTINGS
+// 14. LOAD INSTRUCTOR QUIZ SETTINGS
 // ========================================
 
 async function loadQuizSettings() {
@@ -679,9 +944,7 @@ async function loadQuizSettings() {
 
     );
 
-
     const snapshot = await getDocs(settingsQuery);
-
 
     const allSettings = snapshot.docs.map(function (item) {
 
@@ -695,17 +958,11 @@ async function loadQuizSettings() {
 
     });
 
-
-    // ONLY PUBLISHED QUIZZES
-
     const publishedSettings = allSettings.filter(function (settings) {
 
         return settings.published === true;
 
     });
-
-
-    // COURSE QUIZZES
 
     courseQuizSettings = publishedSettings.filter(function (settings) {
 
@@ -713,25 +970,17 @@ async function loadQuizSettings() {
 
     });
 
-
-    // LESSON QUIZZES
-
     lessonQuizSettings = publishedSettings.filter(function (settings) {
 
         return settings.type === "lesson" && settings.lessonId;
 
     });
 
-
-    console.log("Published course quizzes:", courseQuizSettings);
-
-    console.log("Published lesson quizzes:", lessonQuizSettings);
-
 }
 
 
 // ========================================
-// 12. REFRESH QUIZ SETTINGS
+// 15. REFRESH QUIZ SETTINGS
 // ========================================
 
 async function refreshQuizSettings(settingsId) {
@@ -740,13 +989,11 @@ async function refreshQuizSettings(settingsId) {
 
     const settingsDocument = await getDoc(settingsReference);
 
-
     if (!settingsDocument.exists()) {
 
         throw new Error("This quiz has been removed by the instructor.");
 
     }
-
 
     const settings = {
 
@@ -756,13 +1003,11 @@ async function refreshQuizSettings(settingsId) {
 
     };
 
-
     if (settings.courseId !== courseId) {
 
         throw new Error("This quiz does not belong to this course.");
 
     }
-
 
     if (settings.published !== true) {
 
@@ -770,14 +1015,13 @@ async function refreshQuizSettings(settingsId) {
 
     }
 
-
     return settings;
 
 }
 
 
 // ========================================
-// 13. LOAD QUESTIONS FOR A QUIZ
+// 16. LOAD QUESTIONS FOR A QUIZ
 // ========================================
 
 async function loadQuestionsForQuiz(settings) {
@@ -790,9 +1034,7 @@ async function loadQuestionsForQuiz(settings) {
 
     );
 
-
     const snapshot = await getDocs(questionsQuery);
-
 
     const allQuestions = snapshot.docs.map(function (item) {
 
@@ -806,18 +1048,13 @@ async function loadQuestionsForQuiz(settings) {
 
     });
 
-
-    // QUESTIONS LINKED TO THIS SETTINGS DOCUMENT
-
     let matchingQuestions = allQuestions.filter(function (question) {
 
         return String(question.quizId || "") === String(settings.id);
 
     });
 
-
     // LEGACY QUESTION SUPPORT
-    // ONLY USED WHEN NO LINKED QUESTIONS EXIST
 
     if (matchingQuestions.length === 0) {
 
@@ -827,7 +1064,6 @@ async function loadQuestionsForQuiz(settings) {
 
             if (!hasNoQuizId) return false;
 
-
             if (settings.type === "lesson") {
 
                 return String(question.lessonId || "") ===
@@ -835,16 +1071,13 @@ async function loadQuestionsForQuiz(settings) {
 
             }
 
-
             return !question.lessonId;
 
         });
 
-
         matchingQuestions = legacyQuestions;
 
     }
-
 
     if (matchingQuestions.length === 0) {
 
@@ -854,14 +1087,13 @@ async function loadQuestionsForQuiz(settings) {
 
     }
 
-
     return matchingQuestions;
 
 }
 
 
 // ========================================
-// 14. GET QUESTION OPTIONS
+// 17. GET QUESTION OPTIONS
 // ========================================
 
 function getQuestionOptions(question) {
@@ -871,7 +1103,6 @@ function getQuestionOptions(question) {
         return question.options;
 
     }
-
 
     if (question.options && typeof question.options === "object") {
 
@@ -893,25 +1124,20 @@ function getQuestionOptions(question) {
 
     }
 
-
     return [];
 
 }
 
 
 // ========================================
-// 15. PREPARE QUESTIONS USING SETTINGS
+// 18. PREPARE QUESTIONS
 // ========================================
 
 function prepareQuizQuestions(questions, settings) {
 
     let preparedQuestions = [...questions];
 
-
     const questionLimit = Number(settings.questionLimit);
-
-
-    // APPLY QUESTION LIMIT
 
     if (
         Number.isInteger(questionLimit) &&
@@ -932,17 +1158,11 @@ function prepareQuizQuestions(questions, settings) {
 
     }
 
-
-    // SHUFFLE QUESTIONS
-
     if (settings.shuffleQuestions === true) {
 
         preparedQuestions = shuffleArray(preparedQuestions);
 
     }
-
-
-    // PREPARE OPTION ORDER
 
     preparedQuestions = preparedQuestions.map(function (question) {
 
@@ -954,7 +1174,6 @@ function prepareQuizQuestions(questions, settings) {
 
         });
 
-
         if (settings.shuffleOptions === true) {
 
             question.optionOrder = shuffleArray(optionOrder);
@@ -965,13 +1184,11 @@ function prepareQuizQuestions(questions, settings) {
 
         }
 
-
         question.displayOptions = options;
 
         return question;
 
     });
-
 
     return preparedQuestions;
 
@@ -979,7 +1196,7 @@ function prepareQuizQuestions(questions, settings) {
 
 
 // ========================================
-// 16. LOAD COMPLETED LESSONS
+// 19. LOAD COMPLETED LESSONS
 // ========================================
 
 async function getCompletedLessons() {
@@ -994,9 +1211,7 @@ async function getCompletedLessons() {
 
     );
 
-
     const snapshot = await getDocs(completedQuery);
-
 
     return snapshot.docs.map(function (item) {
 
@@ -1014,20 +1229,18 @@ async function getCompletedLessons() {
 
 
 // ========================================
-// 17. DISPLAY LESSONS
+// 20. DISPLAY LESSONS
 // ========================================
 
 async function displayLessons() {
 
     lessonList.innerHTML = "<p>Loading lessons...</p>";
 
-
     try {
 
         const completed = await getCompletedLessons();
 
         lessonList.innerHTML = "";
-
 
         courseLessons.forEach(function (lesson, index) {
 
@@ -1037,13 +1250,11 @@ async function displayLessons() {
 
             });
 
-
             const button = document.createElement("button");
 
             button.type = "button";
 
             button.className = "lesson-item";
-
 
             if (isCompleted) {
 
@@ -1051,13 +1262,11 @@ async function displayLessons() {
 
             }
 
-
             if (index === currentLessonIndex) {
 
                 button.classList.add("active");
 
             }
-
 
             button.innerHTML = `
 
@@ -1071,13 +1280,11 @@ async function displayLessons() {
 
             `;
 
-
             button.addEventListener("click", function () {
 
                 showLesson(index);
 
             });
-
 
             lessonList.appendChild(button);
 
@@ -1098,13 +1305,12 @@ async function displayLessons() {
 
 
 // ========================================
-// 18. CREATE LESSON QUIZ BUTTON
+// 21. CREATE LESSON QUIZ BUTTON
 // ========================================
 
 function createLessonQuizButton() {
 
     if (lessonQuizButton) return;
-
 
     lessonQuizButton = document.createElement("button");
 
@@ -1122,11 +1328,9 @@ function createLessonQuizButton() {
 
     `;
 
-
     lessonQuizButton.style.marginTop = "15px";
 
     lessonQuizButton.classList.add("hidden");
-
 
     lessonQuizButton.addEventListener("click", async function () {
 
@@ -1134,9 +1338,7 @@ function createLessonQuizButton() {
 
         if (!lesson) return;
 
-
         const settings = getLessonQuizSettings(lesson.id);
-
 
         if (!settings) {
 
@@ -1146,14 +1348,11 @@ function createLessonQuizButton() {
 
         }
 
-
         await openConfiguredQuiz(settings);
 
     });
 
-
     const heading = document.querySelector(".lesson-heading");
-
 
     if (heading) {
 
@@ -1165,7 +1364,7 @@ function createLessonQuizButton() {
 
 
 // ========================================
-// 19. FIND LESSON QUIZ SETTINGS
+// 22. FIND LESSON QUIZ SETTINGS
 // ========================================
 
 function getLessonQuizSettings(lessonId) {
@@ -1176,15 +1375,11 @@ function getLessonQuizSettings(lessonId) {
 
     });
 
-
     if (matchingSettings.length === 0) {
 
         return null;
 
     }
-
-
-    // USE THE MOST RECENTLY UPDATED QUIZ
 
     matchingSettings.sort(function (a, b) {
 
@@ -1196,23 +1391,20 @@ function getLessonQuizSettings(lessonId) {
 
     });
 
-
     return matchingSettings[0];
 
 }
 
 
 // ========================================
-// 20. SHOW LESSON
+// 23. SHOW LESSON
 // ========================================
 
 async function showLesson(index) {
 
     if (index < 0 || index >= courseLessons.length) return;
 
-
     const schedule = checkCourseSchedule();
-
 
     if (!schedule.allowed) {
 
@@ -1224,12 +1416,9 @@ async function showLesson(index) {
 
     }
 
-
     currentLessonIndex = index;
 
-
     const lesson = courseLessons[index];
-
 
     welcomeMessage.classList.add("hidden");
 
@@ -1237,14 +1426,12 @@ async function showLesson(index) {
 
     lessonArea.classList.remove("hidden");
 
-
     lessonTitle.textContent = lesson.title || "";
 
     lessonDescription.textContent = lesson.description || "";
 
     lessonContent.textContent =
         lesson.content || "No lesson content available.";
-
 
     // VIDEO
 
@@ -1260,11 +1447,9 @@ async function showLesson(index) {
 
     }
 
-
     // PDF
 
     const pdf = lesson.pdf || lesson.pdfData;
-
 
     if (pdf) {
 
@@ -1280,21 +1465,17 @@ async function showLesson(index) {
 
     }
 
-
-    // LESSON NAVIGATION
+    // NAVIGATION
 
     previousLessonBtn.disabled = index === 0;
 
     nextLessonBtn.disabled = index === courseLessons.length - 1;
 
-
-    // LESSON QUIZ BUTTON
+    // LESSON QUIZ
 
     createLessonQuizButton();
 
-
     const lessonQuiz = getLessonQuizSettings(lesson.id);
-
 
     if (lessonQuiz) {
 
@@ -1316,18 +1497,15 @@ async function showLesson(index) {
 
     }
 
-
     try {
 
         const completed = await getCompletedLessons();
-
 
         const isCompleted = completed.some(function (item) {
 
             return String(item.lessonId) === String(lesson.id);
 
         });
-
 
         completeLessonBtn.disabled = isCompleted;
 
@@ -1336,7 +1514,6 @@ async function showLesson(index) {
             ? "Completed ✓"
 
             : "Mark as Completed";
-
 
         await displayLessons();
 
@@ -1354,13 +1531,12 @@ async function showLesson(index) {
 
 
 // ========================================
-// 21. COMPLETE LESSON
+// 24. COMPLETE LESSON
 // ========================================
 
 async function completeLesson() {
 
     const schedule = checkCourseSchedule();
-
 
     if (!schedule.allowed) {
 
@@ -1372,35 +1548,24 @@ async function completeLesson() {
 
     }
 
-
     const lesson = courseLessons[currentLessonIndex];
 
     if (!lesson) return;
 
-
     completeLessonBtn.disabled = true;
-
 
     try {
 
         const lessonId = currentStudent.uid + "_" +
-
             currentCourse.id + "_" + lesson.id;
 
-
         const lessonReference = doc(
-
             db,
-
             "completedLessons",
-
             lessonId
-
         );
 
-
         const existing = await getDoc(lessonReference);
-
 
         if (!existing.exists()) {
 
@@ -1420,9 +1585,7 @@ async function completeLesson() {
 
         }
 
-
         alert("Lesson marked as completed!");
-
 
         await displayLessons();
 
@@ -1448,13 +1611,12 @@ async function completeLesson() {
 
 
 // ========================================
-// 22. UPDATE PROGRESS
+// 25. UPDATE PROGRESS
 // ========================================
 
 async function updateProgress() {
 
     if (!currentStudent || !currentCourse) return;
-
 
     try {
 
@@ -1464,13 +1626,11 @@ async function updateProgress() {
 
         const count = completed.length;
 
-
         const percentage = total > 0
 
             ? Math.round((count / total) * 100)
 
             : 0;
-
 
         progressPercentage.textContent = percentage + "%";
 
@@ -1488,7 +1648,7 @@ async function updateProgress() {
 
 
 // ========================================
-// 23. LESSON NAVIGATION EVENTS
+// 26. LESSON NAVIGATION EVENTS
 // ========================================
 
 previousLessonBtn.addEventListener("click", function () {
@@ -1497,25 +1657,22 @@ previousLessonBtn.addEventListener("click", function () {
 
 });
 
-
 nextLessonBtn.addEventListener("click", function () {
 
     showLesson(currentLessonIndex + 1);
 
 });
 
-
 completeLessonBtn.addEventListener("click", completeLesson);
 
 
 // ========================================
-// 24. COURSE QUIZ BUTTON
+// 27. COURSE QUIZ BUTTON
 // ========================================
 
 function updateCourseQuizButton() {
 
     if (!openQuizBtn) return;
-
 
     if (courseQuizSettings.length === 0) {
 
@@ -1533,7 +1690,6 @@ function updateCourseQuizButton() {
 
     }
 
-
     openQuizBtn.disabled = false;
 
     openQuizBtn.innerHTML = `
@@ -1548,7 +1704,7 @@ function updateCourseQuizButton() {
 
 
 // ========================================
-// 25. COURSE QUIZ BUTTON EVENT
+// 28. COURSE QUIZ BUTTON EVENT
 // ========================================
 
 openQuizBtn.addEventListener("click", async function () {
@@ -1561,11 +1717,7 @@ openQuizBtn.addEventListener("click", async function () {
 
     }
 
-
-    // USE MOST RECENT COURSE QUIZ
-
     const matchingSettings = [...courseQuizSettings];
-
 
     matchingSettings.sort(function (a, b) {
 
@@ -1577,23 +1729,20 @@ openQuizBtn.addEventListener("click", async function () {
 
     });
 
-
     await openConfiguredQuiz(matchingSettings[0]);
 
 });
 
 
 // ========================================
-// 26. OPEN CONFIGURED QUIZ
+// 29. OPEN CONFIGURED QUIZ
 // ========================================
 
 async function openConfiguredQuiz(settings) {
 
     if (quizSubmissionInProgress) return;
 
-
     const courseSchedule = checkCourseSchedule();
-
 
     if (!courseSchedule.allowed) {
 
@@ -1603,21 +1752,13 @@ async function openConfiguredQuiz(settings) {
 
     }
 
-
     try {
 
         openQuizBtn.disabled = true;
 
-
-        // REFRESH SETTINGS FROM FIREBASE
-
         const freshSettings = await refreshQuizSettings(settings.id);
 
-
-        // CHECK QUIZ OPENING AND CLOSING
-
         const quizSchedule = checkQuizSchedule(freshSettings);
-
 
         if (!quizSchedule.allowed) {
 
@@ -1627,22 +1768,12 @@ async function openConfiguredQuiz(settings) {
 
         }
 
-
-        // LOAD QUESTIONS FOR THIS PARTICULAR QUIZ
-
         const questions = await loadQuestionsForQuiz(freshSettings);
 
-
-        // APPLY QUESTION LIMIT AND SHUFFLING
-
         const preparedQuestions = prepareQuizQuestions(
-
             questions,
-
             freshSettings
-
         );
-
 
         if (preparedQuestions.length === 0) {
 
@@ -1652,11 +1783,7 @@ async function openConfiguredQuiz(settings) {
 
         }
 
-
-        // CHECK MAXIMUM ATTEMPTS
-
         const attemptStatus = await checkQuizAttempts(freshSettings);
-
 
         if (!attemptStatus.allowed) {
 
@@ -1666,9 +1793,6 @@ async function openConfiguredQuiz(settings) {
 
         }
 
-
-        // SAVE ACTIVE QUIZ INFORMATION
-
         currentQuizSettings = freshSettings;
 
         activeQuizQuestions = preparedQuestions;
@@ -1676,9 +1800,6 @@ async function openConfiguredQuiz(settings) {
         maxQuizAttempts = attemptStatus.maxAttempts;
 
         usedQuizAttempts = attemptStatus.usedAttempts;
-
-
-        // RESET QUIZ
 
         currentQuestionIndex = 0;
 
@@ -1688,27 +1809,21 @@ async function openConfiguredQuiz(settings) {
 
         quizSubmissionInProgress = false;
 
-
         quizResult.classList.add("hidden");
 
         submitQuizBtn.disabled = false;
 
         submitQuizBtn.textContent = "Submit Answers";
 
-
-        // DISPLAY QUIZ TITLE AND INSTRUCTIONS
-
         const heading = quizArea.querySelector(".quiz-heading h2");
 
         const description = quizArea.querySelector(".quiz-heading p");
-
 
         if (heading) {
 
             heading.textContent = freshSettings.title || "Course Quiz";
 
         }
-
 
         if (description) {
 
@@ -1718,22 +1833,13 @@ async function openConfiguredQuiz(settings) {
 
         }
 
-
-        // OPEN QUIZ AREA
-
         lessonArea.classList.add("hidden");
 
         welcomeMessage.classList.add("hidden");
 
         quizArea.classList.remove("hidden");
 
-
-        // START TIMER USING INSTRUCTOR SETTINGS
-
         startQuizTimer();
-
-
-        // DISPLAY FIRST QUESTION
 
         displayQuiz();
 
@@ -1757,7 +1863,7 @@ async function openConfiguredQuiz(settings) {
 
 
 // ========================================
-// 27. CHECK QUIZ ATTEMPTS
+// 30. CHECK QUIZ ATTEMPTS
 // ========================================
 
 async function checkQuizAttempts(settings) {
@@ -1774,9 +1880,7 @@ async function checkQuizAttempts(settings) {
 
         );
 
-
         const snapshot = await getDocs(resultsQuery);
-
 
         const allResults = snapshot.docs.map(function (item) {
 
@@ -1790,9 +1894,6 @@ async function checkQuizAttempts(settings) {
 
         });
 
-
-        // COUNT ATTEMPTS FOR THIS PARTICULAR QUIZ
-
         const quizResults = allResults.filter(function (result) {
 
             if (result.quizId) {
@@ -1801,20 +1902,13 @@ async function checkQuizAttempts(settings) {
 
             }
 
-
-            // OLD RESULTS WITHOUT QUIZ ID
-            // COUNT THEM ONLY FOR COURSE QUIZZES
-
             return settings.type !== "lesson";
 
         });
 
-
         const usedAttempts = quizResults.length;
 
-
         let maxAttempts = Number(settings.maxAttempts);
-
 
         if (!Number.isInteger(maxAttempts) || maxAttempts < 1) {
 
@@ -1822,31 +1916,16 @@ async function checkQuizAttempts(settings) {
 
         }
 
-
         if (!Number.isInteger(maxAttempts) || maxAttempts < 1) {
 
             maxAttempts = DEFAULT_MAX_ATTEMPTS;
 
         }
 
-
         const remainingAttempts = Math.max(
-
             0,
-
             maxAttempts - usedAttempts
-
         );
-
-
-        console.log("Quiz:", settings.title);
-
-        console.log("Used attempts:", usedAttempts);
-
-        console.log("Maximum attempts:", maxAttempts);
-
-        console.log("Remaining attempts:", remainingAttempts);
-
 
         if (remainingAttempts <= 0) {
 
@@ -1855,9 +1934,7 @@ async function checkQuizAttempts(settings) {
                 allowed: false,
 
                 message: "You have used all " +
-
                     maxAttempts +
-
                     " attempts for this quiz.",
 
                 usedAttempts: usedAttempts,
@@ -1867,7 +1944,6 @@ async function checkQuizAttempts(settings) {
             };
 
         }
-
 
         return {
 
@@ -1897,18 +1973,16 @@ async function checkQuizAttempts(settings) {
 
 
 // ========================================
-// 28. QUIZ TIMER DISPLAY
+// 31. QUIZ TIMER DISPLAY
 // ========================================
 
 function createTimerDisplay() {
 
     if (quizTimerDisplay) return;
 
-
     const heading = quizArea.querySelector(".quiz-heading");
 
     if (!heading) return;
-
 
     quizTimerDisplay = document.createElement("div");
 
@@ -1925,7 +1999,6 @@ function createTimerDisplay() {
     quizTimerDisplay.style.fontWeight = "bold";
 
     quizTimerDisplay.style.textAlign = "center";
-
 
     heading.after(quizTimerDisplay);
 
@@ -1947,10 +2020,8 @@ function updateTimerDisplay() {
 
     if (!quizTimerDisplay) return;
 
-
     quizTimerDisplay.textContent =
         "Time Remaining: " + formatTime(remainingTime);
-
 
     if (remainingTime <= 60) {
 
@@ -1983,18 +2054,16 @@ function stopQuizTimer() {
 
 
 // ========================================
-// 29. START QUIZ TIMER
+// 32. START QUIZ TIMER
 // ========================================
 
 function startQuizTimer() {
 
     stopQuizTimer();
 
-
     let timeLimitMinutes = Number(
         currentQuizSettings.timeLimitMinutes
     );
-
 
     if (
         !Number.isFinite(timeLimitMinutes) ||
@@ -2014,16 +2083,13 @@ function startQuizTimer() {
 
     }
 
-
     remainingTime = Math.round(timeLimitMinutes * 60);
 
     quizStartTime = Date.now();
 
-
     createTimerDisplay();
 
     updateTimerDisplay();
-
 
     quizTimer = setInterval(function () {
 
@@ -2035,7 +2101,6 @@ function startQuizTimer() {
 
         }
 
-
         remainingTime = Math.max(
 
             0,
@@ -2046,9 +2111,7 @@ function startQuizTimer() {
 
         );
 
-
         updateTimerDisplay();
-
 
         if (remainingTime <= 0) {
 
@@ -2064,24 +2127,20 @@ function startQuizTimer() {
 
 
 // ========================================
-// 30. DISPLAY QUIZ QUESTION
+// 33. DISPLAY QUIZ QUESTION
 // ========================================
 
 function displayQuiz() {
 
     quizQuestions.innerHTML = "";
 
-
     const quiz = activeQuizQuestions[currentQuestionIndex];
 
-
     if (!quiz) return;
-
 
     const letters = ["A", "B", "C", "D"];
 
     let optionsHTML = "";
-
 
     quiz.optionOrder.forEach(function (originalIndex, displayIndex) {
 
@@ -2093,10 +2152,8 @@ function displayQuiz() {
 
         }
 
-
         const selected =
             studentAnswers[quiz.id] === String(originalIndex);
-
 
         optionsHTML += `
 
@@ -2104,7 +2161,7 @@ function displayQuiz() {
 
                 <input type="radio"
 
-                    name="question-${quiz.id}"
+                    name="question-${escapeHTML(quiz.id)}"
 
                     value="${originalIndex}"
 
@@ -2120,9 +2177,7 @@ function displayQuiz() {
 
     });
 
-
     const questionText = quiz.question || quiz.questionText || "";
-
 
     quizQuestions.innerHTML = `
 
@@ -2141,7 +2196,6 @@ function displayQuiz() {
 
     `;
 
-
     quizQuestions.querySelectorAll('input[type="radio"]').forEach(
         function (radio) {
 
@@ -2154,7 +2208,6 @@ function displayQuiz() {
         }
     );
 
-
     createQuizNavigation();
 
     updateQuizNavigation();
@@ -2163,13 +2216,12 @@ function displayQuiz() {
 
 
 // ========================================
-// 31. QUIZ NAVIGATION
+// 34. QUIZ NAVIGATION
 // ========================================
 
 function createQuizNavigation() {
 
     let navigation = document.getElementById("quizNavigation");
-
 
     if (!navigation) {
 
@@ -2181,9 +2233,7 @@ function createQuizNavigation() {
 
     }
 
-
     navigation.classList.remove("hidden");
-
 
     navigation.innerHTML = `
 
@@ -2198,7 +2248,6 @@ function createQuizNavigation() {
         </button>
 
     `;
-
 
     document.getElementById("previousQuestionBtn").addEventListener(
         "click",
@@ -2215,7 +2264,6 @@ function createQuizNavigation() {
         }
     );
 
-
     document.getElementById("nextQuestionBtn").addEventListener(
         "click",
         nextQuestion
@@ -2225,7 +2273,7 @@ function createQuizNavigation() {
 
 
 // ========================================
-// 32. UPDATE QUIZ NAVIGATION
+// 35. UPDATE QUIZ NAVIGATION
 // ========================================
 
 function updateQuizNavigation() {
@@ -2236,12 +2284,9 @@ function updateQuizNavigation() {
 
     const counter = document.getElementById("questionCounter");
 
-
     if (!previous || !next || !counter) return;
 
-
     previous.disabled = currentQuestionIndex === 0;
-
 
     counter.textContent =
 
@@ -2249,10 +2294,8 @@ function updateQuizNavigation() {
 
         " of " + activeQuizQuestions.length;
 
-
     const last =
         currentQuestionIndex === activeQuizQuestions.length - 1;
-
 
     next.classList.toggle("hidden", last);
 
@@ -2262,16 +2305,14 @@ function updateQuizNavigation() {
 
 
 // ========================================
-// 33. NEXT QUESTION
+// 36. NEXT QUESTION
 // ========================================
 
 function nextQuestion() {
 
     const quiz = activeQuizQuestions[currentQuestionIndex];
 
-
     if (!quiz) return;
-
 
     if (studentAnswers[quiz.id] === undefined) {
 
@@ -2280,7 +2321,6 @@ function nextQuestion() {
         return;
 
     }
-
 
     if (currentQuestionIndex < activeQuizQuestions.length - 1) {
 
@@ -2294,7 +2334,7 @@ function nextQuestion() {
 
 
 // ========================================
-// 34. CHECK CORRECT ANSWER
+// 37. CHECK CORRECT ANSWER
 // ========================================
 
 function isCorrectAnswer(quiz, answer) {
@@ -2305,28 +2345,19 @@ function isCorrectAnswer(quiz, answer) {
 
     }
 
-
     const correct = String(quiz.correctAnswer ?? "").trim();
 
     const letters = ["A", "B", "C", "D"];
 
     const selectedIndex = Number(answer);
 
-
     const options = getQuestionOptions(quiz);
-
-
-    // NUMERIC CORRECT ANSWER
-    // INSTRUCTOR USES ZERO-BASED INDEX
 
     if (["0", "1", "2", "3"].includes(correct)) {
 
         return selectedIndex === Number(correct);
 
     }
-
-
-    // LETTER CORRECT ANSWER
 
     if (letters.includes(correct.toUpperCase())) {
 
@@ -2336,11 +2367,7 @@ function isCorrectAnswer(quiz, answer) {
 
     }
 
-
-    // TEXT CORRECT ANSWER
-
     const selectedOption = options[selectedIndex];
-
 
     return Boolean(selectedOption) &&
 
@@ -2352,7 +2379,7 @@ function isCorrectAnswer(quiz, answer) {
 
 
 // ========================================
-// 35. SAVE QUIZ RESULT TO FIREBASE
+// 38. SAVE QUIZ RESULT TO FIREBASE
 // ========================================
 
 async function saveQuizResult(
@@ -2379,9 +2406,7 @@ async function saveQuizResult(
 
         Date.now();
 
-
     const resultReference = doc(db, "results", resultId);
-
 
     const resultData = {
 
@@ -2422,9 +2447,7 @@ async function saveQuizResult(
 
     };
 
-
     await setDoc(resultReference, resultData);
-
 
     return resultId;
 
@@ -2432,13 +2455,12 @@ async function saveQuizResult(
 
 
 // ========================================
-// 36. ISSUE CERTIFICATE
+// 39. ISSUE CERTIFICATE
 // ========================================
 
 async function checkCourseCompletionAndIssueCertificate() {
 
     if (!currentStudent || !currentCourse) return;
-
 
     if (courseLessons.length === 0 || courseQuizSettings.length === 0) {
 
@@ -2446,11 +2468,9 @@ async function checkCourseCompletionAndIssueCertificate() {
 
     }
 
-
     try {
 
         const completed = await getCompletedLessons();
-
 
         const allCompleted = courseLessons.every(function (lesson) {
 
@@ -2462,11 +2482,7 @@ async function checkCourseCompletionAndIssueCertificate() {
 
         });
 
-
         if (!allCompleted) return;
-
-
-        // GET COURSE QUIZ RESULTS
 
         const resultsQuery = query(
 
@@ -2478,9 +2494,7 @@ async function checkCourseCompletionAndIssueCertificate() {
 
         );
 
-
         const resultsSnapshot = await getDocs(resultsQuery);
-
 
         const passingResults = resultsSnapshot.docs
 
@@ -2496,23 +2510,17 @@ async function checkCourseCompletionAndIssueCertificate() {
 
                     !result.quizType || result.quizType === "course";
 
-
                 return isCourseQuiz &&
 
                     Number(result.percentage) >= CERTIFICATE_PASS_MARK;
 
             });
 
-
         if (passingResults.length === 0) return;
-
-
-        // CHECK EXISTING CERTIFICATE
 
         const certificateId =
 
             "LS-" + currentStudent.uid + "-" + currentCourse.id;
-
 
         const certificateReference = doc(
 
@@ -2524,17 +2532,13 @@ async function checkCourseCompletionAndIssueCertificate() {
 
         );
 
-
         let newlyIssued = false;
-
 
         await runTransaction(db, async function (transaction) {
 
             const existing = await transaction.get(certificateReference);
 
-
             if (existing.exists()) return;
-
 
             const bestResult = [...passingResults].sort(
 
@@ -2545,7 +2549,6 @@ async function checkCourseCompletionAndIssueCertificate() {
                 }
 
             )[0];
-
 
             transaction.set(certificateReference, {
 
@@ -2573,11 +2576,9 @@ async function checkCourseCompletionAndIssueCertificate() {
 
             });
 
-
             newlyIssued = true;
 
         });
-
 
         if (newlyIssued) {
 
@@ -2617,13 +2618,12 @@ async function checkCourseCompletionAndIssueCertificate() {
 
 
 // ========================================
-// 37. SUBMIT QUIZ
+// 40. SUBMIT QUIZ
 // ========================================
 
 async function submitQuiz(timeExpired = false) {
 
     if (quizSubmitted || quizSubmissionInProgress) return;
-
 
     if (!currentQuizSettings || activeQuizQuestions.length === 0) {
 
@@ -2633,11 +2633,7 @@ async function submitQuiz(timeExpired = false) {
 
     }
 
-
-    // CHECK COURSE SCHEDULE
-
     const courseSchedule = checkCourseSchedule();
-
 
     if (!courseSchedule.allowed) {
 
@@ -2649,15 +2645,11 @@ async function submitQuiz(timeExpired = false) {
 
     }
 
-
-    // CHECK UNANSWERED QUESTIONS
-
     const unanswered = activeQuizQuestions.filter(function (quiz) {
 
         return studentAnswers[quiz.id] === undefined;
 
     });
-
 
     if (!timeExpired && unanswered.length > 0) {
 
@@ -2667,9 +2659,6 @@ async function submitQuiz(timeExpired = false) {
 
     }
 
-
-    // PREVENT DOUBLE SUBMISSION
-
     quizSubmissionInProgress = true;
 
     stopQuizTimer();
@@ -2678,13 +2667,9 @@ async function submitQuiz(timeExpired = false) {
 
     submitQuizBtn.textContent = "Submitting...";
 
-
-    // CALCULATE SCORE
-
     let score = 0;
 
     const answers = [];
-
 
     activeQuizQuestions.forEach(function (quiz) {
 
@@ -2692,13 +2677,11 @@ async function submitQuiz(timeExpired = false) {
 
         const correct = isCorrectAnswer(quiz, answer);
 
-
         if (correct) {
 
             score++;
 
         }
-
 
         answers.push({
 
@@ -2714,9 +2697,7 @@ async function submitQuiz(timeExpired = false) {
 
     });
 
-
     const totalQuestions = activeQuizQuestions.length;
-
 
     const percentage = totalQuestions > 0
 
@@ -2724,10 +2705,7 @@ async function submitQuiz(timeExpired = false) {
 
         : 0;
 
-
     try {
-
-        // SAVE RESULT
 
         await saveQuizResult(
 
@@ -2743,13 +2721,9 @@ async function submitQuiz(timeExpired = false) {
 
         );
 
-
         quizSubmitted = true;
 
         usedQuizAttempts++;
-
-
-        // CHECK CERTIFICATE
 
         if (
             !currentQuizSettings.type ||
@@ -2760,11 +2734,7 @@ async function submitQuiz(timeExpired = false) {
 
         }
 
-
-        // SHOW RESULT FEEDBACK
-
         quizResult.classList.remove("hidden");
-
 
         quizScore.textContent =
 
@@ -2774,41 +2744,30 @@ async function submitQuiz(timeExpired = false) {
 
             " (" + percentage + "%)";
 
-
         if (timeExpired) {
 
             quizFeedback.textContent =
-
                 "Time is up! Your quiz was submitted automatically.";
 
         } else if (percentage >= CERTIFICATE_PASS_MARK) {
 
             quizFeedback.textContent =
-
                 "Excellent work! You passed the quiz.";
 
         } else {
 
             quizFeedback.textContent =
-
                 "Keep learning. You can try again.";
 
         }
 
-
-        // HIDE QUIZ NAVIGATION
-
         const navigation = document.getElementById("quizNavigation");
-
 
         if (navigation) {
 
             navigation.classList.add("hidden");
 
         }
-
-
-        // RETURN TO DASHBOARD
 
         alert(
 
@@ -2828,7 +2787,6 @@ async function submitQuiz(timeExpired = false) {
 
         );
 
-
         window.location.href = "student-dashboard.html";
 
     }
@@ -2843,7 +2801,6 @@ async function submitQuiz(timeExpired = false) {
 
         submitQuizBtn.textContent = "Submit Answers";
 
-
         showError(
 
             "Unable to save your quiz result: " + error.message
@@ -2856,7 +2813,7 @@ async function submitQuiz(timeExpired = false) {
 
 
 // ========================================
-// 38. QUIZ FORM SUBMISSION
+// 41. QUIZ FORM SUBMISSION
 // ========================================
 
 quizForm.addEventListener("submit", function (event) {
