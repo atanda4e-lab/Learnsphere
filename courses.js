@@ -1,9 +1,27 @@
-// ======================================
+// ==========================================
 // LEARNSPHERE COURSE CATALOGUE
-// ======================================
+// FIREBASE VERSION
+// ==========================================
+
+import { auth, db } from "./firebase.js";
+
+import {
+    collection,
+    query,
+    where,
+    getDocs,
+    addDoc,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+import {
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
 
-// GET HTML ELEMENTS
+// ==========================================
+// 1. GET HTML ELEMENTS
+// ==========================================
 
 const courseGrid = document.getElementById("courseGrid");
 const courseSearch = document.getElementById("courseSearch");
@@ -13,54 +31,154 @@ const courseCount = document.getElementById("courseCount");
 const emptyMessage = document.getElementById("emptyMessage");
 
 
-// ======================================
-// GET DATA FROM LOCAL STORAGE
-// ======================================
+// ==========================================
+// 2. GLOBAL VARIABLES
+// ==========================================
 
-function getData(key) {
+let allCourses = [];
+let currentUser = null;
+let authReady = false;
+
+let resolveAuthReady;
+
+const authReadyPromise = new Promise(function(resolve) {
+    resolveAuthReady = resolve;
+});
+
+
+// ==========================================
+// 3. WAIT FOR FIREBASE AUTHENTICATION
+// ==========================================
+
+onAuthStateChanged(auth, function(user) {
+
+    currentUser = user;
+    authReady = true;
+
+    resolveAuthReady();
+
+});
+
+
+// ==========================================
+// 4. ESCAPE HTML
+// ==========================================
+
+function escapeHTML(value) {
+
+    return String(value ?? "").replace(/[&<>"']/g, function(character) {
+
+        const characters = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+        };
+
+        return characters[character];
+
+    });
+
+}
+
+
+// ==========================================
+// 5. GET SAFE IMAGE URL
+// ==========================================
+
+function getSafeImageURL(course) {
+
+    const image = course.image || course.imageUrl || "";
+
+    if (!image) {
+        return "";
+    }
 
     try {
 
-        const data = localStorage.getItem(key);
+        const url = new URL(image);
 
-        return data ? JSON.parse(data) : [];
+        if (url.protocol === "https:" || url.protocol === "http:") {
+            return url.href;
+        }
 
     } catch (error) {
 
-        console.error("Error reading " + key + ":", error);
+        console.error("Invalid course image URL:", error);
 
-        return [];
+    }
+
+    return "";
+
+}
+
+
+// ==========================================
+// 6. LOAD PUBLISHED COURSES FROM FIREBASE
+// ==========================================
+
+async function getCourses() {
+
+    try {
+
+        const coursesCollection = collection(db, "courses");
+
+        // Get courses published using the published field.
+
+        const publishedQuery = query(
+            coursesCollection,
+            where("published", "==", true)
+        );
+
+        // Also support courses using isPublished.
+
+        const isPublishedQuery = query(
+            coursesCollection,
+            where("isPublished", "==", true)
+        );
+
+        const results = await Promise.all([
+            getDocs(publishedQuery),
+            getDocs(isPublishedQuery)
+        ]);
+
+        // Combine results and remove duplicates.
+
+        const courseMap = new Map();
+
+        results.forEach(function(result) {
+
+            result.forEach(function(documentSnapshot) {
+
+                courseMap.set(
+                    documentSnapshot.id,
+                    {
+                        id: documentSnapshot.id,
+                        ...documentSnapshot.data()
+                    }
+                );
+
+            });
+
+        });
+
+        return Array.from(courseMap.values());
+
+    } catch (error) {
+
+        console.error("Firebase course loading error:", error);
+
+        throw error;
 
     }
 
 }
 
 
-// ======================================
-// SAVE DATA TO LOCAL STORAGE
-// ======================================
-
-function saveData(key, data) {
-
-    localStorage.setItem(key, JSON.stringify(data));
-
-}
-
-
-// ======================================
-// GET ALL COURSES
-// ======================================
-
-function getCourses() {
-
-    return getData("learnsphereCourses");
-
-}
-
-
-// ======================================
-// LOAD DEPARTMENTS
-// ======================================
+// ==========================================
+// 7. LOAD DEPARTMENTS
+// ==========================================
 
 function loadDepartments() {
 
@@ -68,19 +186,13 @@ function loadDepartments() {
         return;
     }
 
-    const courses = getCourses();
-
-    const publishedCourses = courses.filter(function(course) {
-
-        return course.published === true;
-
-    });
-
     const departments = [
         ...new Set(
-            publishedCourses.map(function(course) {
-                return course.department;
-            }).filter(Boolean)
+            allCourses
+                .map(function(course) {
+                    return course.department;
+                })
+                .filter(Boolean)
         )
     ];
 
@@ -88,7 +200,7 @@ function loadDepartments() {
         <option value="">All Departments</option>
     `;
 
-    departments.forEach(function(department) {
+    departments.sort().forEach(function(department) {
 
         const option = document.createElement("option");
 
@@ -102,9 +214,9 @@ function loadDepartments() {
 }
 
 
-// ======================================
-// CREATE COURSE CARD
-// ======================================
+// ==========================================
+// 8. CREATE COURSE CARD
+// ==========================================
 
 function createCourseCard(course) {
 
@@ -112,8 +224,12 @@ function createCourseCard(course) {
 
     card.className = "course-card";
 
-    const imageContent = course.image
-        ? `<img src="${course.image}" alt="Course image">`
+    const imageURL = getSafeImageURL(course);
+
+    const imageContent = imageURL
+        ? `<img src="${escapeHTML(imageURL)}"
+                 alt="${escapeHTML(course.title || "Course image")}"
+                 loading="lazy">`
         : `<i class="fa-solid fa-book-open"></i>`;
 
     card.innerHTML = `
@@ -133,7 +249,10 @@ function createCourseCard(course) {
             </h3>
 
             <p class="course-description">
-                ${escapeHTML(course.description || "Explore this course and improve your knowledge.")}
+                ${escapeHTML(
+                    course.description ||
+                    "Explore this course and improve your knowledge."
+                )}
             </p>
 
             <div class="course-details">
@@ -145,7 +264,7 @@ function createCourseCard(course) {
 
                 <span>
                     <i class="fa-solid fa-user-graduate"></i>
-                    ${escapeHTML(String(course.level || "All Levels"))}
+                    ${escapeHTML(course.level || "All Levels")}
                 </span>
 
             </div>
@@ -174,114 +293,91 @@ function createCourseCard(course) {
 }
 
 
-// ======================================
-// ENROL STUDENT
-// ======================================
+// ==========================================
+// 9. ENROL STUDENT
+// ==========================================
 
-function enrolStudent(courseId) {
-
-    let currentStudent = null;
+async function enrolStudent(courseId) {
 
     try {
 
-        currentStudent = JSON.parse(
-            localStorage.getItem("learnsphereCurrentStudent")
+        // Wait until Firebase checks the login status.
+
+        if (!authReady) {
+            await authReadyPromise;
+        }
+
+        // Check student login.
+
+        if (!currentUser) {
+
+            alert("Please log in as a student before enrolling.");
+
+            window.location.href = "auth.html?mode=login";
+
+            return;
+
+        }
+
+        // Check whether the student is already enrolled.
+
+        const enrollmentQuery = query(
+            collection(db, "enrollments"),
+            where("studentId", "==", currentUser.uid),
+            where("courseId", "==", courseId)
         );
+
+        const enrollmentResults = await getDocs(enrollmentQuery);
+
+        if (!enrollmentResults.empty) {
+
+            alert("You are already enrolled in this course.");
+
+            window.location.href =
+                "course.html?id=" + encodeURIComponent(courseId);
+
+            return;
+
+        }
+
+        // Save enrollment in Firestore.
+
+        await addDoc(collection(db, "enrollments"), {
+
+            studentId: currentUser.uid,
+
+            courseId: courseId,
+
+            enrolledAt: serverTimestamp()
+
+        });
+
+        alert("You have successfully enrolled in this course!");
+
+        window.location.href = "student-dashboard.html";
 
     } catch (error) {
 
-        console.error("Student information error:", error);
+        console.error("Enrollment error:", error);
 
-    }
-
-
-    // CHECK STUDENT LOGIN
-
-    if (!currentStudent || !currentStudent.id) {
-
-        alert("Please log in as a student before enrolling.");
-
-        window.location.href = "auth.html?mode=login";
-
-        return;
-
-    }
-
-
-    // GET ENROLMENTS
-
-    const enrollments = getData("learnsphereEnrollments");
-
-
-    // CHECK EXISTING ENROLMENT
-
-    const alreadyEnrolled = enrollments.some(function(enrollment) {
-
-        return (
-
-            String(enrollment.studentId) === String(currentStudent.id) &&
-
-            String(enrollment.courseId) === String(courseId)
-
+        alert(
+            "Unable to enrol in this course. Please make sure you are logged in with a student account."
         );
 
-    });
-
-
-    if (alreadyEnrolled) {
-
-        alert("You are already enrolled in this course.");
-
-        window.location.href = "course.html?id=" + encodeURIComponent(courseId);
-
-        return;
-
     }
-
-
-    // CREATE NEW ENROLMENT
-
-    const newEnrollment = {
-
-        id: Date.now(),
-
-        studentId: currentStudent.id,
-
-        courseId: courseId,
-
-        enrolledAt: new Date().toISOString()
-
-    };
-
-
-    // SAVE ENROLMENT
-
-    enrollments.push(newEnrollment);
-
-    saveData("learnsphereEnrollments", enrollments);
-
-
-    alert("You have successfully enrolled in this course!");
-
-
-    // OPEN STUDENT DASHBOARD
-
-    window.location.href = "student-dashboard.html";
 
 }
 
 
-// ======================================
-// DISPLAY COURSES
-// ======================================
+// ==========================================
+// 10. DISPLAY COURSES
+// ==========================================
 
 function displayCourses() {
 
     if (!courseGrid) {
         return;
     }
-
-    const courses = getCourses();
 
     const searchValue = courseSearch
         ? courseSearch.value.toLowerCase().trim()
@@ -295,17 +391,18 @@ function displayCourses() {
         ? levelFilter.value
         : "";
 
+    // Start with published courses only.
 
-    // SHOW PUBLISHED COURSES ONLY
+    let filteredCourses = allCourses.filter(function(course) {
 
-    let filteredCourses = courses.filter(function(course) {
-
-        return course.published === true;
+        return (
+            course.published === true ||
+            course.isPublished === true
+        );
 
     });
 
-
-    // SEARCH COURSES
+    // Search courses.
 
     filteredCourses = filteredCourses.filter(function(course) {
 
@@ -318,21 +415,15 @@ function displayCourses() {
         const category = (course.category || "").toLowerCase();
 
         return (
-
             title.includes(searchValue) ||
-
             description.includes(searchValue) ||
-
             department.includes(searchValue) ||
-
             category.includes(searchValue)
-
         );
 
     });
 
-
-    // FILTER BY DEPARTMENT
+    // Filter by department.
 
     if (selectedDepartment !== "") {
 
@@ -344,26 +435,23 @@ function displayCourses() {
 
     }
 
-
-    // FILTER BY LEVEL
+    // Filter by level.
 
     if (selectedLevel !== "") {
 
         filteredCourses = filteredCourses.filter(function(course) {
 
-            return String(course.level).replace(/\D/g, "") === selectedLevel;
+            return String(course.level || "").replace(/\D/g, "") === selectedLevel;
 
         });
 
     }
 
-
-    // CLEAR OLD COURSES
+    // Clear previous cards.
 
     courseGrid.innerHTML = "";
 
-
-    // UPDATE COURSE COUNT
+    // Update course count.
 
     if (courseCount) {
 
@@ -371,8 +459,7 @@ function displayCourses() {
 
     }
 
-
-    // CHECK EMPTY COURSES
+    // Display empty message.
 
     if (filteredCourses.length === 0) {
 
@@ -384,15 +471,13 @@ function displayCourses() {
 
     }
 
-
-    // HIDE EMPTY MESSAGE
+    // Hide empty message.
 
     if (emptyMessage) {
         emptyMessage.classList.add("hidden");
     }
 
-
-    // DISPLAY COURSE CARDS
+    // Display course cards.
 
     filteredCourses.forEach(function(course) {
 
@@ -405,34 +490,9 @@ function displayCourses() {
 }
 
 
-// ======================================
-// ESCAPE HTML
-// ======================================
-
-function escapeHTML(value) {
-
-    return String(value).replace(/[&<>"']/g, function(character) {
-
-        const characters = {
-
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#039;"
-
-        };
-
-        return characters[character];
-
-    });
-
-}
-
-
-// ======================================
-// SEARCH EVENT
-// ======================================
+// ==========================================
+// 11. SEARCH EVENT
+// ==========================================
 
 if (courseSearch) {
 
@@ -445,9 +505,9 @@ if (courseSearch) {
 }
 
 
-// ======================================
-// DEPARTMENT FILTER EVENT
-// ======================================
+// ==========================================
+// 12. DEPARTMENT FILTER EVENT
+// ==========================================
 
 if (departmentFilter) {
 
@@ -460,9 +520,9 @@ if (departmentFilter) {
 }
 
 
-// ======================================
-// LEVEL FILTER EVENT
-// ======================================
+// ==========================================
+// 13. LEVEL FILTER EVENT
+// ==========================================
 
 if (levelFilter) {
 
@@ -475,21 +535,52 @@ if (levelFilter) {
 }
 
 
-// ======================================
-// INITIALIZE COURSE CATALOGUE
-// ======================================
+// ==========================================
+// 14. INITIALIZE COURSE CATALOGUE
+// ==========================================
 
-function initializeCourses() {
+async function initializeCourses() {
 
-    loadDepartments();
+    if (!courseGrid) {
+        return;
+    }
 
-    displayCourses();
+    courseGrid.innerHTML = `
+        <p>Loading published courses...</p>
+    `;
+
+    try {
+
+        allCourses = await getCourses();
+
+        loadDepartments();
+
+        displayCourses();
+
+    } catch (error) {
+
+        courseGrid.innerHTML = "";
+
+        if (courseCount) {
+            courseCount.textContent = "Unable to load courses";
+        }
+
+        if (emptyMessage) {
+
+            emptyMessage.textContent =
+                "We could not load courses at the moment. Please try again later.";
+
+            emptyMessage.classList.remove("hidden");
+
+        }
+
+    }
 
 }
 
 
-// ======================================
-// START THE PAGE
-// ======================================
+// ==========================================
+// 15. START COURSE CATALOGUE
+// ==========================================
 
 initializeCourses();
