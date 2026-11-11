@@ -5,90 +5,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Student Dashboard | LearnSphere</title>
+    <title>Instructor Dashboard | LearnSphere</title>
 
-    <link rel="stylesheet" href="student-dashboard.css">
+    <link rel="stylesheet" href="instructor-dashboard.css">
 
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body>
 
+    <!-- DASHBOARD CONTAINER -->
     <div class="dashboard-container">
 
         <!-- SIDEBAR -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
 
             <div class="logo">
                 <h2>Learn<span>Sphere</span></h2>
+                <p>Instructor Portal</p>
             </div>
 
-            <div class="sidebar-profile">
+            <nav class="sidebar-nav">
 
-                <div class="profile-avatar">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-
-                <div>
-                    <h3 id="studentName">Student</h3>
-                    <p>Student Account</p>
-                </div>
-
-            </div>
-
-            <!-- NAVIGATION -->
-            <nav class="sidebar-navigation">
-
-                <a href="#" class="sidebar-link active" data-section="overview">
-                    <i class="fa-solid fa-house"></i>
-                    <span>Overview</span>
+                <a href="#" class="nav-link active" data-section="dashboard">
+                    <span>▦</span> Dashboard
                 </a>
 
-                <a href="#" class="sidebar-link" data-section="explore">
-                    <i class="fa-solid fa-compass"></i>
-                    <span>Explore Courses</span>
+                <a href="#" class="nav-link" data-section="courses">
+                    <span>📚</span> My Courses
                 </a>
 
-                <a href="#" class="sidebar-link" data-section="courses">
-                    <i class="fa-solid fa-book-open"></i>
-                    <span>My Courses</span>
+                <a href="#" class="nav-link" data-section="create-course">
+                    <span>＋</span> Create Course
                 </a>
 
-                <a href="#" class="sidebar-link" data-section="results">
-                    <i class="fa-solid fa-chart-line"></i>
-                    <span>My Results</span>
+                <a href="#" class="nav-link" data-section="lessons">
+                    <span>📖</span> Lessons
                 </a>
 
-                <a href="#" class="sidebar-link" data-section="certificates">
-                    <i class="fa-solid fa-certificate"></i>
-                    <span>Certificates</span>
+                <a href="#" class="nav-link" data-section="quizzes">
+                    <span>📝</span> Quiz Management
                 </a>
 
-                <!-- NOTIFICATIONS NAVIGATION -->
-                <a href="#" class="sidebar-link" data-section="notifications">
-                    <i class="fa-solid fa-bell"></i>
-                    <span>Notifications</span>
-                    <span class="notification-nav-count" id="sidebarUnreadCount">0</span>
+                <a href="#" class="nav-link" data-section="students">
+                    <span>👨‍🎓</span> Students
                 </a>
 
-                <a href="#" class="sidebar-link" data-section="profile">
-                    <i class="fa-solid fa-user"></i>
-                    <span>My Profile</span>
-                </a>
-
-                <a href="verify-certificate.html" class="sidebar-link">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <span>Verify Certificate</span>
+                <a href="#" class="nav-link" data-section="profile">
+                    <span>👤</span> My Profile
                 </a>
 
             </nav>
 
             <div class="sidebar-bottom">
 
-                <button id="logoutBtn">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                    Logout
+                <button id="logoutBtn" class="logout-btn">
+                    ↪ Logout
                 </button>
 
             </div>
@@ -99,76 +70,30 @@
         <!-- MAIN CONTENT -->
         <main class="main-content">
 
-            <!-- HEADER -->
-            <header class="dashboard-header">
+            <!-- TOP HEADER -->
+            <header class="top-header">
 
-                <div>
-                    <h1>Student Dashboard</h1>
-                    <p>Manage your learning activities in one place.</p>
+                <button id="menuBtn" class="menu-btn">
+                    ☰
+                </button>
+
+                <div class="header-title">
+                    <h2>Instructor Dashboard</h2>
+                    <p>Manage your teaching activities</p>
                 </div>
 
-                <div class="header-right">
+                <div class="header-profile">
 
-                    <!-- NOTIFICATION BELL -->
-                    <div class="notification-wrapper">
-
-                        <button type="button"
-                            class="header-icon notification-bell"
-                            id="notificationBell"
-                            aria-label="Open notifications"
-                            aria-expanded="false">
-
-                            <i class="fa-regular fa-bell"></i>
-
-                            <span class="notification-badge"
-                                id="notificationBadge">0</span>
-
-                        </button>
-
-                        <!-- NOTIFICATION DROPDOWN -->
-                        <div class="notification-dropdown hidden"
-                            id="notificationDropdown">
-
-                            <div class="notification-dropdown-header">
-
-                                <div>
-                                    <h3>Notifications</h3>
-                                    <p id="dropdownUnreadCount">0 unread</p>
-                                </div>
-
-                                <button type="button"
-                                    id="markAllReadBtn">
-                                    Mark all read
-                                </button>
-
-                            </div>
-
-                            <div class="notification-dropdown-list"
-                                id="notificationDropdownList">
-
-                                <div class="notification-empty">
-                                    <i class="fa-regular fa-bell"></i>
-                                    <p>No notifications yet.</p>
-                                </div>
-
-                            </div>
-
-                            <button type="button"
-                                class="view-all-notifications"
-                                data-section="notifications">
-
-                                View All Notifications
-
-                                <i class="fa-solid fa-arrow-right"></i>
-
-                            </button>
-
-                        </div>
-
+                    <div class="profile-avatar" id="headerAvatar">
+                        I
                     </div>
 
-                    <div class="header-avatar">
-                        <i class="fa-solid fa-user"></i>
+                    <div>
+                        <h4 id="headerInstructorName">
+                            Loading...
+                        </h4>
+
+                        <p>Instructor</p>
                     </div>
 
                 </div>
@@ -176,93 +101,66 @@
             </header>
 
 
-            <!-- OVERVIEW -->
-            <section class="dashboard-section active" id="overview">
+            <!-- NOTIFICATION MESSAGE -->
+            <div id="notification" class="notification"></div>
 
-                <div class="welcome-card">
 
-                    <div>
+            <!-- DASHBOARD SECTION -->
+            <section class="dashboard-section active" id="dashboard">
 
-                        <p class="welcome-label">WELCOME BACK</p>
+                <div class="welcome-section">
 
-                        <h2>
-                            Hello, <span id="welcomeName">Student</span>!
-                        </h2>
+                    <h1>
+                        Welcome back,
+                        <span id="welcomeName">Instructor</span>!
+                    </h1>
 
-                        <p>
-                            Continue learning and make progress
-                            towards your academic goals.
-                        </p>
-
-                        <button class="primary-btn" data-section="explore">
-                            Explore Courses
-                            <i class="fa-solid fa-arrow-right"></i>
-                        </button>
-
-                    </div>
-
-                    <div class="welcome-icon">
-                        <i class="fa-solid fa-graduation-cap"></i>
-                    </div>
+                    <p>
+                        Here's an overview of your teaching activities.
+                    </p>
 
                 </div>
 
 
                 <!-- STATISTICS -->
-                <div class="statistics-grid">
+                <div class="stats-grid">
 
                     <div class="stat-card">
+                        <div class="stat-icon">📚</div>
 
-                        <div class="stat-icon blue">
-                            <i class="fa-solid fa-book"></i>
-                        </div>
+                        <h3>My Courses</h3>
 
-                        <div>
-                            <p>Enrolled Courses</p>
-                            <h2 id="enrolledCourses">0</h2>
-                        </div>
+                        <h2 id="totalCourses">0</h2>
 
                     </div>
 
 
                     <div class="stat-card">
+                        <div class="stat-icon">👨‍🎓</div>
 
-                        <div class="stat-icon green">
-                            <i class="fa-solid fa-circle-check"></i>
-                        </div>
+                        <h3>Total Students</h3>
 
-                        <div>
-                            <p>Completed Lessons</p>
-                            <h2 id="completedLessons">0</h2>
-                        </div>
+                        <h2 id="totalStudents">0</h2>
 
                     </div>
 
 
                     <div class="stat-card">
+                        <div class="stat-icon">📖</div>
 
-                        <div class="stat-icon orange">
-                            <i class="fa-solid fa-clipboard-check"></i>
-                        </div>
+                        <h3>Total Lessons</h3>
 
-                        <div>
-                            <p>Completed Quizzes</p>
-                            <h2 id="completedQuizzes">0</h2>
-                        </div>
+                        <h2 id="totalLessons">0</h2>
 
                     </div>
 
 
                     <div class="stat-card">
+                        <div class="stat-icon">📝</div>
 
-                        <div class="stat-icon purple">
-                            <i class="fa-solid fa-award"></i>
-                        </div>
+                        <h3>Total Quizzes</h3>
 
-                        <div>
-                            <p>Certificates</p>
-                            <h2 id="earnedCertificates">0</h2>
-                        </div>
+                        <h2 id="totalQuizzes">0</h2>
 
                     </div>
 
@@ -275,96 +173,20 @@
                     <div class="section-heading">
 
                         <div>
-                            <h2>Continue Learning</h2>
-                            <p>Continue with your enrolled courses.</p>
+                            <h2>My Recent Courses</h2>
+                            <p>Recently created courses</p>
                         </div>
 
-                        <button class="text-btn" data-section="courses">
+                        <button class="primary-btn" data-go="courses">
                             View All
                         </button>
 
                     </div>
 
-                    <div class="course-grid" id="overviewCourseList">
+                    <div id="recentCourses" class="courses-container">
 
-                        <div class="empty-state">
-                            <i class="fa-solid fa-book-open"></i>
-                            <p>You have not enrolled in any courses yet.</p>
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-
-            <!-- EXPLORE COURSES -->
-            <section class="dashboard-section" id="explore">
-
-                <div class="page-heading">
-
-                    <h2>Explore Courses</h2>
-
-                    <p>
-                        Discover new courses and enrol to start learning.
-                    </p>
-
-                </div>
-
-
-                <!-- SEARCH AND FILTER -->
-                <div class="course-search-area">
-
-                    <div class="search-box">
-
-                        <i class="fa-solid fa-magnifying-glass"></i>
-
-                        <input
-                            type="text"
-                            id="courseSearch"
-                            placeholder="Search course name..."
-                        >
-
-                    </div>
-
-
-                    <select id="departmentFilter">
-
-                        <option value="">All Departments</option>
-
-                    </select>
-
-
-                    <select id="levelFilter">
-
-                        <option value="">All Levels</option>
-                        <option value="100">100 Level</option>
-                        <option value="200">200 Level</option>
-                        <option value="300">300 Level</option>
-                        <option value="400">400 Level</option>
-                        <option value="500">500 Level</option>
-
-                    </select>
-
-                </div>
-
-
-                <div class="explore-summary">
-
-                    <p>
-                        Available courses:
-                        <strong id="availableCourseCount">0</strong>
-                    </p>
-
-                </div>
-
-
-                <div class="course-grid" id="exploreCourseList">
-
-                    <div class="empty-state">
-                        <i class="fa-solid fa-book-open"></i>
                         <p>Loading courses...</p>
+
                     </div>
 
                 </div>
@@ -372,25 +194,28 @@
             </section>
 
 
-            <!-- MY COURSES -->
+            <!-- MY COURSES SECTION -->
             <section class="dashboard-section" id="courses">
 
                 <div class="page-heading">
 
-                    <h2>My Courses</h2>
+                    <div>
+                        <h1>My Courses</h1>
+                        <p>Manage all courses assigned to you.</p>
+                    </div>
 
-                    <p>
-                        All the courses you have enrolled in.
-                    </p>
+                    <button class="primary-btn" data-go="create-course">
+                        + Create Course
+                    </button>
 
                 </div>
 
+                <div class="content-card">
 
-                <div class="course-grid" id="studentCourseList">
+                    <div id="myCourses" class="courses-container">
 
-                    <div class="empty-state">
-                        <i class="fa-solid fa-book"></i>
-                        <p>No enrolled courses found.</p>
+                        <p>Loading your courses...</p>
+
                     </div>
 
                 </div>
@@ -398,55 +223,292 @@
             </section>
 
 
-            <!-- RESULTS -->
-            <section class="dashboard-section" id="results">
+            <!-- CREATE COURSE SECTION -->
+            <section class="dashboard-section" id="create-course">
 
                 <div class="page-heading">
 
-                    <h2>My Results</h2>
-
-                    <p>
-                        Check your quiz scores and learning performance.
-                    </p>
+                    <div>
+                        <h1>Create Course</h1>
+                        <p>Add a new course to LearnSphere.</p>
+                    </div>
 
                 </div>
 
 
                 <div class="content-card">
 
-                    <div id="studentResultList">
+                    <form id="createCourseForm">
 
-                        <div class="empty-state">
-                            <i class="fa-solid fa-chart-column"></i>
-                            <p>You have not completed any quizzes yet.</p>
+                        <div class="form-group">
+
+                            <label>Course Title</label>
+
+                            <input
+                                type="text"
+                                id="courseTitle"
+                                placeholder="Enter course title"
+                                required
+                            >
+
                         </div>
 
-                    </div>
+
+                        <div class="form-row">
+
+                            <div class="form-group">
+
+                                <label>Course Code</label>
+
+                                <input
+                                    type="text"
+                                    id="courseCode"
+                                    placeholder="e.g. CSC101"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label>Category</label>
+
+                                <select id="courseCategory" required>
+
+                                    <option value="">Select Category</option>
+                                    <option value="Technology">Technology</option>
+                                    <option value="Business">Business</option>
+                                    <option value="Design">Design</option>
+                                    <option value="Science">Science</option>
+                                    <option value="Networking">Networking</option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-row">
+
+                            <div class="form-group">
+
+                                <label>Department</label>
+
+                                <input
+                                    type="text"
+                                    id="courseDepartment"
+                                    placeholder="e.g. Computer Science"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label>Level</label>
+
+                                <select id="courseLevel" required>
+
+                                    <option value="">Select Level</option>
+                                    <option value="100 Level">100 Level</option>
+                                    <option value="200 Level">200 Level</option>
+                                    <option value="300 Level">300 Level</option>
+                                    <option value="400 Level">400 Level</option>
+                                    <option value="500 Level">500 Level</option>
+                                    <option value="Any Level">Any Level</option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label>Course Description</label>
+
+                            <textarea
+                                id="courseDescription"
+                                rows="5"
+                                placeholder="Describe this course..."
+                                required
+                            ></textarea>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label>Course Image URL</label>
+
+                            <input
+                                type="url"
+                                id="courseImage"
+                                placeholder="https://example.com/image.jpg"
+                            >
+
+                        </div>
+
+
+                        <div class="form-row">
+
+                            <div class="form-group">
+
+                                <label>Opening Date</label>
+
+                                <input
+                                    type="date"
+                                    id="courseOpeningDate"
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label>Closing Date</label>
+
+                                <input
+                                    type="date"
+                                    id="courseClosingDate"
+                                >
+
+                            </div>
+
+                        </div>
+
+
+                        <button type="submit" class="primary-btn" id="createCourseBtn">
+
+                            Create Course
+
+                        </button>
+
+                    </form>
 
                 </div>
 
             </section>
 
 
-            <!-- CERTIFICATES -->
-            <section class="dashboard-section" id="certificates">
+            <!-- LESSONS SECTION -->
+            <section class="dashboard-section" id="lessons">
 
                 <div class="page-heading">
 
-                    <h2>My Certificates</h2>
-
-                    <p>
-                        Download certificates for courses you have completed.
-                    </p>
+                    <div>
+                        <h1>Lessons Management</h1>
+                        <p>Create and manage course lessons.</p>
+                    </div>
 
                 </div>
 
 
-                <div class="certificate-grid" id="studentCertificateList">
+                <div class="content-card">
 
-                    <div class="empty-state">
-                        <i class="fa-solid fa-certificate"></i>
-                        <p>You have not earned any certificates yet.</p>
+                    <div class="form-group">
+
+                        <label>Select Course</label>
+
+                        <select id="lessonCourseSelect">
+
+                            <option value="">Choose a course</option>
+
+                        </select>
+
+                    </div>
+
+
+                    <form id="createLessonForm">
+
+                        <div class="form-group">
+
+                            <label>Lesson Title</label>
+
+                            <input
+                                type="text"
+                                id="lessonTitle"
+                                placeholder="Enter lesson title"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label>Lesson Description</label>
+
+                            <textarea
+                                id="lessonDescription"
+                                rows="3"
+                                placeholder="Enter lesson description"
+                            ></textarea>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label>Lesson Content</label>
+
+                            <textarea
+                                id="lessonContent"
+                                rows="8"
+                                placeholder="Enter lesson content..."
+                                required
+                            ></textarea>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label>PDF Link</label>
+
+                            <input
+                                type="url"
+                                id="lessonPdf"
+                                placeholder="Enter PDF link"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label>YouTube Video Link</label>
+
+                            <input
+                                type="url"
+                                id="lessonVideo"
+                                placeholder="Enter YouTube link"
+                            >
+
+                        </div>
+
+
+                        <button type="submit" class="primary-btn">
+
+                            Add Lesson
+
+                        </button>
+
+                    </form>
+
+
+                    <hr>
+
+                    <h3>Existing Lessons</h3>
+
+                    <div id="lessonsList">
+
+                        <p>Select a course to view lessons.</p>
+
                     </div>
 
                 </div>
@@ -454,104 +516,135 @@
             </section>
 
 
-            <!-- NOTIFICATIONS -->
-            <section class="dashboard-section" id="notifications">
+            <!-- QUIZ SECTION -->
+            <section class="dashboard-section" id="quizzes">
 
-                <div class="page-heading notification-page-heading">
+                <div class="page-heading">
 
                     <div>
-                        <h2>My Notifications</h2>
-
-                        <p>
-                            Stay updated with your courses and learning activities.
-                        </p>
-                    </div>
-
-                    <button type="button"
-                        class="notification-mark-all-btn"
-                        id="notificationPageMarkAllBtn">
-
-                        <i class="fa-solid fa-check-double"></i>
-
-                        Mark All as Read
-
-                    </button>
-
-                </div>
-
-
-                <!-- NOTIFICATION SUMMARY -->
-                <div class="notification-summary-grid">
-
-                    <div class="notification-summary-card">
-
-                        <div class="notification-summary-icon">
-                            <i class="fa-solid fa-bell"></i>
-                        </div>
-
-                        <div>
-                            <p>Total Notifications</p>
-                            <h3 id="totalNotifications">0</h3>
-                        </div>
-
-                    </div>
-
-
-                    <div class="notification-summary-card">
-
-                        <div class="notification-summary-icon unread">
-                            <i class="fa-solid fa-envelope"></i>
-                        </div>
-
-                        <div>
-                            <p>Unread Notifications</p>
-                            <h3 id="pageUnreadNotifications">0</h3>
-                        </div>
-
+                        <h1>Quiz Management</h1>
+                        <p>Create and manage course assessments.</p>
                     </div>
 
                 </div>
 
 
-                <!-- NOTIFICATION FILTERS -->
-                <div class="notification-filter-area">
+                <div class="content-card">
 
-                    <button type="button"
-                        class="notification-filter active"
-                        data-notification-filter="all">
+                    <div class="form-group">
 
-                        All
+                        <label>Select Course</label>
 
-                    </button>
+                        <select id="quizCourseSelect">
 
-                    <button type="button"
-                        class="notification-filter"
-                        data-notification-filter="unread">
+                            <option value="">Choose a course</option>
 
-                        Unread
+                        </select>
 
-                    </button>
-
-                    <button type="button"
-                        class="notification-filter"
-                        data-notification-filter="read">
-
-                        Read
-
-                    </button>
-
-                </div>
+                    </div>
 
 
-                <!-- NOTIFICATION LIST -->
-                <div class="notification-page-list"
-                    id="notificationPageList">
+                    <form id="createQuizForm">
 
-                    <div class="notification-empty">
+                        <div class="form-group">
 
-                        <i class="fa-regular fa-bell"></i>
+                            <label>Quiz Title</label>
 
-                        <p>No notifications yet.</p>
+                            <input
+                                type="text"
+                                id="quizTitle"
+                                placeholder="Enter quiz title"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-row">
+
+                            <div class="form-group">
+
+                                <label>Total Questions</label>
+
+                                <input
+                                    type="number"
+                                    id="quizTotalQuestions"
+                                    min="1"
+                                    value="20"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label>Duration (Minutes)</label>
+
+                                <input
+                                    type="number"
+                                    id="quizDuration"
+                                    min="1"
+                                    value="30"
+                                    required
+                                >
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-row">
+
+                            <div class="form-group">
+
+                                <label>Pass Mark (%)</label>
+
+                                <input
+                                    type="number"
+                                    id="quizPassMark"
+                                    min="1"
+                                    max="100"
+                                    value="50"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label>Attempts Allowed</label>
+
+                                <input
+                                    type="number"
+                                    id="quizAttempts"
+                                    min="1"
+                                    value="1"
+                                    required
+                                >
+
+                            </div>
+
+                        </div>
+
+
+                        <button type="submit" class="primary-btn">
+
+                            Create Quiz
+
+                        </button>
+
+                    </form>
+
+
+                    <hr>
+
+                    <h3>Existing Quizzes</h3>
+
+                    <div id="quizzesList">
+
+                        <p>Select a course to view quizzes.</p>
 
                     </div>
 
@@ -560,50 +653,110 @@
             </section>
 
 
-            <!-- PROFILE -->
+            <!-- STUDENTS SECTION -->
+            <section class="dashboard-section" id="students">
+
+                <div class="page-heading">
+
+                    <div>
+                        <h1>My Students</h1>
+                        <p>View students enrolled in your courses.</p>
+                    </div>
+
+                </div>
+
+
+                <div class="content-card">
+
+                    <div class="form-group">
+
+                        <label>Filter by Course</label>
+
+                        <select id="studentCourseFilter">
+
+                            <option value="">All My Courses</option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div id="studentsList">
+
+                        <p>Loading students...</p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- PROFILE SECTION -->
             <section class="dashboard-section" id="profile">
 
                 <div class="page-heading">
 
-                    <h2>My Profile</h2>
-
-                    <p>Your LearnSphere student information.</p>
+                    <div>
+                        <h1>My Instructor Profile</h1>
+                        <p>View your instructor information.</p>
+                    </div>
 
                 </div>
 
 
-                <div class="content-card profile-card">
-
-                    <div class="large-avatar">
-                        <i class="fa-solid fa-user"></i>
-                    </div>
-
+                <div class="content-card">
 
                     <div class="profile-details">
 
-                        <div class="profile-item">
-                            <span>Full Name</span>
-                            <h3 id="profileFullName">Not available</h3>
+                        <div class="profile-avatar large" id="profileAvatar">
+                            I
                         </div>
 
-                        <div class="profile-item">
-                            <span>Email Address</span>
-                            <h3 id="profileEmail">Not available</h3>
+                        <div>
+
+                            <h2 id="profileName">
+                                Loading...
+                            </h2>
+
+                            <p id="profileEmail">
+                                Loading...
+                            </p>
+
                         </div>
 
-                        <div class="profile-item">
-                            <span>Department</span>
-                            <h3 id="profileDepartment">Not available</h3>
+                    </div>
+
+
+                    <div class="profile-information">
+
+                        <div>
+                            <h4>Instructor Name</h4>
+                            <p id="profileFullName">Loading...</p>
                         </div>
 
-                        <div class="profile-item">
-                            <span>Level</span>
-                            <h3 id="profileLevel">Not available</h3>
+
+                        <div>
+                            <h4>Email Address</h4>
+                            <p id="profileEmailAddress">Loading...</p>
                         </div>
 
-                        <div class="profile-item">
-                            <span>University</span>
-                            <h3 id="profileUniversity">Not available</h3>
+
+                        <div>
+                            <h4>University</h4>
+                            <p id="profileUniversity">Loading...</p>
+                        </div>
+
+
+                        <div>
+                            <h4>Department</h4>
+                            <p id="profileDepartment">Loading...</p>
+                        </div>
+
+
+                        <div>
+                            <h4>Account Status</h4>
+                            <p id="profileStatus">Loading...</p>
                         </div>
 
                     </div>
@@ -617,8 +770,7 @@
             <footer class="dashboard-footer">
 
                 <p>
-                    &copy; <span id="currentYear"></span>
-                    LearnSphere. All rights reserved.
+                    © 2026 LearnSphere. All Rights Reserved.
                 </p>
 
             </footer>
@@ -628,11 +780,8 @@
     </div>
 
 
-    <!-- PDF LIBRARY -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-    <!-- DASHBOARD JAVASCRIPT -->
-    <script type="module" src="student-dashboard.js"></script>
+    <!-- JAVASCRIPT -->
+    <script type="module" src="instructor-dashboard.js"></script>
 
 </body>
 

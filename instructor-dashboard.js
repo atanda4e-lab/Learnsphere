@@ -1,7 +1,13 @@
-// ==========================================
+// ========================================
 // LEARNSPHERE INSTRUCTOR DASHBOARD
-// FIREBASE VERSION
-// ==========================================
+// COMPLETE FIREBASE JAVASCRIPT
+// FIREBASE VERSION 12.2.1
+// ========================================
+
+
+// ========================================
+// 1. FIREBASE IMPORTS
+// ========================================
 
 import { auth, db } from "./firebase.js";
 
@@ -16,7 +22,6 @@ import {
     getDoc,
     getDocs,
     addDoc,
-    setDoc,
     updateDoc,
     deleteDoc,
     query,
@@ -25,430 +30,957 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 
-// ==========================================
-// 1. GLOBAL VARIABLES
-// ==========================================
+// ========================================
+// 2. GLOBAL VARIABLES
+// ========================================
 
-let currentInstructor = null;
-
-let departmentCourses = [];
-
-let departmentLessons = [];
-
-let departmentQuizSettings = [];
-
-let departmentQuestions = [];
-
+let currentUser = null;
+let instructorData = null;
+let instructorCourses = [];
 let departmentStudents = [];
 
-let selectedQuestionQuiz = "";
+
+// ========================================
+// 3. HTML ELEMENTS
+// ========================================
+
+const notification = document.getElementById("notification");
+
+const logoutBtn = document.getElementById("logoutBtn");
+
+const menuBtn = document.getElementById("menuBtn");
+
+const sidebar = document.getElementById("sidebar");
+
+const createCourseForm = document.getElementById("createCourseForm");
+
+const createLessonForm = document.getElementById("createLessonForm");
+
+const createQuizForm = document.getElementById("createQuizForm");
 
 
-// ==========================================
-// 2. HELPERS
-// ==========================================
+// ========================================
+// 4. HELPER FUNCTIONS
+// ========================================
 
-function element(id) {
+function getElement(id) {
     return document.getElementById(id);
 }
 
-function value(id) {
-    return element(id)?.value?.trim() || "";
-}
 
-function setText(id, text) {
-    if (element(id)) {
-        element(id).textContent = text ?? "";
-    }
-}
+function setElementContent(id, value) {
 
-function escapeHTML(text) {
-    const div = document.createElement("div");
-    div.textContent = text ?? "";
-    return div.innerHTML;
-}
+    const element = getElement(id);
 
-function showError(error, message) {
-    console.error(message, error);
-    alert(message + "\n\n" + (error.message || "Unknown error"));
-}
+    if (!element) return;
 
-function departmentName() {
-    return currentInstructor?.department || "";
-}
-
-function getCourse(courseId) {
-    return departmentCourses.find(course => course.id === courseId);
-}
-
-function getQuizSettings(quizId) {
-    return departmentQuizSettings.find(item => item.id === quizId);
-}
-
-function showEmpty(message) {
-    return `<div class="empty-state">${escapeHTML(message)}</div>`;
-}
-
-function getDateTimeValue(value) {
-    if (!value) return "";
-
-    if (typeof value === "string") {
-        return value;
+    if (
+        element.tagName === "INPUT" ||
+        element.tagName === "TEXTAREA" ||
+        element.tagName === "SELECT"
+    ) {
+        element.value = value ?? "";
+    } else {
+        element.textContent = value ?? "";
     }
 
-    return "";
 }
 
 
-// ==========================================
-// 3. AUTHENTICATION
-// ==========================================
+function escapeHTML(value) {
+
+    return String(value ?? "").replace(/[&<>"']/g, character => {
+
+        const entities = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+        };
+
+        return entities[character];
+
+    });
+
+}
+
+
+// IMPORTANT:
+// Your Firestore instructor name field is "full name"
+// with a space, so we read that exact field.
+
+function getInstructorName() {
+
+    if (!instructorData) {
+
+        return (
+            currentUser?.displayName ||
+            currentUser?.email?.split("@")[0] ||
+            "Instructor"
+        );
+
+    }
+
+    const firstName =
+        instructorData.firstName ||
+        instructorData.firstname ||
+        "";
+
+    const lastName =
+        instructorData.lastName ||
+        instructorData.lastname ||
+        "";
+
+    return (
+        instructorData["full name"] ||
+        instructorData.fullName ||
+        instructorData.fullname ||
+        instructorData.instructorName ||
+        instructorData.name ||
+        instructorData.displayName ||
+        `${firstName} ${lastName}`.trim() ||
+        currentUser?.displayName ||
+        currentUser?.email?.split("@")[0] ||
+        "Instructor"
+    );
+
+}
+
+
+function getInstructorEmail() {
+
+    return (
+        instructorData?.email ||
+        instructorData?.emailAddress ||
+        currentUser?.email ||
+        "Not available"
+    );
+
+}
+
+
+function isCoursePublished(course) {
+
+    return (
+        course.published === true ||
+        course.isPublished === true
+    );
+
+}
+
+
+function showNotification(message, type = "success") {
+
+    if (!notification) {
+        alert(message);
+        return;
+    }
+
+    notification.textContent = message;
+
+    notification.className = "notification " + type;
+
+    notification.style.display = "block";
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+    setTimeout(() => {
+        notification.style.display = "none";
+    }, 5000);
+
+}
+
+
+function getCourseById(courseId) {
+
+    return instructorCourses.find(
+        course => course.id === courseId
+    );
+
+}
+
+
+function getStudentName(student) {
+
+    return (
+        student["full name"] ||
+        student.fullName ||
+        student.fullname ||
+        student.name ||
+        student.displayName ||
+        `${student.firstName || ""} ${student.lastName || ""}`.trim() ||
+        "Student"
+    );
+
+}
+
+
+// ========================================
+// 5. NAVIGATION
+// ========================================
+
+function navigateTo(sectionId) {
+
+    document.querySelectorAll(".dashboard-section").forEach(section => {
+
+        section.classList.remove("active");
+
+    });
+
+    const target = getElement(sectionId);
+
+    if (!target) return;
+
+    target.classList.add("active");
+
+    document.querySelectorAll(".nav-link").forEach(link => {
+
+        link.classList.remove("active");
+
+        if (link.dataset.section === sectionId) {
+            link.classList.add("active");
+        }
+
+    });
+
+    sidebar?.classList.remove("show");
+
+    if (sectionId === "courses") {
+        loadCourses();
+    }
+
+    if (sectionId === "lessons") {
+        loadCourseOptions();
+    }
+
+    if (sectionId === "quizzes") {
+        loadCourseOptions();
+        loadQuizzes();
+    }
+
+    if (sectionId === "students") {
+        loadStudents();
+    }
+
+    if (sectionId === "profile") {
+        displayInstructorProfile();
+    }
+
+}
+
+
+document.querySelectorAll(".nav-link").forEach(link => {
+
+    link.addEventListener("click", event => {
+
+        event.preventDefault();
+
+        navigateTo(link.dataset.section);
+
+    });
+
+});
+
+
+document.querySelectorAll("[data-go]").forEach(button => {
+
+    button.addEventListener("click", () => {
+
+        navigateTo(button.dataset.go);
+
+    });
+
+});
+
+
+menuBtn?.addEventListener("click", () => {
+
+    sidebar?.classList.toggle("show");
+
+});
+
+
+// ========================================
+// 6. AUTHENTICATION
+// ========================================
 
 onAuthStateChanged(auth, async user => {
 
     if (!user) {
-        window.location.href = "auth.html?mode=instructor";
+
+        window.location.href = "auth.html";
+
         return;
+
     }
+
+    currentUser = user;
+
+    await verifyInstructor();
+
+});
+
+
+// ========================================
+// 7. VERIFY INSTRUCTOR
+// ========================================
+
+async function verifyInstructor() {
 
     try {
 
-        const instructorSnapshot = await getDoc(
-            doc(db, "instructors", user.uid)
+        const instructorRef = doc(
+            db,
+            "instructors",
+            currentUser.uid
         );
 
-        if (!instructorSnapshot.exists()) {
-            await signOut(auth);
-            window.location.href = "auth.html?mode=instructor";
+        const instructorSnap = await getDoc(instructorRef);
+
+        if (!instructorSnap.exists()) {
+
+            showNotification(
+                "Instructor profile was not found.",
+                "error"
+            );
+
             return;
+
         }
 
-        const profile = instructorSnapshot.data();
+        instructorData = instructorSnap.data();
 
         if (
-            profile.role !== "instructor" ||
-            profile.status !== "approved"
+            instructorData.role !== "instructor" ||
+            instructorData.status !== "approved"
         ) {
-            alert("Your instructor account is not approved.");
-            await signOut(auth);
-            window.location.href = "auth.html?mode=instructor";
+
+            showNotification(
+                "Your instructor account has not been approved.",
+                "error"
+            );
+
             return;
+
         }
 
-        currentInstructor = {
-            uid: user.uid,
-            fullName: profile.fullName || "Instructor",
-            email: profile.email || user.email || "",
-            university: profile.university || "",
-            department: profile.department || ""
-        };
+        if (!instructorData.department) {
 
-        if (!currentInstructor.department) {
-            alert("Your instructor profile has no department.");
+            showNotification(
+                "Your instructor profile has no department.",
+                "error"
+            );
+
             return;
+
         }
 
         displayInstructorProfile();
 
-        await loadAllData();
+        await loadDashboard();
 
     } catch (error) {
-        showError(error, "Unable to load instructor dashboard.");
+
+        console.error(
+            "Instructor verification error:",
+            error
+        );
+
+        showNotification(
+            "Unable to verify instructor: " + error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+// ========================================
+// 8. DISPLAY INSTRUCTOR PROFILE
+// ========================================
+
+function displayInstructorProfile() {
+
+    if (!instructorData || !currentUser) return;
+
+    const name = getInstructorName();
+
+    const email = getInstructorEmail();
+
+    const university =
+        instructorData.university ||
+        instructorData.institution ||
+        "Not available";
+
+    const department =
+        instructorData.department ||
+        "Not available";
+
+    const status =
+        instructorData.status ||
+        "Not available";
+
+    const initial = name.charAt(0).toUpperCase();
+
+    // Welcome message
+
+    setElementContent("welcomeName", name);
+
+    // Header
+
+    setElementContent("headerInstructorName", name);
+
+    setElementContent("headerAvatar", initial);
+
+    // Profile
+
+    setElementContent("profileAvatar", initial);
+
+    setElementContent("profileName", name);
+
+    setElementContent("profileEmail", email);
+
+    setElementContent("profileFullName", name);
+
+    setElementContent("profileEmailAddress", email);
+
+    setElementContent("profileUniversity", university);
+
+    setElementContent("profileDepartment", department);
+
+    setElementContent("profileStatus", status);
+
+}
+
+
+// ========================================
+// 9. LOAD DASHBOARD
+// ========================================
+
+async function loadDashboard() {
+
+    displayInstructorProfile();
+
+    await loadCourses();
+
+    await loadStudents();
+
+    await loadDashboardStatistics();
+
+    await loadRecentCourses();
+
+}
+
+
+// ========================================
+// 10. LOAD DEPARTMENT COURSES
+// ========================================
+
+async function loadCourses() {
+
+    try {
+
+        const department = instructorData.department;
+
+        const coursesQuery = query(
+            collection(db, "courses"),
+            where("department", "==", department)
+        );
+
+        const snapshot = await getDocs(coursesQuery);
+
+        instructorCourses = snapshot.docs.map(courseDoc => {
+
+            return {
+                id: courseDoc.id,
+                ...courseDoc.data()
+            };
+
+        });
+
+        displayCourses();
+
+        loadCourseOptions();
+
+    } catch (error) {
+
+        console.error(
+            "Course loading error:",
+            error
+        );
+
+        const container = getElement("myCourses");
+
+        if (container) {
+
+            container.textContent =
+                "Unable to load courses: " + error.message;
+
+        }
+
+    }
+
+}
+
+
+// ========================================
+// 11. DISPLAY COURSES
+// ========================================
+
+function displayCourses() {
+
+    const container = getElement("myCourses");
+
+    if (!container) return;
+
+    if (instructorCourses.length === 0) {
+
+        container.innerHTML =
+            "<p>No courses found in your department.</p>";
+
+        return;
+
+    }
+
+    container.innerHTML = "";
+
+    instructorCourses.forEach(course => {
+
+        const card = document.createElement("div");
+
+        card.className = "course-card";
+
+        const image =
+            course.image ||
+            "https://placehold.co/600x300?text=LearnSphere";
+
+        const isOwner =
+            course.instructorId === currentUser.uid;
+
+        const published = isCoursePublished(course);
+
+        card.innerHTML = `
+
+            <img
+                src="${escapeHTML(image)}"
+                alt="Course image"
+            >
+
+            <div class="course-card-body">
+
+                <h3>
+                    ${escapeHTML(course.title || "Untitled Course")}
+                </h3>
+
+                <p>
+                    Course Code:
+                    ${escapeHTML(course.courseCode || "Not available")}
+                </p>
+
+                <p>
+                    Department:
+                    ${escapeHTML(course.department || "")}
+                </p>
+
+                <p>
+                    Level:
+                    ${escapeHTML(course.level || "Not specified")}
+                </p>
+
+                <p>
+                    Instructor:
+                    ${escapeHTML(course.instructorName || "LearnSphere Admin")}
+                </p>
+
+                <p>
+                    Status:
+                    ${published ? "Published" : "Draft"}
+                </p>
+
+                <div class="course-actions">
+
+                    <button
+                        data-action="lessons"
+                        data-id="${escapeHTML(course.id)}">
+                        Lessons
+                    </button>
+
+                    ${
+                        isOwner
+                        ? `
+
+                            <button
+                                data-action="publish"
+                                data-id="${escapeHTML(course.id)}">
+
+                                ${published ? "Unpublish" : "Publish"}
+
+                            </button>
+
+                            <button
+                                data-action="delete"
+                                data-id="${escapeHTML(course.id)}"
+                                class="delete-btn">
+
+                                Delete
+
+                            </button>
+
+                        `
+                        : `
+                            <span class="course-owner">
+                                Department Course
+                            </span>
+                        `
+                    }
+
+                </div>
+
+            </div>
+
+        `;
+
+        container.appendChild(card);
+
+    });
+
+}
+
+
+// ========================================
+// 12. COURSE ACTIONS
+// ========================================
+
+document.addEventListener("click", async event => {
+
+    const button = event.target.closest("[data-action]");
+
+    if (!button || !currentUser) return;
+
+    const action = button.dataset.action;
+
+    const courseId = button.dataset.id;
+
+    const course = getCourseById(courseId);
+
+    if (!course) return;
+
+    if (action === "lessons") {
+
+        navigateTo("lessons");
+
+        const select = getElement("lessonCourseSelect");
+
+        if (select) {
+            select.value = courseId;
+        }
+
+        await loadLessons(courseId);
+
+        return;
+
+    }
+
+    if (course.instructorId !== currentUser.uid) {
+
+        showNotification(
+            "You cannot manage this course.",
+            "error"
+        );
+
+        return;
+
+    }
+
+    if (action === "publish") {
+
+        await toggleCoursePublication(course);
+
+    }
+
+    if (action === "delete") {
+
+        await deleteCourse(course);
+
     }
 
 });
 
 
-// ==========================================
-// 4. PROFILE
-// ==========================================
+// ========================================
+// 13. PUBLISH COURSE
+// ========================================
 
-function displayInstructorProfile() {
+async function toggleCoursePublication(course) {
 
-    setText("instructorName", currentInstructor.fullName);
-    setText("profileName", currentInstructor.fullName);
-    setText("profileDepartment", currentInstructor.department);
+    try {
 
-    setText("overviewName", currentInstructor.fullName);
-    setText("overviewEmail", currentInstructor.email);
-    setText("overviewUniversity", currentInstructor.university);
-    setText("overviewDepartment", currentInstructor.department);
+        const newStatus = !isCoursePublished(course);
 
-}
-
-
-// ==========================================
-// 5. LOAD ALL DATA
-// ==========================================
-
-async function loadAllData() {
-
-    await loadDepartmentCourses();
-
-    await loadDepartmentLessons();
-
-    await loadDepartmentQuizSettings();
-
-    await loadDepartmentQuestions();
-
-    await loadDepartmentStudents();
-
-    populateCourseSelects();
-
-    populateQuizSelects();
-
-    displayAllData();
-
-}
-
-
-// ==========================================
-// 6. LOAD DEPARTMENT COURSES
-// ==========================================
-
-async function loadDepartmentCourses() {
-
-    const courseQuery = query(
-        collection(db, "courses"),
-        where("department", "==", departmentName())
-    );
-
-    const snapshot = await getDocs(courseQuery);
-
-    departmentCourses = snapshot.docs.map(item => ({
-        ...item.data(),
-        id: item.id
-    }));
-
-}
-
-
-// ==========================================
-// 7. LOAD LESSONS
-// ==========================================
-
-async function loadDepartmentLessons() {
-
-    departmentLessons = [];
-
-    const tasks = departmentCourses.map(async course => {
-
-        const lessonQuery = query(
-            collection(db, "lessons"),
-            where("courseId", "==", course.id)
-        );
-
-        const snapshot = await getDocs(lessonQuery);
-
-        snapshot.docs.forEach(item => {
-
-            departmentLessons.push({
-                ...item.data(),
-                id: item.id,
-                courseTitle: course.title
-            });
-
-        });
-
-    });
-
-    await Promise.all(tasks);
-
-}
-
-
-// ==========================================
-// 8. LOAD QUIZ SETTINGS
-// ==========================================
-
-async function loadDepartmentQuizSettings() {
-
-    departmentQuizSettings = [];
-
-    const tasks = departmentCourses.map(async course => {
-
-        const settingsQuery = query(
-            collection(db, "quizSettings"),
-            where("courseId", "==", course.id)
-        );
-
-        const snapshot = await getDocs(settingsQuery);
-
-        snapshot.docs.forEach(item => {
-
-            departmentQuizSettings.push({
-                ...item.data(),
-                id: item.id,
-                courseTitle: course.title
-            });
-
-        });
-
-    });
-
-    await Promise.all(tasks);
-
-}
-
-
-// ==========================================
-// 9. LOAD QUIZ QUESTIONS
-// ==========================================
-
-async function loadDepartmentQuestions() {
-
-    departmentQuestions = [];
-
-    const tasks = departmentCourses.map(async course => {
-
-        const questionsQuery = query(
-            collection(db, "quizzes"),
-            where("courseId", "==", course.id)
-        );
-
-        const snapshot = await getDocs(questionsQuery);
-
-        snapshot.docs.forEach(item => {
-
-            departmentQuestions.push({
-                ...item.data(),
-                id: item.id
-            });
-
-        });
-
-    });
-
-    await Promise.all(tasks);
-
-}
-
-
-// ==========================================
-// 10. LOAD DEPARTMENT STUDENTS
-// ==========================================
-
-async function loadDepartmentStudents() {
-
-    departmentStudents = [];
-
-    const studentMap = new Map();
-
-    const tasks = departmentCourses.map(async course => {
-
-        const enrollmentQuery = query(
-            collection(db, "enrollments"),
-            where("courseId", "==", course.id)
-        );
-
-        const snapshot = await getDocs(enrollmentQuery);
-
-        snapshot.docs.forEach(item => {
-
-            const enrollment = item.data();
-
-            const studentId = enrollment.studentId;
-
-            if (!studentId) return;
-
-            if (!studentMap.has(studentId)) {
-
-                studentMap.set(studentId, {
-                    studentId: studentId,
-                    studentName: enrollment.studentName || "Student",
-                    courses: [],
-                    enrolledAt: enrollment.enrolledAt || null
-                });
-
+        await updateDoc(
+            doc(db, "courses", course.id),
+            {
+                published: newStatus,
+                isPublished: newStatus,
+                updatedAt: serverTimestamp()
             }
+        );
 
-            const student = studentMap.get(studentId);
+        showNotification(
+            newStatus
+                ? "Course published successfully."
+                : "Course unpublished successfully."
+        );
 
-            if (!student.courses.includes(course.title)) {
-                student.courses.push(course.title);
-            }
+        await loadCourses();
 
-        });
+        await loadDashboardStatistics();
 
-    });
+        await loadRecentCourses();
 
-    await Promise.all(tasks);
+    } catch (error) {
 
-    departmentStudents = Array.from(studentMap.values());
+        console.error("Course publication error:", error);
 
-}
+        showNotification(
+            "Unable to update course: " + error.message,
+            "error"
+        );
 
-
-// ==========================================
-// 11. DISPLAY ALL DATA
-// ==========================================
-
-function displayAllData() {
-
-    displayCourses();
-
-    displayLessons();
-
-    displayQuizSettings();
-
-    displayQuestions();
-
-    displayStudents();
-
-    updateStatistics();
+    }
 
 }
 
 
-// ==========================================
-// 12. STATISTICS
-// ==========================================
+// ========================================
+// 14. DELETE COURSE
+// ========================================
 
-function updateStatistics() {
+async function deleteCourse(course) {
 
-    setText("courseCount", departmentCourses.length);
+    if (course.instructorId !== currentUser.uid) {
 
-    setText("lessonCount", departmentLessons.length);
+        showNotification(
+            "You cannot delete another instructor's course.",
+            "error"
+        );
 
-    setText("questionCount", departmentQuestions.length);
+        return;
 
-    setText("studentCount", departmentStudents.length);
+    }
+
+    if (!confirm("Are you sure you want to delete this course?")) {
+        return;
+    }
+
+    try {
+
+        await deleteDoc(
+            doc(db, "courses", course.id)
+        );
+
+        showNotification("Course deleted successfully.");
+
+        await loadCourses();
+
+        await loadDashboardStatistics();
+
+        await loadRecentCourses();
+
+    } catch (error) {
+
+        console.error("Course deletion error:", error);
+
+        showNotification(
+            "Unable to delete course: " + error.message,
+            "error"
+        );
+
+    }
 
 }
 
 
-// ==========================================
-// 13. COURSE SELECT BOXES
-// ==========================================
+// ========================================
+// 15. CREATE COURSE
+// ========================================
 
-function populateCourseSelects() {
+createCourseForm?.addEventListener("submit", async event => {
+
+    event.preventDefault();
+
+    const button = getElement("createCourseBtn");
+
+    if (button) {
+
+        button.disabled = true;
+
+        button.textContent = "Creating Course...";
+
+    }
+
+    try {
+
+        const courseData = {
+
+            title: getElement("courseTitle").value.trim(),
+
+            courseCode: getElement("courseCode").value.trim().toUpperCase(),
+
+            category: getElement("courseCategory").value,
+
+            department: instructorData.department,
+
+            level: getElement("courseLevel").value,
+
+            description: getElement("courseDescription").value.trim(),
+
+            image: getElement("courseImage").value.trim(),
+
+            openingDate: getElement("courseOpeningDate").value,
+
+            closingDate: getElement("courseClosingDate").value,
+
+            instructorId: currentUser.uid,
+
+            instructorName: getInstructorName(),
+
+            instructorEmail: getInstructorEmail(),
+
+            published: false,
+
+            isPublished: false,
+
+            createdAt: serverTimestamp(),
+
+            updatedAt: serverTimestamp()
+
+        };
+
+        if (!courseData.title || !courseData.courseCode) {
+
+            throw new Error(
+                "Course title and course code are required."
+            );
+
+        }
+
+        if (
+            courseData.openingDate &&
+            courseData.closingDate &&
+            courseData.closingDate < courseData.openingDate
+        ) {
+
+            throw new Error(
+                "Closing date cannot be earlier than opening date."
+            );
+
+        }
+
+        await addDoc(
+            collection(db, "courses"),
+            courseData
+        );
+
+        createCourseForm.reset();
+
+        showNotification("Course created successfully.");
+
+        await loadCourses();
+
+        await loadDashboardStatistics();
+
+        await loadRecentCourses();
+
+        navigateTo("courses");
+
+    } catch (error) {
+
+        console.error("Course creation error:", error);
+
+        showNotification(
+            "Course creation failed: " + error.message,
+            "error"
+        );
+
+    } finally {
+
+        if (button) {
+
+            button.disabled = false;
+
+            button.textContent = "Create Course";
+
+        }
+
+    }
+
+});
+
+
+// ========================================
+// 16. COURSE SELECT OPTIONS
+// ========================================
+
+function loadCourseOptions() {
 
     const selects = [
-        element("lessonCourse"),
-        element("quizCourse")
+
+        getElement("lessonCourseSelect"),
+
+        getElement("quizCourseSelect"),
+
+        getElement("studentCourseFilter")
+
     ];
 
     selects.forEach(select => {
 
         if (!select) return;
 
-        const previous = select.value;
+        const previousValue = select.value;
 
-        select.innerHTML = `<option value="">Select course</option>`;
+        const firstOption =
+            select.id === "studentCourseFilter"
+                ? "All Department Students"
+                : "Choose a course";
 
-        departmentCourses.forEach(course => {
+        select.innerHTML = "";
+
+        const defaultOption = document.createElement("option");
+
+        defaultOption.value = "";
+
+        defaultOption.textContent = firstOption;
+
+        select.appendChild(defaultOption);
+
+        instructorCourses.forEach(course => {
 
             const option = document.createElement("option");
 
             option.value = course.id;
-            option.textContent = course.title;
+
+            option.textContent =
+                `${course.courseCode || ""} - ${course.title || ""}`;
 
             select.appendChild(option);
 
         });
 
-        if (departmentCourses.some(course => course.id === previous)) {
-            select.value = previous;
+        if (
+            [...select.options].some(
+                option => option.value === previousValue
+            )
+        ) {
+
+            select.value = previousValue;
+
         }
 
     });
@@ -456,1131 +988,1052 @@ function populateCourseSelects() {
 }
 
 
-// ==========================================
-// 14. DISPLAY COURSES
-// ==========================================
+// ========================================
+// 17. CREATE LESSON
+// ========================================
 
-function displayCourses() {
-
-    const list = element("courseList");
-
-    if (!list) return;
-
-    if (departmentCourses.length === 0) {
-        list.innerHTML = showEmpty("No courses found in your department.");
-        return;
-    }
-
-    list.innerHTML = departmentCourses.map(course => {
-
-        const published =
-            course.published === true ||
-            course.isPublished === true;
-
-        return `
-            <div class="item-card">
-
-                <h3>${escapeHTML(course.title)}</h3>
-
-                <p>Department: ${escapeHTML(course.department)}</p>
-
-                <p>Level: ${escapeHTML(course.level)}</p>
-
-                <span class="status ${published ? "" : "unpublished"}">
-                    ${published ? "Published" : "Unpublished"}
-                </span>
-
-                <div class="item-actions">
-
-                    <button class="edit-btn"
-                        data-edit-course="${course.id}">
-                        Edit
-                    </button>
-
-                    <button class="publish-btn"
-                        data-toggle-course="${course.id}">
-                        ${published ? "Unpublish" : "Publish"}
-                    </button>
-
-                    <button class="delete-btn"
-                        data-delete-course="${course.id}">
-                        Delete
-                    </button>
-
-                </div>
-
-            </div>
-        `;
-
-    }).join("");
-
-}
-
-
-// ==========================================
-// 15. SAVE COURSE
-// ==========================================
-
-element("courseForm").addEventListener("submit", async event => {
+createLessonForm?.addEventListener("submit", async event => {
 
     event.preventDefault();
 
-    const id = value("courseId");
+    const courseId = getElement("lessonCourseSelect").value;
 
-    const courseData = {
+    const course = getCourseById(courseId);
 
-        title: value("courseTitle"),
+    if (!course) {
 
-        category: value("courseCategory"),
-
-        department: departmentName(),
-
-        level: value("courseLevel"),
-
-        description: value("courseDescription"),
-
-        image: value("courseImage"),
-
-        updatedAt: serverTimestamp()
-
-    };
-
-    try {
-
-        if (id) {
-
-            await updateDoc(
-                doc(db, "courses", id),
-                courseData
-            );
-
-        } else {
-
-            courseData.published = false;
-            courseData.isPublished = false;
-            courseData.createdAt = serverTimestamp();
-            courseData.instructorId = currentInstructor.uid;
-
-            await addDoc(
-                collection(db, "courses"),
-                courseData
-            );
-
-        }
-
-        element("courseForm").reset();
-        setText("courseId", "");
-
-        await loadAllData();
-
-        alert("Course saved successfully.");
-
-    } catch (error) {
-        showError(error, "Unable to save course.");
-    }
-
-});
-
-
-// ==========================================
-// 16. EDIT COURSE
-// ==========================================
-
-function editCourse(id) {
-
-    const course = getCourse(id);
-
-    if (!course) return;
-
-    setText("courseId", course.id);
-
-    element("courseId").value = course.id;
-    element("courseTitle").value = course.title || "";
-    element("courseCategory").value = course.category || "";
-    element("courseLevel").value = course.level || "";
-    element("courseDescription").value = course.description || "";
-    element("courseImage").value = course.image || "";
-
-    setText("courseFormTitle", "Edit Course");
-
-    showSection("courses");
-
-    element("courseForm").scrollIntoView({
-        behavior: "smooth"
-    });
-
-}
-
-
-// ==========================================
-// 17. PUBLISH / UNPUBLISH COURSE
-// ==========================================
-
-async function toggleCourse(id) {
-
-    const course = getCourse(id);
-
-    if (!course) return;
-
-    const published =
-        course.published === true ||
-        course.isPublished === true;
-
-    try {
-
-        await updateDoc(
-            doc(db, "courses", id),
-            {
-                published: !published,
-                isPublished: !published,
-                updatedAt: serverTimestamp()
-            }
+        showNotification(
+            "Please select a valid course.",
+            "error"
         );
 
-        await loadAllData();
+        return;
 
-    } catch (error) {
-        showError(error, "Unable to update course publication.");
     }
-
-}
-
-
-// ==========================================
-// 18. DELETE COURSE
-// ==========================================
-
-async function removeCourse(id) {
-
-    if (!confirm(
-        "Delete this course? Its lessons, quizzes and enrolments will not automatically be deleted."
-    )) return;
 
     try {
 
-        await deleteDoc(doc(db, "courses", id));
+        const lessonData = {
 
-        await loadAllData();
+            courseId: courseId,
 
-        alert("Course deleted.");
+            courseTitle: course.title,
 
-    } catch (error) {
-        showError(error, "Unable to delete course.");
-    }
+            title: getElement("lessonTitle").value.trim(),
 
-}
+            description: getElement("lessonDescription").value.trim(),
 
+            content: getElement("lessonContent").value.trim(),
 
-// ==========================================
-// 19. COURSE FORM CLEAR
-// ==========================================
+            instructions: "",
 
-element("cancelCourseEdit").addEventListener("click", () => {
+            pdf: getElement("lessonPdf").value.trim(),
 
-    element("courseForm").reset();
-    element("courseId").value = "";
+            video: getElement("lessonVideo").value.trim(),
 
-    setText("courseFormTitle", "Create New Course");
+            instructorId: currentUser.uid,
 
-});
+            department: instructorData.department,
 
+            published: false,
 
-// ==========================================
-// 20. LESSON COURSE FILTER
-// ==========================================
+            createdAt: serverTimestamp(),
 
-function displayLessons() {
+            updatedAt: serverTimestamp()
 
-    const list = element("lessonList");
+        };
 
-    if (!list) return;
+        if (!lessonData.title || !lessonData.content) {
 
-    if (departmentLessons.length === 0) {
-        list.innerHTML = showEmpty("No lessons have been added yet.");
-        return;
-    }
-
-    list.innerHTML = departmentLessons.map(lesson => {
-
-        return `
-            <div class="item-card">
-
-                <h3>${escapeHTML(lesson.title)}</h3>
-
-                <p>Course: ${escapeHTML(lesson.courseTitle)}</p>
-
-                <p>${escapeHTML(lesson.description || "")}</p>
-
-                <span class="status ${lesson.published ? "" : "unpublished"}">
-                    ${lesson.published ? "Published" : "Unpublished"}
-                </span>
-
-                <div class="item-actions">
-
-                    <button class="edit-btn"
-                        data-edit-lesson="${lesson.id}">
-                        Edit
-                    </button>
-
-                    <button class="delete-btn"
-                        data-delete-lesson="${lesson.id}">
-                        Delete
-                    </button>
-
-                </div>
-
-            </div>
-        `;
-
-    }).join("");
-
-}
-
-
-// ==========================================
-// 21. SAVE LESSON
-// ==========================================
-
-element("lessonForm").addEventListener("submit", async event => {
-
-    event.preventDefault();
-
-    const id = value("lessonId");
-
-    const courseId = value("lessonCourse");
-
-    const course = getCourse(courseId);
-
-    if (!course) {
-        alert("Please select a valid course.");
-        return;
-    }
-
-    const lessonData = {
-
-        courseId: courseId,
-
-        title: value("lessonTitle"),
-
-        description: value("lessonDescription"),
-
-        instructions: value("lessonInstructions"),
-
-        content: value("lessonContent"),
-
-        pdf: value("lessonPdf"),
-
-        video: value("lessonVideo"),
-
-        published: element("lessonPublished").checked,
-
-        updatedAt: serverTimestamp()
-
-    };
-
-    try {
-
-        if (id) {
-
-            await updateDoc(
-                doc(db, "lessons", id),
-                lessonData
-            );
-
-        } else {
-
-            lessonData.createdAt = serverTimestamp();
-
-            await addDoc(
-                collection(db, "lessons"),
-                lessonData
+            throw new Error(
+                "Lesson title and content are required."
             );
 
         }
-
-        element("lessonForm").reset();
-        element("lessonId").value = "";
-
-        await loadAllData();
-
-        alert("Lesson saved successfully.");
-
-    } catch (error) {
-        showError(error, "Unable to save lesson.");
-    }
-
-});
-
-
-// ==========================================
-// 22. EDIT LESSON
-// ==========================================
-
-function editLesson(id) {
-
-    const lesson = departmentLessons.find(item => item.id === id);
-
-    if (!lesson) return;
-
-    element("lessonId").value = id;
-    element("lessonCourse").value = lesson.courseId || "";
-    element("lessonTitle").value = lesson.title || "";
-    element("lessonDescription").value = lesson.description || "";
-    element("lessonInstructions").value = lesson.instructions || "";
-    element("lessonContent").value = lesson.content || "";
-    element("lessonPdf").value = lesson.pdf || "";
-    element("lessonVideo").value = lesson.video || "";
-    element("lessonPublished").checked = lesson.published === true;
-
-    setText("lessonFormTitle", "Edit Lesson");
-
-    showSection("lessons");
-
-    element("lessonForm").scrollIntoView({
-        behavior: "smooth"
-    });
-
-}
-
-
-// ==========================================
-// 23. DELETE LESSON
-// ==========================================
-
-async function deleteLesson(id) {
-
-    if (!confirm("Delete this lesson?")) return;
-
-    try {
-
-        await deleteDoc(doc(db, "lessons", id));
-
-        await loadAllData();
-
-        alert("Lesson deleted.");
-
-    } catch (error) {
-        showError(error, "Unable to delete lesson.");
-    }
-
-}
-
-
-// ==========================================
-// 24. CLEAR LESSON FORM
-// ==========================================
-
-element("cancelLessonEdit").addEventListener("click", () => {
-
-    element("lessonForm").reset();
-    element("lessonId").value = "";
-
-    setText("lessonFormTitle", "Add Lesson");
-
-});
-
-
-// ==========================================
-// 25. QUIZ LESSON SELECT
-// ==========================================
-
-element("quizCourse").addEventListener("change", () => {
-
-    populateLessonSelect();
-
-});
-
-element("quizType").addEventListener("change", () => {
-
-    const isLessonQuiz = value("quizType") === "lesson";
-
-    element("quizLesson").disabled = !isLessonQuiz;
-
-    if (isLessonQuiz) {
-        populateLessonSelect();
-    } else {
-        element("quizLesson").value = "";
-    }
-
-});
-
-
-function populateLessonSelect() {
-
-    const courseId = value("quizCourse");
-
-    const select = element("quizLesson");
-
-    select.innerHTML =
-        `<option value="">Select lesson</option>`;
-
-    departmentLessons
-        .filter(lesson => lesson.courseId === courseId)
-        .forEach(lesson => {
-
-            const option = document.createElement("option");
-
-            option.value = lesson.id;
-            option.textContent = lesson.title;
-
-            select.appendChild(option);
-
-        });
-
-}
-
-
-// ==========================================
-// 26. SAVE QUIZ SETTINGS
-// ==========================================
-
-element("quizSettingsForm").addEventListener("submit", async event => {
-
-    event.preventDefault();
-
-    const id = value("quizSettingsId");
-
-    const courseId = value("quizCourse");
-
-    const course = getCourse(courseId);
-
-    if (!course) {
-        alert("Please select a valid course.");
-        return;
-    }
-
-    const type = value("quizType");
-
-    const lessonId = value("quizLesson");
-
-    if (type === "lesson" && !lessonId) {
-        alert("Please select a lesson for this quiz.");
-        return;
-    }
-
-    const quizData = {
-
-        courseId: courseId,
-
-        title: value("quizTitle"),
-
-        type: type,
-
-        lessonId: type === "lesson" ? lessonId : "",
-
-        instructions: value("quizInstructions"),
-
-        timeLimitMinutes: Number(value("quizTime")),
-
-        maxAttempts: Number(value("quizAttempts")),
-
-        questionLimit: Number(value("quizQuestionLimit")),
-
-        openingDateTime: value("quizOpening"),
-
-        closingDateTime: value("quizClosing"),
-
-        shuffleQuestions: element("shuffleQuestions").checked,
-
-        shuffleOptions: element("shuffleOptions").checked,
-
-        published: element("quizPublished").checked,
-
-        updatedAt: serverTimestamp(),
-
-        updatedBy: currentInstructor.uid
-
-    };
-
-    if (
-        quizData.timeLimitMinutes < 1 ||
-        quizData.maxAttempts < 1 ||
-        quizData.questionLimit < 1
-    ) {
-        alert("Please enter valid quiz settings.");
-        return;
-    }
-
-    if (
-        quizData.openingDateTime &&
-        quizData.closingDateTime &&
-        new Date(quizData.closingDateTime) <=
-        new Date(quizData.openingDateTime)
-    ) {
-        alert("Closing time must be later than opening time.");
-        return;
-    }
-
-    try {
-
-        if (id) {
-
-            await updateDoc(
-                doc(db, "quizSettings", id),
-                quizData
-            );
-
-        } else {
-
-            quizData.createdAt = serverTimestamp();
-            quizData.createdBy = currentInstructor.uid;
-
-            const newQuiz = await addDoc(
-                collection(db, "quizSettings"),
-                quizData
-            );
-
-            selectedQuestionQuiz = newQuiz.id;
-
-        }
-
-        element("quizSettingsForm").reset();
-        element("quizSettingsId").value = "";
-
-        await loadAllData();
-
-        alert("Quiz settings saved.");
-
-    } catch (error) {
-        showError(error, "Unable to save quiz settings.");
-    }
-
-});
-
-
-// ==========================================
-// 27. DISPLAY QUIZ SETTINGS
-// ==========================================
-
-function displayQuizSettings() {
-
-    const list = element("quizSettingsList");
-
-    if (!list) return;
-
-    if (departmentQuizSettings.length === 0) {
-        list.innerHTML = showEmpty("No quizzes have been created yet.");
-        return;
-    }
-
-    list.innerHTML = departmentQuizSettings.map(quiz => {
-
-        return `
-            <div class="item-card">
-
-                <h3>${escapeHTML(quiz.title)}</h3>
-
-                <p>Course: ${escapeHTML(quiz.courseTitle)}</p>
-
-                <p>Time: ${escapeHTML(quiz.timeLimitMinutes)} minutes</p>
-
-                <p>Attempts: ${escapeHTML(quiz.maxAttempts)}</p>
-
-                <p>Questions: ${escapeHTML(quiz.questionLimit)}</p>
-
-                <span class="status ${quiz.published ? "" : "unpublished"}">
-                    ${quiz.published ? "Published" : "Unpublished"}
-                </span>
-
-                <div class="item-actions">
-
-                    <button class="edit-btn"
-                        data-edit-settings="${quiz.id}">
-                        Edit Settings
-                    </button>
-
-                    <button class="publish-btn"
-                        data-select-quiz="${quiz.id}">
-                        Manage Questions
-                    </button>
-
-                    <button class="delete-btn"
-                        data-delete-settings="${quiz.id}">
-                        Delete Quiz
-                    </button>
-
-                </div>
-
-            </div>
-        `;
-
-    }).join("");
-
-}
-
-
-// ==========================================
-// 28. POPULATE QUIZ SELECT
-// ==========================================
-
-function populateQuizSelects() {
-
-    const select = element("questionQuiz");
-
-    if (!select) return;
-
-    select.innerHTML = `<option value="">Select quiz</option>`;
-
-    departmentQuizSettings.forEach(quiz => {
-
-        const option = document.createElement("option");
-
-        option.value = quiz.id;
-        option.textContent = quiz.courseTitle + " - " + quiz.title;
-
-        select.appendChild(option);
-
-    });
-
-    if (
-        selectedQuestionQuiz &&
-        departmentQuizSettings.some(
-            quiz => quiz.id === selectedQuestionQuiz
-        )
-    ) {
-        select.value = selectedQuestionQuiz;
-    }
-
-}
-
-
-// ==========================================
-// 29. SAVE QUESTION
-// ==========================================
-
-element("questionForm").addEventListener("submit", async event => {
-
-    event.preventDefault();
-
-    const quizId = value("questionQuiz");
-
-    const settings = getQuizSettings(quizId);
-
-    if (!settings) {
-        alert("Please select a valid quiz.");
-        return;
-    }
-
-    const options = [
-        value("optionA"),
-        value("optionB"),
-        value("optionC"),
-        value("optionD")
-    ];
-
-    const correctAnswer = Number(value("correctAnswer"));
-
-    const questionData = {
-
-        courseId: settings.courseId,
-
-        quizId: quizId,
-
-        lessonId: settings.lessonId || "",
-
-        question: value("questionText"),
-
-        questionText: value("questionText"),
-
-        options: options,
-
-        correctAnswer: correctAnswer,
-
-        marks: Number(value("questionMarks")),
-
-        updatedAt: serverTimestamp(),
-
-        createdAt: serverTimestamp()
-
-    };
-
-    if (
-        options.some(option => !option) ||
-        !Number.isInteger(correctAnswer) ||
-        correctAnswer < 0 ||
-        correctAnswer > 3 ||
-        questionData.marks < 1
-    ) {
-        alert("Please complete all question fields correctly.");
-        return;
-    }
-
-    try {
 
         await addDoc(
-            collection(db, "quizzes"),
-            questionData
+            collection(db, "lessons"),
+            lessonData
         );
 
-        element("questionForm").reset();
+        createLessonForm.reset();
 
-        selectedQuestionQuiz = quizId;
+        showNotification("Lesson added successfully.");
 
-        await loadAllData();
+        await loadLessons(courseId);
 
-        element("questionQuiz").value = quizId;
-
-        alert("Quiz question saved successfully.");
+        await loadDashboardStatistics();
 
     } catch (error) {
-        showError(error, "Unable to save quiz question.");
+
+        console.error("Lesson creation error:", error);
+
+        showNotification(
+            "Unable to add lesson: " + error.message,
+            "error"
+        );
+
     }
 
 });
 
 
-// ==========================================
-// 30. DISPLAY QUESTIONS
-// ==========================================
+// ========================================
+// 18. LOAD LESSONS
+// ========================================
 
-function displayQuestions() {
+async function loadLessons(courseId) {
 
-    const list = element("questionList");
+    const container = getElement("lessonsList");
 
-    if (!list) return;
+    if (!container) return;
 
-    const quizId = value("questionQuiz");
+    if (!courseId) {
 
-    const questions = departmentQuestions.filter(
-        question => question.quizId === quizId
-    );
+        container.textContent =
+            "Select a course to view lessons.";
 
-    if (!quizId) {
-        list.innerHTML = showEmpty("Select a quiz to view its questions.");
         return;
+
     }
 
-    if (questions.length === 0) {
-        list.innerHTML = showEmpty("No questions have been added to this quiz.");
-        return;
-    }
-
-    list.innerHTML = questions.map((question, index) => {
-
-        return `
-            <div class="item-card">
-
-                <h3>Question ${index + 1}</h3>
-
-                <p>${escapeHTML(question.question || question.questionText)}</p>
-
-                <p>Marks: ${escapeHTML(question.marks || 1)}</p>
-
-                <div class="item-actions">
-
-                    <button class="delete-btn"
-                        data-delete-question="${question.id}">
-                        Delete Question
-                    </button>
-
-                </div>
-
-            </div>
-        `;
-
-    }).join("");
-
-}
-
-element("questionQuiz").addEventListener("change", () => {
-
-    selectedQuestionQuiz = value("questionQuiz");
-
-    displayQuestions();
-
-});
-
-
-// ==========================================
-// 31. EDIT QUIZ SETTINGS
-// ==========================================
-
-function editQuizSettings(id) {
-
-    const quiz = getQuizSettings(id);
-
-    if (!quiz) return;
-
-    element("quizSettingsId").value = id;
-
-    element("quizCourse").value = quiz.courseId || "";
-    element("quizTitle").value = quiz.title || "";
-    element("quizType").value = quiz.type || "course";
-    element("quizInstructions").value = quiz.instructions || "";
-    element("quizTime").value = quiz.timeLimitMinutes || 30;
-    element("quizAttempts").value = quiz.maxAttempts || 2;
-    element("quizQuestionLimit").value = quiz.questionLimit || 10;
-    element("quizOpening").value = getDateTimeValue(quiz.openingDateTime);
-    element("quizClosing").value = getDateTimeValue(quiz.closingDateTime);
-
-    element("shuffleQuestions").checked = quiz.shuffleQuestions === true;
-    element("shuffleOptions").checked = quiz.shuffleOptions === true;
-    element("quizPublished").checked = quiz.published === true;
-
-    populateLessonSelect();
-
-    element("quizLesson").value = quiz.lessonId || "";
-
-    element("quizLesson").disabled = quiz.type !== "lesson";
-
-    showSection("quizzes");
-
-    element("quizSettingsForm").scrollIntoView({
-        behavior: "smooth"
-    });
-
-}
-
-
-// ==========================================
-// 32. DELETE QUIZ SETTINGS
-// ==========================================
-
-async function deleteQuizSettings(id) {
-
-    if (!confirm(
-        "Delete these quiz settings? Existing questions will remain."
-    )) return;
+    container.textContent = "Loading lessons...";
 
     try {
 
-        await deleteDoc(doc(db, "quizSettings", id));
-
-        await loadAllData();
-
-        alert("Quiz settings deleted.");
-
-    } catch (error) {
-        showError(error, "Unable to delete quiz settings.");
-    }
-
-}
-
-
-// ==========================================
-// 33. DELETE QUESTION
-// ==========================================
-
-async function deleteQuestion(id) {
-
-    if (!confirm("Delete this question?")) return;
-
-    try {
-
-        await deleteDoc(doc(db, "quizzes", id));
-
-        await loadAllData();
-
-        alert("Question deleted.");
-
-    } catch (error) {
-        showError(error, "Unable to delete question.");
-    }
-
-}
-
-
-// ==========================================
-// 34. DISPLAY DEPARTMENT STUDENTS
-// ==========================================
-
-function displayStudents() {
-
-    const list = element("studentList");
-
-    if (!list) return;
-
-    if (departmentStudents.length === 0) {
-        list.innerHTML = showEmpty(
-            "No students have enrolled in your department's courses yet."
+        const lessonsQuery = query(
+            collection(db, "lessons"),
+            where("courseId", "==", courseId)
         );
-        return;
-    }
 
-    list.innerHTML = departmentStudents.map(student => {
+        const snapshot = await getDocs(lessonsQuery);
 
-        return `
-            <div class="item-card">
+        container.innerHTML = "";
 
-                <h3>${escapeHTML(student.studentName)}</h3>
+        if (snapshot.empty) {
 
-                <p>Student ID: ${escapeHTML(student.studentId)}</p>
+            container.textContent =
+                "No lessons available for this course.";
+
+            return;
+
+        }
+
+        snapshot.forEach(lessonDoc => {
+
+            const lesson = lessonDoc.data();
+
+            const isOwner =
+                lesson.instructorId === currentUser.uid;
+
+            const item = document.createElement("div");
+
+            item.className = "lesson-item";
+
+            item.innerHTML = `
+
+                <h4>
+                    ${escapeHTML(lesson.title || "Untitled Lesson")}
+                </h4>
 
                 <p>
-                    Enrolled Courses:
-                    ${escapeHTML(student.courses.join(", "))}
+                    ${escapeHTML(lesson.description || "")}
+                </p>
+
+                <p>
+                    Status:
+                    ${lesson.published ? "Published" : "Draft"}
+                </p>
+
+                ${
+                    isOwner
+                    ? `
+
+                        <div class="course-actions">
+
+                            <button
+                                data-lesson-action="publish"
+                                data-id="${escapeHTML(lessonDoc.id)}"
+                                data-course="${escapeHTML(courseId)}">
+
+                                ${lesson.published ? "Unpublish" : "Publish"}
+
+                            </button>
+
+                            <button
+                                class="delete-btn"
+                                data-lesson-action="delete"
+                                data-id="${escapeHTML(lessonDoc.id)}"
+                                data-course="${escapeHTML(courseId)}">
+
+                                Delete
+
+                            </button>
+
+                        </div>
+
+                    `
+                    : "<p>Department lesson</p>"
+                }
+
+            `;
+
+            container.appendChild(item);
+
+        });
+
+    } catch (error) {
+
+        console.error("Lesson loading error:", error);
+
+        container.textContent =
+            "Unable to load lessons: " + error.message;
+
+    }
+
+}
+
+
+getElement("lessonCourseSelect")?.addEventListener(
+    "change",
+    event => loadLessons(event.target.value)
+);
+
+
+// ========================================
+// 19. LESSON ACTIONS
+// ========================================
+
+document.addEventListener("click", async event => {
+
+    const button = event.target.closest("[data-lesson-action]");
+
+    if (!button || !currentUser) return;
+
+    const action = button.dataset.lessonAction;
+
+    const lessonId = button.dataset.id;
+
+    const courseId = button.dataset.course;
+
+    try {
+
+        const lessonRef = doc(
+            db,
+            "lessons",
+            lessonId
+        );
+
+        const lessonSnap = await getDoc(lessonRef);
+
+        if (!lessonSnap.exists()) {
+
+            throw new Error("Lesson not found.");
+
+        }
+
+        const lesson = lessonSnap.data();
+
+        if (lesson.instructorId !== currentUser.uid) {
+
+            throw new Error(
+                "You cannot manage another instructor's lesson."
+            );
+
+        }
+
+        if (action === "publish") {
+
+            await updateDoc(lessonRef, {
+
+                published: !lesson.published,
+
+                updatedAt: serverTimestamp()
+
+            });
+
+            showNotification("Lesson status updated.");
+
+        }
+
+        if (action === "delete") {
+
+            if (!confirm("Delete this lesson?")) return;
+
+            await deleteDoc(lessonRef);
+
+            showNotification("Lesson deleted successfully.");
+
+        }
+
+        await loadLessons(courseId);
+
+        await loadDashboardStatistics();
+
+    } catch (error) {
+
+        console.error("Lesson action error:", error);
+
+        showNotification(
+            error.message,
+            "error"
+        );
+
+    }
+
+});
+
+
+// ========================================
+// 20. CREATE QUIZ SETTINGS
+// ========================================
+
+createQuizForm?.addEventListener("submit", async event => {
+
+    event.preventDefault();
+
+    const courseId = getElement("quizCourseSelect").value;
+
+    const course = getCourseById(courseId);
+
+    if (!course) {
+
+        showNotification(
+            "Please select a valid course.",
+            "error"
+        );
+
+        return;
+
+    }
+
+    try {
+
+        const quizData = {
+
+            courseId: courseId,
+
+            courseTitle: course.title,
+
+            title: getElement("quizTitle").value.trim(),
+
+            type: "course",
+
+            lessonId: "",
+
+            timeLimitMinutes: Number(
+                getElement("quizDuration").value
+            ),
+
+            maxAttempts: Number(
+                getElement("quizAttempts").value
+            ),
+
+            questionLimit: Number(
+                getElement("quizTotalQuestions").value
+            ),
+
+            passMark: Number(
+                getElement("quizPassMark").value
+            ),
+
+            instructorId: currentUser.uid,
+
+            department: instructorData.department,
+
+            published: false,
+
+            createdAt: serverTimestamp(),
+
+            updatedAt: serverTimestamp()
+
+        };
+
+        if (
+            !quizData.title ||
+            !Number.isFinite(quizData.timeLimitMinutes) ||
+            quizData.timeLimitMinutes <= 0 ||
+            !Number.isFinite(quizData.maxAttempts) ||
+            quizData.maxAttempts <= 0 ||
+            !Number.isFinite(quizData.questionLimit) ||
+            quizData.questionLimit <= 0 ||
+            !Number.isFinite(quizData.passMark) ||
+            quizData.passMark < 1 ||
+            quizData.passMark > 100
+        ) {
+
+            throw new Error(
+                "Please enter valid quiz settings."
+            );
+
+        }
+
+        await addDoc(
+            collection(db, "quizSettings"),
+            quizData
+        );
+
+        createQuizForm.reset();
+
+        showNotification(
+            "Quiz settings created successfully."
+        );
+
+        await loadQuizzes();
+
+        await loadDashboardStatistics();
+
+    } catch (error) {
+
+        console.error("Quiz creation error:", error);
+
+        showNotification(
+            "Unable to create quiz: " + error.message,
+            "error"
+        );
+
+    }
+
+});
+
+
+// ========================================
+// 21. LOAD DEPARTMENT QUIZZES
+// ========================================
+
+async function loadQuizzes() {
+
+    const container = getElement("quizzesList");
+
+    if (!container) return;
+
+    container.textContent = "Loading quizzes...";
+
+    try {
+
+        container.innerHTML = "";
+
+        let totalFound = 0;
+
+        let permissionErrors = 0;
+
+        for (const course of instructorCourses) {
+
+            try {
+
+                const quizQuery = query(
+                    collection(db, "quizSettings"),
+                    where("courseId", "==", course.id)
+                );
+
+                const snapshot = await getDocs(quizQuery);
+
+                snapshot.forEach(quizDoc => {
+
+                    const quiz = quizDoc.data();
+
+                    const isOwner =
+                        quiz.instructorId === currentUser.uid;
+
+                    const item = document.createElement("div");
+
+                    item.className = "quiz-item";
+
+                    item.innerHTML = `
+
+                        <h4>
+                            ${escapeHTML(quiz.title || "Untitled Quiz")}
+                        </h4>
+
+                        <p>
+                            Course:
+                            ${escapeHTML(course.title || "")}
+                        </p>
+
+                        <p>
+                            Questions:
+                            ${escapeHTML(quiz.questionLimit || 0)}
+                        </p>
+
+                        <p>
+                            Duration:
+                            ${escapeHTML(quiz.timeLimitMinutes || 0)}
+                            minutes
+                        </p>
+
+                        <p>
+                            Attempts:
+                            ${escapeHTML(quiz.maxAttempts || 1)}
+                        </p>
+
+                        <p>
+                            Pass Mark:
+                            ${escapeHTML(quiz.passMark || 50)}%
+                        </p>
+
+                        <p>
+                            Status:
+                            ${quiz.published ? "Published" : "Draft"}
+                        </p>
+
+                        ${
+                            isOwner
+                            ? `
+
+                                <div class="course-actions">
+
+                                    <button
+                                        data-quiz-action="publish"
+                                        data-id="${escapeHTML(quizDoc.id)}">
+
+                                        ${quiz.published ? "Unpublish" : "Publish"}
+
+                                    </button>
+
+                                    <button
+                                        class="delete-btn"
+                                        data-quiz-action="delete"
+                                        data-id="${escapeHTML(quizDoc.id)}">
+
+                                        Delete
+
+                                    </button>
+
+                                </div>
+
+                            `
+                            : "<p>Department quiz</p>"
+                        }
+
+                    `;
+
+                    container.appendChild(item);
+
+                    totalFound++;
+
+                });
+
+            } catch (error) {
+
+                permissionErrors++;
+
+                console.error(
+                    "Quiz loading error for course:",
+                    course.title,
+                    error
+                );
+
+            }
+
+        }
+
+        if (totalFound === 0 && permissionErrors === 0) {
+
+            container.textContent =
+                "No quizzes available yet.";
+
+        } else if (totalFound === 0 && permissionErrors > 0) {
+
+            container.textContent =
+                "Quiz records could not be accessed. Check Firestore quizSettings permissions and courseId fields.";
+
+        }
+
+        if (permissionErrors > 0) {
+
+            console.warn(
+                permissionErrors +
+                " course quiz queries failed. Other courses were still checked."
+            );
+
+        }
+
+    } catch (error) {
+
+        console.error("Quiz loading error:", error);
+
+        container.textContent =
+            "Unable to load quizzes: " + error.message;
+
+    }
+
+}
+
+
+// ========================================
+// 22. QUIZ ACTIONS
+// ========================================
+
+document.addEventListener("click", async event => {
+
+    const button = event.target.closest("[data-quiz-action]");
+
+    if (!button || !currentUser) return;
+
+    const action = button.dataset.quizAction;
+
+    const quizId = button.dataset.id;
+
+    try {
+
+        const quizRef = doc(
+            db,
+            "quizSettings",
+            quizId
+        );
+
+        const quizSnap = await getDoc(quizRef);
+
+        if (!quizSnap.exists()) {
+
+            throw new Error("Quiz not found.");
+
+        }
+
+        const quiz = quizSnap.data();
+
+        if (quiz.instructorId !== currentUser.uid) {
+
+            throw new Error(
+                "You cannot manage another instructor's quiz."
+            );
+
+        }
+
+        if (action === "publish") {
+
+            await updateDoc(quizRef, {
+
+                published: !quiz.published,
+
+                updatedAt: serverTimestamp()
+
+            });
+
+            showNotification("Quiz status updated.");
+
+        }
+
+        if (action === "delete") {
+
+            if (!confirm("Delete this quiz settings?")) return;
+
+            await deleteDoc(quizRef);
+
+            showNotification("Quiz deleted successfully.");
+
+        }
+
+        await loadQuizzes();
+
+        await loadDashboardStatistics();
+
+    } catch (error) {
+
+        console.error("Quiz action error:", error);
+
+        showNotification(
+            error.message,
+            "error"
+        );
+
+    }
+
+});
+
+
+// ========================================
+// 23. LOAD ALL DEPARTMENT STUDENTS
+// ========================================
+
+async function loadStudents() {
+
+    const container = getElement("studentsList");
+
+    if (!container || !instructorData) return;
+
+    container.textContent = "Loading department students...";
+
+    try {
+
+        const department = instructorData.department;
+
+        // Firestore rules require this department filter.
+        // The department value must match the instructor's
+        // department exactly.
+
+        const studentsQuery = query(
+            collection(db, "students"),
+            where("department", "==", department)
+        );
+
+        const snapshot = await getDocs(studentsQuery);
+
+        // Use document IDs to avoid duplicate records.
+
+        const uniqueStudents = new Map();
+
+        snapshot.docs.forEach(studentDoc => {
+
+            uniqueStudents.set(studentDoc.id, {
+
+                id: studentDoc.id,
+
+                ...studentDoc.data()
+
+            });
+
+        });
+
+        departmentStudents = Array.from(
+            uniqueStudents.values()
+        );
+
+        let students = [...departmentStudents];
+
+        const selectedCourse =
+            getElement("studentCourseFilter")?.value;
+
+        // Filter students by course enrollment.
+
+        if (selectedCourse) {
+
+            try {
+
+                const enrollmentQuery = query(
+                    collection(db, "enrollments"),
+                    where("courseId", "==", selectedCourse)
+                );
+
+                const enrollmentSnapshot = await getDocs(
+                    enrollmentQuery
+                );
+
+                const enrolledIds = new Set();
+
+                enrollmentSnapshot.docs.forEach(item => {
+
+                    const enrollment = item.data();
+
+                    if (enrollment.studentId) {
+                        enrolledIds.add(enrollment.studentId);
+                    }
+
+                    if (enrollment.studentUid) {
+                        enrolledIds.add(enrollment.studentUid);
+                    }
+
+                });
+
+                students = students.filter(student => {
+
+                    return (
+                        enrolledIds.has(student.id) ||
+                        enrolledIds.has(student.uid)
+                    );
+
+                });
+
+            } catch (error) {
+
+                console.error(
+                    "Enrollment filtering error:",
+                    error
+                );
+
+                showNotification(
+                    "Could not filter by enrollment. Showing all department students.",
+                    "error"
+                );
+
+                students = [...departmentStudents];
+
+            }
+
+        }
+
+        container.innerHTML = "";
+
+        if (students.length === 0) {
+
+            container.textContent =
+                "No students found for this selection.";
+
+            return;
+
+        }
+
+        students.forEach(student => {
+
+            const item = document.createElement("div");
+
+            item.className = "student-item";
+
+            const studentName = getStudentName(student);
+
+            item.innerHTML = `
+
+                <h4>
+                    ${escapeHTML(studentName)}
+                </h4>
+
+                <p>
+                    Email:
+                    ${escapeHTML(student.email || "Not available")}
+                </p>
+
+                <p>
+                    Matric Number:
+                    ${escapeHTML(student.matricNumber || "Not available")}
+                </p>
+
+                <p>
+                    Department:
+                    ${escapeHTML(student.department || "Not available")}
+                </p>
+
+                <p>
+                    Level:
+                    ${escapeHTML(student.level || "Not available")}
+                </p>
+
+            `;
+
+            container.appendChild(item);
+
+        });
+
+        console.log(
+            "Department students loaded:",
+            departmentStudents.length
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Student loading error:",
+            error
+        );
+
+        container.textContent =
+            "Unable to load department students: " + error.message;
+
+    }
+
+}
+
+
+// ========================================
+// 24. STUDENT FILTER
+// ========================================
+
+getElement("studentCourseFilter")?.addEventListener(
+    "change",
+    loadStudents
+);
+
+
+// ========================================
+// 25. DASHBOARD STATISTICS
+// ========================================
+
+async function loadDashboardStatistics() {
+
+    try {
+
+        // Department student count
+
+        const studentsQuery = query(
+            collection(db, "students"),
+            where("department", "==", instructorData.department)
+        );
+
+        const studentsSnapshot = await getDocs(studentsQuery);
+
+        // Count lessons and quizzes course by course.
+
+        let totalLessons = 0;
+
+        let totalQuizzes = 0;
+
+        for (const course of instructorCourses) {
+
+            try {
+
+                const lessonQuery = query(
+                    collection(db, "lessons"),
+                    where("courseId", "==", course.id)
+                );
+
+                const lessonSnapshot = await getDocs(lessonQuery);
+
+                totalLessons += lessonSnapshot.size;
+
+            } catch (error) {
+
+                console.error(
+                    "Lesson statistics error:",
+                    course.title,
+                    error
+                );
+
+            }
+
+            try {
+
+                const quizQuery = query(
+                    collection(db, "quizSettings"),
+                    where("courseId", "==", course.id)
+                );
+
+                const quizSnapshot = await getDocs(quizQuery);
+
+                totalQuizzes += quizSnapshot.size;
+
+            } catch (error) {
+
+                console.error(
+                    "Quiz statistics error:",
+                    course.title,
+                    error
+                );
+
+            }
+
+        }
+
+        setElementContent(
+            "totalCourses",
+            instructorCourses.length
+        );
+
+        setElementContent(
+            "totalStudents",
+            studentsSnapshot.size
+        );
+
+        setElementContent(
+            "totalLessons",
+            totalLessons
+        );
+
+        setElementContent(
+            "totalQuizzes",
+            totalQuizzes
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Dashboard statistics error:",
+            error
+        );
+
+        showNotification(
+            "Some dashboard statistics could not be loaded: " + error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+// ========================================
+// 26. RECENT COURSES
+// ========================================
+
+async function loadRecentCourses() {
+
+    const container = getElement("recentCourses");
+
+    if (!container) return;
+
+    const recentCourses = instructorCourses.slice(0, 4);
+
+    if (recentCourses.length === 0) {
+
+        container.textContent =
+            "No courses available in your department.";
+
+        return;
+
+    }
+
+    container.innerHTML = "";
+
+    recentCourses.forEach(course => {
+
+        const card = document.createElement("div");
+
+        card.className = "course-card";
+
+        card.innerHTML = `
+
+            <div class="course-card-body">
+
+                <h3>
+                    ${escapeHTML(course.title || "Untitled Course")}
+                </h3>
+
+                <p>
+                    ${escapeHTML(course.courseCode || "")}
+                </p>
+
+                <p>
+                    ${escapeHTML(course.department || "")}
+                </p>
+
+                <p>
+                    ${escapeHTML(course.level || "")}
+                </p>
+
+                <p>
+                    Status:
+                    ${isCoursePublished(course) ? "Published" : "Draft"}
                 </p>
 
             </div>
+
         `;
 
-    }).join("");
+        container.appendChild(card);
+
+    });
 
 }
 
 
-// ==========================================
-// 35. SEARCH STUDENTS
-// ==========================================
+// ========================================
+// 27. LOGOUT
+// ========================================
 
-element("studentSearch").addEventListener("input", () => {
-
-    const search = value("studentSearch").toLowerCase();
-
-    const filtered = departmentStudents.filter(student => {
-
-        return (
-            student.studentName.toLowerCase().includes(search) ||
-            student.studentId.toLowerCase().includes(search) ||
-            student.courses.join(" ").toLowerCase().includes(search)
-        );
-
-    });
-
-    const list = element("studentList");
-
-    if (filtered.length === 0) {
-        list.innerHTML = showEmpty("No matching students found.");
-        return;
-    }
-
-    list.innerHTML = filtered.map(student => `
-
-        <div class="item-card">
-
-            <h3>${escapeHTML(student.studentName)}</h3>
-
-            <p>Student ID: ${escapeHTML(student.studentId)}</p>
-
-            <p>Courses: ${escapeHTML(student.courses.join(", "))}</p>
-
-        </div>
-
-    `).join("");
-
-});
-
-
-// ==========================================
-// 36. NAVIGATION
-// ==========================================
-
-function showSection(sectionId) {
-
-    document.querySelectorAll(".page-section").forEach(section => {
-        section.classList.remove("active");
-    });
-
-    document.querySelectorAll(".nav-link").forEach(link => {
-        link.classList.remove("active");
-    });
-
-    element(sectionId)?.classList.add("active");
-
-    document.querySelector(
-        `.nav-link[data-section="${sectionId}"]`
-    )?.classList.add("active");
-
-}
-
-document.querySelectorAll(".nav-link").forEach(button => {
-
-    button.addEventListener("click", () => {
-        showSection(button.dataset.section);
-    });
-
-});
-
-
-// ==========================================
-// 37. BUTTON EVENTS
-// ==========================================
-
-document.addEventListener("click", event => {
-
-    const target = event.target.closest("button");
-
-    if (!target) return;
-
-    if (target.dataset.editCourse) {
-        editCourse(target.dataset.editCourse);
-    }
-
-    if (target.dataset.toggleCourse) {
-        toggleCourse(target.dataset.toggleCourse);
-    }
-
-    if (target.dataset.deleteCourse) {
-        removeCourse(target.dataset.deleteCourse);
-    }
-
-    if (target.dataset.editLesson) {
-        editLesson(target.dataset.editLesson);
-    }
-
-    if (target.dataset.deleteLesson) {
-        deleteLesson(target.dataset.deleteLesson);
-    }
-
-    if (target.dataset.editSettings) {
-        editQuizSettings(target.dataset.editSettings);
-    }
-
-    if (target.dataset.selectQuiz) {
-
-        selectedQuestionQuiz = target.dataset.selectQuiz;
-
-        populateQuizSelects();
-
-        element("questionQuiz").value = selectedQuestionQuiz;
-
-        displayQuestions();
-
-        element("questionForm").scrollIntoView({
-            behavior: "smooth"
-        });
-
-    }
-
-    if (target.dataset.deleteSettings) {
-        deleteQuizSettings(target.dataset.deleteSettings);
-    }
-
-    if (target.dataset.deleteQuestion) {
-        deleteQuestion(target.dataset.deleteQuestion);
-    }
-
-});
-
-
-// ==========================================
-// 38. LOGOUT
-// ==========================================
-
-element("logoutBtn").addEventListener("click", async () => {
-
-    if (!confirm("Are you sure you want to log out?")) return;
+logoutBtn?.addEventListener("click", async () => {
 
     try {
 
         await signOut(auth);
 
-        window.location.href = "auth.html?mode=instructor";
+        window.location.href = "auth.html";
 
     } catch (error) {
-        showError(error, "Unable to log out.");
+
+        console.error("Logout error:", error);
+
+        showNotification(
+            "Unable to logout: " + error.message,
+            "error"
+        );
+
     }
 
 });
 
 
-// ==========================================
-// 39. INITIAL QUESTION DISPLAY
-// ==========================================
+// ========================================
+// 28. DASHBOARD READY
+// ========================================
 
-element("questionQuiz").addEventListener("change", displayQuestions);
-
-
-// ==========================================
-// END OF INSTRUCTOR DASHBOARD
-// ==========================================
+console.log(
+    "LearnSphere Instructor Dashboard loaded successfully."
+);
