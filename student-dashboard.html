@@ -69,10 +69,25 @@
                     <i class="fa-solid fa-user"></i>
                     <span>My Profile</span>
                 </a>
+
+                <!-- ANNOUNCEMENTS -->
+                <a href="#" class="sidebar-link" data-section="announcements">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>Announcements</span>
+                </a>
+
+                <!-- NOTIFICATIONS -->
+                <a href="#" class="sidebar-link" data-section="notifications">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                    <span class="notification-nav-count" id="sidebarUnreadCount">0</span>
+                </a>
+
+                <!-- VERIFY CERTIFICATE -->
                 <a href="verify-certificate.html" class="nav-link">
-    <i class="fa-solid fa-shield-halved"></i>
-    <span>Verify Certificate</span>
-</a>
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Verify Certificate</span>
+                </a>
 
             </nav>
 
@@ -101,10 +116,58 @@
 
                 <div class="header-right">
 
-                    <div class="header-icon">
-                        <i class="fa-regular fa-bell"></i>
+                    <!-- NOTIFICATION BELL -->
+                    <div class="notification-wrapper">
+
+                        <button
+                            class="notification-bell"
+                            id="notificationBell"
+                            type="button"
+                            aria-label="Open notifications">
+
+                            <i class="fa-regular fa-bell"></i>
+
+                            <span
+                                class="notification-badge"
+                                id="notificationBadge">
+                            </span>
+
+                        </button>
+
+                        <!-- NOTIFICATION DROPDOWN -->
+                        <div class="notification-dropdown" id="notificationDropdown">
+
+                            <div class="notification-dropdown-header">
+
+                                <h3>Notifications</h3>
+
+                                <span id="dropdownUnreadCount">0</span>
+
+                            </div>
+
+                            <div
+                                class="notification-dropdown-list"
+                                id="notificationDropdownList">
+
+                                <p>No notifications yet.</p>
+
+                            </div>
+
+                            <div class="notification-dropdown-footer">
+
+                                <button
+                                    type="button"
+                                    data-section="notifications">
+                                    View All Notifications
+                                </button>
+
+                            </div>
+
+                        </div>
+
                     </div>
 
+                    <!-- PROFILE AVATAR -->
                     <div class="header-avatar">
                         <i class="fa-solid fa-user"></i>
                     </div>
@@ -162,7 +225,6 @@
 
                     </div>
 
-
                     <div class="stat-card">
 
                         <div class="stat-icon green">
@@ -176,7 +238,6 @@
 
                     </div>
 
-
                     <div class="stat-card">
 
                         <div class="stat-icon orange">
@@ -189,7 +250,6 @@
                         </div>
 
                     </div>
-
 
                     <div class="stat-card">
 
@@ -250,7 +310,6 @@
 
                 </div>
 
-
                 <!-- SEARCH AND FILTER -->
                 <div class="course-search-area">
 
@@ -261,18 +320,13 @@
                         <input
                             type="text"
                             id="courseSearch"
-                            placeholder="Search course name..."
-                        >
+                            placeholder="Search course name...">
 
                     </div>
 
-
                     <select id="departmentFilter">
-
                         <option value="">All Departments</option>
-
                     </select>
-
 
                     <select id="levelFilter">
 
@@ -287,7 +341,6 @@
 
                 </div>
 
-
                 <div class="explore-summary">
 
                     <p>
@@ -296,7 +349,6 @@
                     </p>
 
                 </div>
-
 
                 <!-- EXPLORE COURSE LIST -->
                 <div class="course-grid" id="exploreCourseList">
@@ -324,7 +376,6 @@
 
                 </div>
 
-
                 <div class="course-grid" id="studentCourseList">
 
                     <div class="empty-state">
@@ -349,9 +400,6 @@
                     </p>
 
                 </div>
-
-                
-
 
                 <div class="content-card">
 
@@ -382,7 +430,6 @@
 
                 </div>
 
-
                 <div class="certificate-grid" id="studentCertificateList">
 
                     <div class="empty-state">
@@ -406,13 +453,11 @@
 
                 </div>
 
-
                 <div class="content-card profile-card">
 
                     <div class="large-avatar">
                         <i class="fa-solid fa-user"></i>
                     </div>
-
 
                     <div class="profile-details">
 
@@ -448,6 +493,152 @@
             </section>
 
 
+            <!-- ANNOUNCEMENTS -->
+            <section class="dashboard-section" id="announcements">
+
+                <div class="page-heading">
+
+                    <h2>Announcements</h2>
+
+                    <p>
+                        Important news, updates and information from LearnSphere.
+                    </p>
+
+                </div>
+
+                <div class="content-card">
+
+                    <div class="section-heading">
+
+                        <div>
+                            <h2>Latest Announcements</h2>
+                            <p>Stay informed about platform updates and activities.</p>
+                        </div>
+
+                    </div>
+
+                    <div id="announcementsList">
+
+                        <div class="empty-state">
+                            <i class="fa-solid fa-bullhorn"></i>
+                            <p>Loading announcements...</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- NOTIFICATIONS -->
+            <section class="dashboard-section" id="notifications">
+
+                <div class="page-heading">
+
+                    <h2>Notifications</h2>
+
+                    <p>
+                        Stay updated with your learning activities.
+                    </p>
+
+                </div>
+
+                <div class="notification-page-heading">
+
+                    <h3>Your Notifications</h3>
+
+                    <button
+                        class="notification-mark-all-btn"
+                        id="notificationPageMarkAllBtn"
+                        type="button">
+
+                        <i class="fa-solid fa-check-double"></i>
+                        Mark All as Read
+
+                    </button>
+
+                </div>
+
+                <!-- NOTIFICATION STATISTICS -->
+                <div class="notification-summary-grid">
+
+                    <div class="notification-summary-card">
+
+                        <div class="notification-summary-icon">
+                            <i class="fa-solid fa-bell"></i>
+                        </div>
+
+                        <div>
+                            <h3 id="totalNotifications">0</h3>
+                            <p>Total Notifications</p>
+                        </div>
+
+                    </div>
+
+                    <div class="notification-summary-card unread">
+
+                        <div class="notification-summary-icon">
+                            <i class="fa-solid fa-envelope"></i>
+                        </div>
+
+                        <div>
+                            <h3 id="pageUnreadNotifications">0</h3>
+                            <p>Unread Notifications</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- NOTIFICATION FILTERS -->
+                <div class="notification-filter-area">
+
+                    <button
+                        class="notification-filter active"
+                        data-notification-filter="all"
+                        type="button">
+
+                        All
+
+                    </button>
+
+                    <button
+                        class="notification-filter"
+                        data-notification-filter="unread"
+                        type="button">
+
+                        Unread
+
+                    </button>
+
+                    <button
+                        class="notification-filter"
+                        data-notification-filter="read"
+                        type="button">
+
+                        Read
+
+                    </button>
+
+                </div>
+
+                <!-- NOTIFICATION LIST -->
+                <div class="notification-page-list" id="notificationPageList">
+
+                    <div class="notification-empty">
+
+                        <i class="fa-regular fa-bell"></i>
+
+                        <p>No notifications yet.</p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
             <!-- FOOTER -->
             <footer class="dashboard-footer">
 
@@ -467,7 +658,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <!-- DASHBOARD JAVASCRIPT -->
-  <script type="module" src="student-dashboard.js"></script>
+    <script type="module" src="student-dashboard.js"></script>
+
 </body>
 
 </html>

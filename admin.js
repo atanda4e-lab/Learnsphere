@@ -1,6 +1,7 @@
 // =====================================================
 // LEARNSPHERE ADMIN DASHBOARD
 // FIREBASE ADMIN SYSTEM
+// WITH ANNOUNCEMENT MANAGEMENT
 // =====================================================
 
 
@@ -40,6 +41,7 @@ let results = [];
 let certificates = [];
 let instructors = [];
 let quizSettings = [];
+let announcements = [];
 
 let currentCourseId = null;
 let currentAdmin = null;
@@ -58,13 +60,12 @@ function getElement(id) {
 }
 
 
-// The course title ID exists twice in the supplied HTML.
-// This function specifically selects the input inside its form.
-
 function getInput(id) {
 
     if (id === "editCourseTitle") {
-        return document.querySelector("#editCourseForm input#editCourseTitle");
+        return document.querySelector(
+            "#editCourseForm input#editCourseTitle"
+        );
     }
 
     return getElement(id);
@@ -207,7 +208,10 @@ onAuthStateChanged(auth, async user => {
 
         console.error("Admin authentication error:", error);
 
-        notify("Unable to verify administrator access: " + error.message);
+        notify(
+            "Unable to verify administrator access: " +
+            error.message
+        );
 
     }
 
@@ -252,7 +256,8 @@ async function loadAllData() {
         ["Results", loadResults],
         ["Certificates", loadCertificates],
         ["Instructors", loadInstructors],
-        ["Quiz Settings", loadQuizSettings]
+        ["Quiz Settings", loadQuizSettings],
+        ["Announcements", loadAnnouncements]
 
     ];
 
@@ -450,7 +455,41 @@ async function loadQuizSettings() {
 
 
 // =====================================================
-// 15. REFRESH DASHBOARD
+// 15. LOAD ANNOUNCEMENTS
+// =====================================================
+
+async function loadAnnouncements() {
+
+    const snapshot = await getDocs(
+        collection(db, "announcements")
+    );
+
+    announcements = snapshot.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+    }));
+
+    announcements.sort((a, b) => {
+
+        const dateA = a.createdAt?.toDate
+            ? a.createdAt.toDate().getTime()
+            : 0;
+
+        const dateB = b.createdAt?.toDate
+            ? b.createdAt.toDate().getTime()
+            : 0;
+
+        return dateB - dateA;
+
+    });
+
+    displayAnnouncements();
+
+}
+
+
+// =====================================================
+// 16. REFRESH DASHBOARD
 // =====================================================
 
 function refreshDashboard() {
@@ -469,6 +508,8 @@ function refreshDashboard() {
 
     displayInstructors();
 
+    displayAnnouncements();
+
     updateStatistics();
 
     updateCoursePublicationStatus();
@@ -477,7 +518,7 @@ function refreshDashboard() {
 
 
 // =====================================================
-// 16. NAVIGATION
+// 17. NAVIGATION
 // =====================================================
 
 function setupNavigation() {
@@ -496,7 +537,7 @@ function setupNavigation() {
 
 
 // =====================================================
-// 17. SHOW DASHBOARD PAGE
+// 18. SHOW DASHBOARD PAGE
 // =====================================================
 
 function showPage(pageName) {
@@ -510,7 +551,8 @@ function showPage(pageName) {
         "manageQuizzes",
         "manageStudents",
         "manageResults",
-        "manageCertificates"
+        "manageCertificates",
+        "manageAnnouncements"
 
     ];
 
@@ -553,7 +595,7 @@ function showPage(pageName) {
 
 
 // =====================================================
-// 18. COURSE EDITOR LAYOUT
+// 19. COURSE EDITOR LAYOUT
 // =====================================================
 
 function prepareCourseEditorLayout() {
@@ -586,7 +628,7 @@ function closeCourseEditor() {
 
 
 // =====================================================
-// 19. EVENT LISTENERS
+// 20. EVENT LISTENERS
 // =====================================================
 
 function setupEventListeners() {
@@ -616,9 +658,15 @@ function setupEventListeners() {
         openCourseEditor();
     });
 
-    getElement("backToCoursesBtn")?.addEventListener("click", closeCourseEditor);
+    getElement("backToCoursesBtn")?.addEventListener(
+        "click",
+        closeCourseEditor
+    );
 
-    getElement("editCourseForm")?.addEventListener("submit", saveCourse);
+    getElement("editCourseForm")?.addEventListener(
+        "submit",
+        saveCourse
+    );
 
     getElement("courseScheduleForm")?.addEventListener(
         "submit",
@@ -659,6 +707,14 @@ function setupEventListeners() {
     getElement("editorQuizType")?.addEventListener(
         "change",
         updateQuizTypeDisplay
+    );
+
+
+    // ANNOUNCEMENT MANAGEMENT
+
+    getElement("announcementForm")?.addEventListener(
+        "submit",
+        publishAnnouncement
     );
 
 
@@ -716,7 +772,10 @@ function setupEventListeners() {
 
             } catch (error) {
 
-                notify("Unable to refresh instructors: " + error.message);
+                notify(
+                    "Unable to refresh instructors: " +
+                    error.message
+                );
 
             }
 
@@ -749,7 +808,7 @@ function setupEventListeners() {
 
 
 // =====================================================
-// 20. DISPLAY COURSES
+// 21. DISPLAY COURSES
 // =====================================================
 
 function displayCourses() {
@@ -858,7 +917,7 @@ function displayCourses() {
 
 
 // =====================================================
-// 21. OPEN COURSE EDITOR
+// 22. OPEN COURSE EDITOR
 // =====================================================
 
 function openCourseEditor(course = null) {
@@ -934,7 +993,7 @@ function openCourseEditor(course = null) {
 
 
 // =====================================================
-// 22. EDIT COURSE
+// 23. EDIT COURSE
 // =====================================================
 
 window.editCourse = function(courseId) {
@@ -952,7 +1011,7 @@ window.editCourse = function(courseId) {
 
 
 // =====================================================
-// 23. SAVE COURSE
+// 24. SAVE COURSE
 // =====================================================
 
 async function saveCourse(event) {
@@ -1034,7 +1093,7 @@ async function saveCourse(event) {
 
 
 // =====================================================
-// 24. DELETE COURSE
+// 25. DELETE COURSE
 // =====================================================
 
 window.removeCourse = async function(courseId) {
@@ -1114,7 +1173,7 @@ window.removeCourse = async function(courseId) {
 
 
 // =====================================================
-// 25. PUBLISH / UNPUBLISH COURSE
+// 26. PUBLISH / UNPUBLISH COURSE
 // =====================================================
 
 async function changeCourseStatus(status) {
@@ -1161,7 +1220,7 @@ async function changeCourseStatus(status) {
 
 
 // =====================================================
-// 26. COURSE PUBLICATION STATUS
+// 27. COURSE PUBLICATION STATUS
 // =====================================================
 
 function updateCoursePublicationStatus() {
@@ -1182,7 +1241,7 @@ function updateCoursePublicationStatus() {
 
 
 // =====================================================
-// 27. COURSE SCHEDULE
+// 28. COURSE SCHEDULE
 // =====================================================
 
 async function saveCourseSchedule(event) {
@@ -1265,7 +1324,7 @@ function updateScheduleStatus() {
 
 
 // =====================================================
-// 28. IMPORT COURSE CATALOGUE BUTTON
+// 29. IMPORT COURSE CATALOGUE BUTTON
 // =====================================================
 
 function createImportButton() {
@@ -1294,7 +1353,7 @@ function createImportButton() {
 
 
 // =====================================================
-// 29. IMPORT COURSE CATALOGUE
+// 30. IMPORT COURSE CATALOGUE
 // =====================================================
 
 async function importCourseCatalogue() {
@@ -1411,7 +1470,7 @@ async function importCourseCatalogue() {
 
 
 // =====================================================
-// 30. LESSON SELECTOR FOR QUIZZES
+// 31. LESSON SELECTOR FOR QUIZZES
 // =====================================================
 
 function populateLessonSelector() {
@@ -1450,7 +1509,7 @@ function updateQuizTypeDisplay() {
 
 
 // =====================================================
-// 31. SAVE QUIZ SETTINGS
+// 32. SAVE QUIZ SETTINGS
 // =====================================================
 
 async function saveQuizSettings(event) {
@@ -1664,7 +1723,7 @@ function updateQuizSettingsStatus() {
 
 
 // =====================================================
-// 32. DISPLAY EDITOR LESSONS
+// 33. DISPLAY EDITOR LESSONS
 // =====================================================
 
 function displayEditorLessons() {
@@ -1724,7 +1783,7 @@ function displayEditorLessons() {
 
 
 // =====================================================
-// 33. RESET LESSON FORM
+// 34. RESET LESSON FORM
 // =====================================================
 
 function resetLessonForm() {
@@ -1748,7 +1807,7 @@ function resetLessonForm() {
 
 
 // =====================================================
-// 34. SAVE LESSON
+// 35. SAVE LESSON
 // =====================================================
 
 async function saveLesson(event) {
@@ -1848,7 +1907,7 @@ async function saveLesson(event) {
 
 
 // =====================================================
-// 35. EDIT LESSON
+// 36. EDIT LESSON
 // =====================================================
 
 window.editLesson = function(lessonId) {
@@ -1888,7 +1947,7 @@ window.editLesson = function(lessonId) {
 
 
 // =====================================================
-// 36. DELETE LESSON
+// 37. DELETE LESSON
 // =====================================================
 
 window.deleteLesson = async function(lessonId) {
@@ -1919,7 +1978,7 @@ window.deleteLesson = async function(lessonId) {
 
 
 // =====================================================
-// 37. DISPLAY EDITOR QUIZZES
+// 38. DISPLAY EDITOR QUIZZES
 // =====================================================
 
 function displayEditorQuizzes() {
@@ -1983,7 +2042,7 @@ function displayEditorQuizzes() {
 
 
 // =====================================================
-// 38. QUIZ MARK SUMMARY
+// 39. QUIZ MARK SUMMARY
 // =====================================================
 
 function updateQuizSummary(questionList) {
@@ -2010,7 +2069,7 @@ function updateQuizSummary(questionList) {
 
 
 // =====================================================
-// 39. RESET QUIZ QUESTION FORM
+// 40. RESET QUIZ QUESTION FORM
 // =====================================================
 
 function resetQuizQuestionForm() {
@@ -2032,7 +2091,7 @@ function resetQuizQuestionForm() {
 
 
 // =====================================================
-// 40. SAVE QUIZ QUESTION
+// 41. SAVE QUIZ QUESTION
 // =====================================================
 
 async function saveQuiz(event) {
@@ -2165,7 +2224,7 @@ async function saveQuiz(event) {
 
 
 // =====================================================
-// 41. EDIT QUIZ QUESTION
+// 42. EDIT QUIZ QUESTION
 // =====================================================
 
 window.editQuiz = function(quizId) {
@@ -2210,7 +2269,7 @@ window.editQuiz = function(quizId) {
 
 
 // =====================================================
-// 42. DELETE QUIZ QUESTION
+// 43. DELETE QUIZ QUESTION
 // =====================================================
 
 window.deleteQuiz = async function(quizId) {
@@ -2241,7 +2300,7 @@ window.deleteQuiz = async function(quizId) {
 
 
 // =====================================================
-// 43. COURSE PREVIEW
+// 44. COURSE PREVIEW
 // =====================================================
 
 function previewCourse() {
@@ -2284,7 +2343,7 @@ function previewCourse() {
 
 
 // =====================================================
-// 44. DISPLAY ALL LESSONS
+// 45. DISPLAY ALL LESSONS
 // =====================================================
 
 function displayAllLessons() {
@@ -2345,7 +2404,7 @@ function displayAllLessons() {
 
 
 // =====================================================
-// 45. DISPLAY ALL QUIZZES
+// 46. DISPLAY ALL QUIZZES
 // =====================================================
 
 function displayAllQuizzes() {
@@ -2413,7 +2472,7 @@ function displayAllQuizzes() {
 
 
 // =====================================================
-// 46. DISPLAY STUDENTS
+// 47. DISPLAY STUDENTS
 // =====================================================
 
 function displayStudents() {
@@ -2469,7 +2528,7 @@ function displayStudents() {
 
 
 // =====================================================
-// 47. DISPLAY RESULTS
+// 48. DISPLAY RESULTS
 // =====================================================
 
 function displayResults() {
@@ -2550,7 +2609,7 @@ function displayResults() {
 
 
 // =====================================================
-// 48. EDIT STUDENT MARKS
+// 49. EDIT STUDENT MARKS
 // =====================================================
 
 window.editResult = async function(resultId) {
@@ -2639,7 +2698,7 @@ window.editResult = async function(resultId) {
 
 
 // =====================================================
-// 49. DISPLAY CERTIFICATES
+// 50. DISPLAY CERTIFICATES
 // =====================================================
 
 function displayCertificates() {
@@ -2727,7 +2786,7 @@ function displayCertificates() {
 
 
 // =====================================================
-// 50. EDIT CERTIFICATE
+// 51. EDIT CERTIFICATE
 // =====================================================
 
 window.editCertificate = async function(certificateId) {
@@ -2794,7 +2853,7 @@ window.editCertificate = async function(certificateId) {
 
 
 // =====================================================
-// 51. REVOKE / RESTORE CERTIFICATE
+// 52. REVOKE / RESTORE CERTIFICATE
 // =====================================================
 
 window.toggleCertificate = async function(certificateId) {
@@ -2846,7 +2905,7 @@ window.toggleCertificate = async function(certificateId) {
 
 
 // =====================================================
-// 52. INSTRUCTOR MANAGEMENT
+// 53. INSTRUCTOR MANAGEMENT
 // =====================================================
 
 function displayInstructors() {
@@ -2945,7 +3004,7 @@ function displayInstructors() {
 
 
 // =====================================================
-// 53. UPDATE INSTRUCTOR STATISTICS
+// 54. UPDATE INSTRUCTOR STATISTICS
 // =====================================================
 
 function updateInstructorStatistics() {
@@ -2987,7 +3046,7 @@ function updateInstructorStatistics() {
 
 
 // =====================================================
-// 54. APPROVE INSTRUCTOR
+// 55. APPROVE INSTRUCTOR
 // =====================================================
 
 window.approveInstructor = async function(instructorId) {
@@ -3038,7 +3097,7 @@ window.approveInstructor = async function(instructorId) {
 
 
 // =====================================================
-// 55. REJECT INSTRUCTOR
+// 56. REJECT INSTRUCTOR
 // =====================================================
 
 window.rejectInstructor = async function(instructorId) {
@@ -3087,7 +3146,225 @@ window.rejectInstructor = async function(instructorId) {
 
 
 // =====================================================
-// 56. DASHBOARD STATISTICS
+// 57. ANNOUNCEMENT MANAGEMENT
+// =====================================================
+
+
+// PUBLISH ANNOUNCEMENT
+
+async function publishAnnouncement(event) {
+
+    event.preventDefault();
+
+    if (!currentAdmin) {
+
+        notify("Administrator session not found.");
+        return;
+
+    }
+
+    const title = getValue("announcementTitle");
+
+    const message = getValue("announcementMessage");
+
+    const department = getValue("announcementDepartment");
+
+    const level = getValue("announcementLevel");
+
+    if (!title || !message) {
+
+        notify("Enter an announcement title and message.");
+        return;
+
+    }
+
+    const form = getElement("announcementForm");
+
+    const submitButton = form?.querySelector(
+        'button[type="submit"]'
+    );
+
+    const originalButtonText = submitButton?.textContent;
+
+    if (submitButton) {
+
+        submitButton.disabled = true;
+        submitButton.textContent = "Publishing...";
+
+    }
+
+    try {
+
+        const announcementData = {
+
+            title,
+
+            message,
+
+            targetDepartment: department,
+
+            targetLevel: level,
+
+            createdAt: serverTimestamp(),
+
+            createdBy: currentAdmin.uid
+
+        };
+
+        await addDoc(
+            collection(db, "announcements"),
+            announcementData
+        );
+
+        form?.reset();
+
+        await loadAnnouncements();
+
+        notify("Announcement published successfully.");
+
+    } catch (error) {
+
+        console.error("Publish announcement error:", error);
+
+        notify(
+            "Unable to publish announcement: " +
+            error.message
+        );
+
+    } finally {
+
+        if (submitButton) {
+
+            submitButton.disabled = false;
+
+            submitButton.textContent =
+                originalButtonText || "Publish Announcement";
+
+        }
+
+    }
+
+}
+
+
+// DISPLAY ANNOUNCEMENTS
+
+function displayAnnouncements() {
+
+    const container = getElement("adminAnnouncementList");
+
+    if (!container) return;
+
+    if (!announcements.length) {
+
+        container.innerHTML = `
+            <div class="empty-message">
+                <h3>No Announcements Yet</h3>
+                <p>Announcements you publish will appear here.</p>
+            </div>
+        `;
+
+        return;
+
+    }
+
+    container.innerHTML = announcements.map(announcement => {
+
+        const department =
+            announcement.targetDepartment || "All Departments";
+
+        const level =
+            announcement.targetLevel || "All Levels";
+
+        return `
+
+            <div class="admin-item announcement-admin-card">
+
+                <h3>${escapeHTML(announcement.title)}</h3>
+
+                <p class="announcement-admin-message">
+                    ${escapeHTML(announcement.message).replace(/\n/g, "<br>")}
+                </p>
+
+                <p>
+                    <strong>Department:</strong>
+                    ${escapeHTML(department)}
+                </p>
+
+                <p>
+                    <strong>Level:</strong>
+                    ${escapeHTML(level)}
+                </p>
+
+                <p>
+                    <strong>Published:</strong>
+                    ${escapeHTML(formatDate(announcement.createdAt))}
+                </p>
+
+                <button
+                    type="button"
+                    class="delete-announcement-btn"
+                    onclick="deleteAnnouncement('${escapeHTML(announcement.id)}')"
+                >
+                    Delete Announcement
+                </button>
+
+            </div>
+
+        `;
+
+    }).join("");
+
+}
+
+
+// DELETE ANNOUNCEMENT
+
+window.deleteAnnouncement = async function(announcementId) {
+
+    const announcement = announcements.find(
+        item => item.id === announcementId
+    );
+
+    if (!announcement) {
+
+        notify("Announcement not found.");
+        return;
+
+    }
+
+    const confirmed = confirm(
+        `Delete the announcement "${announcement.title}"?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+
+        await deleteDoc(
+            doc(db, "announcements", announcementId)
+        );
+
+        await loadAnnouncements();
+
+        notify("Announcement deleted successfully.");
+
+    } catch (error) {
+
+        console.error("Delete announcement error:", error);
+
+        notify(
+            "Unable to delete announcement: " +
+            error.message
+        );
+
+    }
+
+};
+
+
+// =====================================================
+// 58. DASHBOARD STATISTICS
 // =====================================================
 
 function updateStatistics() {
@@ -3120,5 +3397,5 @@ function updateStatistics() {
 
 
 // =====================================================
-// 57. END OF LEARNSPHERE ADMIN DASHBOARD
+// 59. END OF LEARNSPHERE ADMIN DASHBOARD
 // =====================================================

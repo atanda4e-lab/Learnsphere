@@ -11,17 +11,13 @@
 
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
 </head>
 
 <body>
 
 <div id="adminArea" class="admin-dashboard hidden">
 
-    <!-- =====================================
-         SIDEBAR
-    ====================================== -->
-
+    <!-- SIDEBAR -->
     <aside class="admin-sidebar">
 
         <div class="admin-logo">
@@ -72,6 +68,11 @@
                 <span>Certificates</span>
             </button>
 
+            <button class="admin-nav-btn" data-page="manageAnnouncements">
+                <i class="fa-solid fa-bullhorn"></i>
+                <span>Announcements</span>
+            </button>
+
         </nav>
 
         <div class="admin-sidebar-bottom">
@@ -86,14 +87,10 @@
     </aside>
 
 
-    <!-- =====================================
-         MAIN CONTENT
-    ====================================== -->
-
+    <!-- MAIN CONTENT -->
     <main class="admin-main">
 
         <!-- HEADER -->
-
         <header class="admin-header">
 
             <div>
@@ -109,10 +106,7 @@
         </header>
 
 
-        <!-- =====================================
-             OVERVIEW
-        ====================================== -->
-
+        <!-- OVERVIEW -->
         <section id="overview" class="admin-page active">
 
             <div class="page-heading">
@@ -175,21 +169,12 @@
         </section>
 
 
-        <!-- =====================================
-             INSTRUCTOR MANAGEMENT
-        ====================================== -->
-
+        <!-- INSTRUCTOR MANAGEMENT -->
         <section id="manageInstructors" class="admin-page">
 
             <div class="page-heading">
-
                 <h2>Instructor Management</h2>
-
-                <p>
-                    Review applications and manage instructor access
-                    to LearnSphere.
-                </p>
-
+                <p>Review applications and manage instructor access to LearnSphere.</p>
             </div>
 
             <div class="admin-stats">
@@ -220,47 +205,32 @@
                 >
 
                 <select id="adminInstructorFilter">
-
                     <option value="all">All Applications</option>
                     <option value="pending">Pending</option>
                     <option value="approved">Approved</option>
                     <option value="rejected">Rejected</option>
-
                 </select>
 
-                <button type="button" class="primary-btn"
-                    id="refreshInstructorsBtn">
-
+                <button type="button" class="primary-btn" id="refreshInstructorsBtn">
                     <i class="fa-solid fa-rotate"></i>
                     Refresh
-
                 </button>
 
             </div>
 
             <div id="adminInstructorList" class="admin-content-list">
-
                 <p>Instructor applications will appear here.</p>
-
             </div>
 
         </section>
 
 
-        <!-- =====================================
-             MANAGE COURSES
-        ====================================== -->
-
+        <!-- MANAGE COURSES -->
         <section id="manageCourses" class="admin-page">
 
             <div class="page-heading">
-
                 <h2>Manage Courses</h2>
-
-                <p>
-                    Add, search, edit, publish and delete courses.
-                </p>
-
+                <p>Add, search, edit, publish and delete courses.</p>
             </div>
 
             <div class="course-management">
@@ -274,18 +244,14 @@
                     >
 
                     <select id="adminCourseFilter">
-
                         <option value="all">All Courses</option>
                         <option value="published">Published</option>
                         <option value="unpublished">Unpublished</option>
-
                     </select>
 
                     <button class="primary-btn" id="addNewCourseBtn">
-
                         <i class="fa-solid fa-plus"></i>
                         Add New Course
-
                     </button>
 
                 </div>
@@ -297,35 +263,25 @@
         </section>
 
 
-        <!-- =====================================
-             COURSE EDITOR
-        ====================================== -->
-
+        <!-- COURSE EDITOR -->
         <section id="courseEditor" class="course-editor hidden">
 
             <div class="editor-heading">
 
                 <button type="button" id="backToCoursesBtn" class="back-btn">
-
                     <i class="fa-solid fa-arrow-left"></i>
                     Back to Courses
-
                 </button>
 
                 <div>
-                    <h2 id="editorCourseTitle">Edit Course</h2>
-
-                    <p>
-                        Manage course information, schedule,
-                        lessons and quizzes.
-                    </p>
+                    <h2 id="editorCourseHeading">Edit Course</h2>
+                    <p>Manage course information, schedule, lessons and quizzes.</p>
                 </div>
 
             </div>
 
 
             <!-- COURSE INFORMATION -->
-
             <section class="editor-section">
 
                 <h3>
@@ -338,26 +294,21 @@
                     <input type="hidden" id="editCourseId">
 
                     <div class="form-group">
-
                         <label for="editCourseTitle">Course Title</label>
-
                         <input
                             type="text"
                             id="editCourseTitle"
                             placeholder="Enter course title"
                             required
                         >
-
                     </div>
 
                     <div class="form-row">
 
                         <div class="form-group">
-
                             <label for="editCourseCategory">Category</label>
 
                             <select id="editCourseCategory" required>
-
                                 <option value="">Select Category</option>
                                 <option value="Technology">Technology</option>
                                 <option value="Business">Business</option>
@@ -365,31 +316,24 @@
                                 <option value="Science">Science</option>
                                 <option value="Networking">Networking</option>
                                 <option value="Database Management">Database Management</option>
-
                             </select>
-
                         </div>
 
                         <div class="form-group">
-
                             <label for="editCourseDepartment">Department</label>
-
                             <input
                                 type="text"
                                 id="editCourseDepartment"
                                 placeholder="Enter department"
                             >
-
                         </div>
 
                     </div>
 
                     <div class="form-group">
-
                         <label for="editCourseLevel">Level</label>
 
                         <select id="editCourseLevel" required>
-
                             <option value="">Select Level</option>
                             <option value="100">100 Level</option>
                             <option value="200">200 Level</option>
@@ -397,43 +341,31 @@
                             <option value="400">400 Level</option>
                             <option value="500">500 Level</option>
                             <option value="Any">Any Level</option>
-
                         </select>
-
                     </div>
 
                     <div class="form-group">
-
-                        <label for="editCourseDescription">
-                            Course Description
-                        </label>
-
+                        <label for="editCourseDescription">Course Description</label>
                         <textarea
                             id="editCourseDescription"
                             rows="5"
                             placeholder="Write a course description"
                             required
                         ></textarea>
-
                     </div>
 
                     <div class="form-group">
-
                         <label for="editCourseImage">Course Image URL</label>
-
                         <input
                             type="url"
                             id="editCourseImage"
                             placeholder="Enter image URL"
                         >
-
                     </div>
 
                     <button type="submit" class="primary-btn">
-
                         <i class="fa-solid fa-floppy-disk"></i>
                         Save Course Information
-
                     </button>
 
                 </form>
@@ -442,7 +374,6 @@
 
 
             <!-- COURSE SCHEDULE -->
-
             <section class="editor-section">
 
                 <h3>
@@ -450,43 +381,23 @@
                     Course Schedule
                 </h3>
 
-                <p>
-                    Set when students can access this course.
-                </p>
+                <p>Set when students can access this course.</p>
 
                 <form id="courseScheduleForm">
 
                     <div class="form-group">
-
-                        <label for="editCourseOpeningDate">
-                            Course Opening Date and Time
-                        </label>
-
-                        <input
-                            type="datetime-local"
-                            id="editCourseOpeningDate"
-                        >
-
+                        <label for="editCourseOpeningDate">Course Opening Date and Time</label>
+                        <input type="datetime-local" id="editCourseOpeningDate">
                     </div>
 
                     <div class="form-group">
-
-                        <label for="editCourseClosingDate">
-                            Course Closing Date and Time
-                        </label>
-
-                        <input
-                            type="datetime-local"
-                            id="editCourseClosingDate"
-                        >
-
+                        <label for="editCourseClosingDate">Course Closing Date and Time</label>
+                        <input type="datetime-local" id="editCourseClosingDate">
                     </div>
 
                     <button type="submit" class="primary-btn">
-
                         <i class="fa-solid fa-calendar-check"></i>
                         Save Course Schedule
-
                     </button>
 
                 </form>
@@ -498,10 +409,7 @@
             </section>
 
 
-            <!-- =====================================
-                 LESSON MANAGEMENT
-            ====================================== -->
-
+            <!-- LESSON MANAGEMENT -->
             <section class="editor-section">
 
                 <h3>
@@ -512,127 +420,80 @@
                 <form id="editorLessonForm">
 
                     <input type="hidden" id="editorLessonCourseId">
-
                     <input type="hidden" id="editorLessonId">
 
                     <div class="form-group">
-
                         <label for="editorLessonTitle">Lesson Title</label>
-
                         <input
                             type="text"
                             id="editorLessonTitle"
                             placeholder="Enter lesson title"
                             required
                         >
-
                     </div>
 
                     <div class="form-group">
-
-                        <label for="editorLessonDescription">
-                            Lesson Description
-                        </label>
-
+                        <label for="editorLessonDescription">Lesson Description</label>
                         <textarea
                             id="editorLessonDescription"
                             rows="3"
                             placeholder="Describe this lesson"
                         ></textarea>
-
                     </div>
 
                     <div class="form-group">
-
-                        <label for="editorLessonInstructions">
-                            Student Instructions
-                        </label>
-
+                        <label for="editorLessonInstructions">Student Instructions</label>
                         <textarea
                             id="editorLessonInstructions"
                             rows="3"
                             placeholder="Tell students what they should study or complete."
                         ></textarea>
-
                     </div>
 
                     <div class="form-group">
-
-                        <label for="editorLessonContent">
-                            Lesson Content
-                        </label>
-
+                        <label for="editorLessonContent">Lesson Content</label>
                         <textarea
                             id="editorLessonContent"
                             rows="8"
                             placeholder="Write the lesson content"
                         ></textarea>
-
                     </div>
 
                     <div class="form-group">
-
                         <label for="editorLessonPDF">PDF Link</label>
-
-                        <input
-                            type="url"
-                            id="editorLessonPDF"
-                            placeholder="Paste PDF link"
-                        >
-
+                        <input type="url" id="editorLessonPDF" placeholder="Paste PDF link">
                     </div>
 
                     <div class="form-group">
-
                         <label for="editorLessonVideo">Video Link</label>
-
-                        <input
-                            type="url"
-                            id="editorLessonVideo"
-                            placeholder="Paste video link"
-                        >
-
+                        <input type="url" id="editorLessonVideo" placeholder="Paste video link">
                     </div>
 
                     <div class="form-group">
-
                         <label>
-                            <input
-                                type="checkbox"
-                                id="editorLessonPublished"
-                            >
+                            <input type="checkbox" id="editorLessonPublished">
                             Publish this lesson for students
                         </label>
-
                     </div>
 
                     <button type="submit" class="primary-btn">
-
                         <i class="fa-solid fa-floppy-disk"></i>
                         Save Lesson
-
                     </button>
 
-                    <button type="button" class="back-btn"
-                        id="cancelLessonEditBtn">
-
+                    <button type="button" class="back-btn" id="cancelLessonEditBtn">
                         Cancel Editing
-
                     </button>
 
                 </form>
 
                 <h4>Lessons Added</h4>
-
                 <div id="editorLessonList" class="editor-list"></div>
 
             </section>
 
 
-            <!-- =====================================
-                 QUIZ SETTINGS
-            ====================================== -->
-
+            <!-- QUIZ SETTINGS -->
             <section class="editor-section">
 
                 <h3>
@@ -640,86 +501,49 @@
                     Quiz Settings
                 </h3>
 
-                <p>
-                    Configure the quiz before adding its questions.
-                </p>
+                <p>Configure the quiz before adding its questions.</p>
 
                 <form id="editorQuizSettingsForm">
 
                     <input type="hidden" id="editorSettingsCourseId">
 
                     <div class="form-group">
-
                         <label for="editorQuizTitle">Quiz Title</label>
-
-                        <input
-                            type="text"
-                            id="editorQuizTitle"
-                            placeholder="Enter quiz title"
-                        >
-
+                        <input type="text" id="editorQuizTitle" placeholder="Enter quiz title">
                     </div>
 
                     <div class="form-group">
-
                         <label for="editorQuizType">Quiz Type</label>
 
                         <select id="editorQuizType">
-
-                            <option value="course">
-                                General Course Quiz
-                            </option>
-
-                            <option value="lesson">
-                                Lesson-Specific Quiz
-                            </option>
-
+                            <option value="course">General Course Quiz</option>
+                            <option value="lesson">Lesson-Specific Quiz</option>
                         </select>
-
                     </div>
 
                     <div class="form-group" id="lessonQuizSelectorGroup">
-
-                        <label for="editorQuizLessonId">
-                            Select Lesson
-                        </label>
+                        <label for="editorQuizLessonId">Select Lesson</label>
 
                         <select id="editorQuizLessonId">
-
-                            <option value="">
-                                Select a lesson
-                            </option>
-
+                            <option value="">Select a lesson</option>
                         </select>
 
-                        <small>
-                            Select the lesson this quiz belongs to.
-                        </small>
-
+                        <small>Select the lesson this quiz belongs to.</small>
                     </div>
 
                     <div class="form-group">
-
-                        <label for="editorQuizInstructions">
-                            Student Quiz Instructions
-                        </label>
-
+                        <label for="editorQuizInstructions">Student Quiz Instructions</label>
                         <textarea
                             id="editorQuizInstructions"
                             rows="4"
                             placeholder="Explain what students should know before taking this quiz and the rules they must follow."
                         ></textarea>
-
                     </div>
 
                     <div class="form-row">
 
                         <div class="form-group">
-
-                            <label for="editorQuizTimeLimit">
-                                Time Limit (Minutes)
-                            </label>
-
+                            <label for="editorQuizTimeLimit">Time Limit (Minutes)</label>
                             <input
                                 type="number"
                                 id="editorQuizTimeLimit"
@@ -727,19 +551,11 @@
                                 step="1"
                                 value="0"
                             >
-
-                            <small>
-                                Enter 0 for no time limit.
-                            </small>
-
+                            <small>Enter 0 for no time limit.</small>
                         </div>
 
                         <div class="form-group">
-
-                            <label for="editorQuizMaxAttempts">
-                                Maximum Attempts
-                            </label>
-
+                            <label for="editorQuizMaxAttempts">Maximum Attempts</label>
                             <input
                                 type="number"
                                 id="editorQuizMaxAttempts"
@@ -747,13 +563,11 @@
                                 step="1"
                                 value="3"
                             >
-
                         </div>
 
                     </div>
 
                     <div class="form-group">
-
                         <label for="editorQuizQuestionLimit">
                             Number of Questions Students Must Answer
                         </label>
@@ -767,79 +581,44 @@
                         >
 
                         <small>
-                            The quiz should select this number from
-                            the available question bank.
+                            The quiz should select this number from the available question bank.
                         </small>
-
                     </div>
 
                     <div class="form-group">
-
-                        <label for="editorQuizOpeningDate">
-                            Quiz Opening Date and Time
-                        </label>
-
-                        <input
-                            type="datetime-local"
-                            id="editorQuizOpeningDate"
-                        >
-
+                        <label for="editorQuizOpeningDate">Quiz Opening Date and Time</label>
+                        <input type="datetime-local" id="editorQuizOpeningDate">
                     </div>
 
                     <div class="form-group">
-
-                        <label for="editorQuizClosingDate">
-                            Quiz Closing Date and Time
-                        </label>
-
-                        <input
-                            type="datetime-local"
-                            id="editorQuizClosingDate"
-                        >
-
+                        <label for="editorQuizClosingDate">Quiz Closing Date and Time</label>
+                        <input type="datetime-local" id="editorQuizClosingDate">
                     </div>
 
                     <div class="form-group">
-
                         <label>
-                            <input
-                                type="checkbox"
-                                id="editorShuffleQuestions"
-                            >
+                            <input type="checkbox" id="editorShuffleQuestions">
                             Shuffle question order
                         </label>
-
                     </div>
 
                     <div class="form-group">
-
                         <label>
-                            <input
-                                type="checkbox"
-                                id="editorShuffleOptions"
-                            >
+                            <input type="checkbox" id="editorShuffleOptions">
                             Shuffle answer options
                         </label>
-
                     </div>
 
                     <div class="form-group">
-
                         <label>
-                            <input
-                                type="checkbox"
-                                id="editorQuizPublished"
-                            >
+                            <input type="checkbox" id="editorQuizPublished">
                             Publish this quiz for students
                         </label>
-
                     </div>
 
                     <button type="submit" class="primary-btn">
-
                         <i class="fa-solid fa-floppy-disk"></i>
                         Save Quiz Settings
-
                     </button>
 
                 </form>
@@ -851,10 +630,7 @@
             </section>
 
 
-            <!-- =====================================
-                 QUIZ QUESTION MANAGEMENT
-            ====================================== -->
-
+            <!-- QUIZ QUESTION MANAGEMENT -->
             <section class="editor-section">
 
                 <h3>
@@ -862,53 +638,33 @@
                     Quiz Question Bank
                 </h3>
 
-                <p>
-                    Add questions to the selected course or lesson quiz.
-                </p>
+                <p>Add questions to the selected course or lesson quiz.</p>
 
                 <form id="editorQuizForm">
 
                     <input type="hidden" id="editorQuizCourseId">
-
                     <input type="hidden" id="editorQuizId">
 
                     <div class="form-group">
-
                         <label for="editorQuestionText">Question</label>
-
                         <textarea
                             id="editorQuestionText"
                             rows="3"
                             placeholder="Enter quiz question"
                             required
                         ></textarea>
-
                     </div>
 
                     <div class="form-row">
 
                         <div class="form-group">
-
                             <label for="editorOptionA">Option A</label>
-
-                            <input
-                                type="text"
-                                id="editorOptionA"
-                                required
-                            >
-
+                            <input type="text" id="editorOptionA" required>
                         </div>
 
                         <div class="form-group">
-
                             <label for="editorOptionB">Option B</label>
-
-                            <input
-                                type="text"
-                                id="editorOptionB"
-                                required
-                            >
-
+                            <input type="text" id="editorOptionB" required>
                         </div>
 
                     </div>
@@ -916,55 +672,31 @@
                     <div class="form-row">
 
                         <div class="form-group">
-
                             <label for="editorOptionC">Option C</label>
-
-                            <input
-                                type="text"
-                                id="editorOptionC"
-                                required
-                            >
-
+                            <input type="text" id="editorOptionC" required>
                         </div>
 
                         <div class="form-group">
-
                             <label for="editorOptionD">Option D</label>
-
-                            <input
-                                type="text"
-                                id="editorOptionD"
-                                required
-                            >
-
+                            <input type="text" id="editorOptionD" required>
                         </div>
 
                     </div>
 
                     <div class="form-group">
-
-                        <label for="editorCorrectAnswer">
-                            Correct Answer
-                        </label>
+                        <label for="editorCorrectAnswer">Correct Answer</label>
 
                         <select id="editorCorrectAnswer" required>
-
                             <option value="">Select Correct Answer</option>
                             <option value="0">Option A</option>
                             <option value="1">Option B</option>
                             <option value="2">Option C</option>
                             <option value="3">Option D</option>
-
                         </select>
-
                     </div>
 
                     <div class="form-group">
-
-                        <label for="editorQuestionMark">
-                            Marks for This Question
-                        </label>
-
+                        <label for="editorQuestionMark">Marks for This Question</label>
                         <input
                             type="number"
                             id="editorQuestionMark"
@@ -973,25 +705,18 @@
                             value="1"
                             required
                         >
-
                     </div>
 
                     <button type="submit" class="primary-btn">
-
                         <i class="fa-solid fa-plus"></i>
                         Save Quiz Question
-
                     </button>
 
-                    <button type="button" class="back-btn"
-                        id="cancelQuizEditBtn">
-
+                    <button type="button" class="back-btn" id="cancelQuizEditBtn">
                         Cancel Editing
-
                     </button>
 
                 </form>
-
 
                 <div class="admin-item">
 
@@ -1010,14 +735,12 @@
                 </div>
 
                 <h4>Quiz Questions Added</h4>
-
                 <div id="editorQuizList" class="editor-list"></div>
 
             </section>
 
 
             <!-- COURSE PUBLICATION -->
-
             <section class="editor-section">
 
                 <h3>
@@ -1054,20 +777,15 @@
         </section>
 
 
-        <!-- =====================================
-             COURSE PREVIEW
-        ====================================== -->
-
+        <!-- COURSE PREVIEW -->
         <div id="coursePreview" class="course-preview hidden">
 
             <div class="preview-heading">
-
                 <h3>Course Preview</h3>
 
                 <button type="button" id="closePreviewBtn">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
-
             </div>
 
             <div id="coursePreviewContent"></div>
@@ -1075,20 +793,12 @@
         </div>
 
 
-        <!-- =====================================
-             MANAGE LESSONS
-        ====================================== -->
-
+        <!-- MANAGE LESSONS -->
         <section id="manageLessons" class="admin-page">
 
             <div class="page-heading">
-
                 <h2>Manage Lessons</h2>
-
-                <p>
-                    View lessons available on the platform.
-                </p>
-
+                <p>View lessons available on the platform.</p>
             </div>
 
             <div id="adminLessonList" class="admin-content-list"></div>
@@ -1096,20 +806,12 @@
         </section>
 
 
-        <!-- =====================================
-             MANAGE QUIZZES
-        ====================================== -->
-
+        <!-- MANAGE QUIZZES -->
         <section id="manageQuizzes" class="admin-page">
 
             <div class="page-heading">
-
                 <h2>Manage Quizzes</h2>
-
-                <p>
-                    View quiz questions created for your courses.
-                </p>
-
+                <p>View quiz questions created for your courses.</p>
             </div>
 
             <div id="adminQuizList" class="admin-content-list"></div>
@@ -1117,18 +819,12 @@
         </section>
 
 
-        <!-- =====================================
-             MANAGE STUDENTS
-        ====================================== -->
-
+        <!-- MANAGE STUDENTS -->
         <section id="manageStudents" class="admin-page">
 
             <div class="page-heading">
-
                 <h2>Manage Students</h2>
-
                 <p>View registered students.</p>
-
             </div>
 
             <input
@@ -1142,20 +838,12 @@
         </section>
 
 
-        <!-- =====================================
-             STUDENT RESULTS
-        ====================================== -->
-
+        <!-- STUDENT RESULTS -->
         <section id="manageResults" class="admin-page">
 
             <div class="page-heading">
-
                 <h2>Student Results</h2>
-
-                <p>
-                    View and manage student quiz scores.
-                </p>
-
+                <p>View and manage student quiz scores.</p>
             </div>
 
             <input
@@ -1165,14 +853,12 @@
             >
 
             <div class="admin-item">
-
                 <h4>Result Management</h4>
 
                 <p>
                     Review individual question marks, total marks,
                     percentages and pass/fail status.
                 </p>
-
             </div>
 
             <div id="adminResultList" class="admin-content-list"></div>
@@ -1180,20 +866,12 @@
         </section>
 
 
-        <!-- =====================================
-             CERTIFICATE MANAGEMENT
-        ====================================== -->
-
+        <!-- CERTIFICATE MANAGEMENT -->
         <section id="manageCertificates" class="admin-page">
 
             <div class="page-heading">
-
                 <h2>Certificates</h2>
-
-                <p>
-                    View, manage and update student certificates.
-                </p>
-
+                <p>View, manage and update student certificates.</p>
             </div>
 
             <input
@@ -1206,17 +884,121 @@
 
         </section>
 
+
+        <!-- ANNOUNCEMENT MANAGEMENT -->
+        <section id="manageAnnouncements" class="admin-page">
+
+            <div class="page-heading">
+                <h2>Announcements</h2>
+                <p>Publish important updates and messages for LearnSphere students.</p>
+            </div>
+
+            <div class="announcement-admin-layout">
+
+                <div class="editor-section announcement-form-card">
+
+                    <h3>
+                        <i class="fa-solid fa-bullhorn"></i>
+                        Create Announcement
+                    </h3>
+
+                    <form id="announcementForm">
+
+                        <div class="form-group">
+                            <label for="announcementTitle">Announcement Title</label>
+
+                            <input
+                                type="text"
+                                id="announcementTitle"
+                                placeholder="Enter announcement title"
+                                maxlength="150"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="announcementMessage">Announcement Message</label>
+
+                            <textarea
+                                id="announcementMessage"
+                                rows="7"
+                                placeholder="Write your announcement here..."
+                                maxlength="5000"
+                                required
+                            ></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="announcementDepartment">Target Department</label>
+
+                            <select id="announcementDepartment">
+                                <option value="">All Departments</option>
+                                <option value="Computer Science">Computer Science</option>
+                                <option value="Information Technology">Information Technology</option>
+                                <option value="Business Administration">Business Administration</option>
+                                <option value="Public Administration">Public Administration</option>
+                            </select>
+
+                            <small>
+                                Leave this blank to send the announcement to every department.
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="announcementLevel">Target Level</label>
+
+                            <select id="announcementLevel">
+                                <option value="">All Levels</option>
+                                <option value="100">100 Level</option>
+                                <option value="200">200 Level</option>
+                                <option value="300">300 Level</option>
+                                <option value="400">400 Level</option>
+                                <option value="500">500 Level</option>
+                            </select>
+
+                            <small>
+                                Leave this blank to send the announcement to all levels.
+                            </small>
+                        </div>
+
+                        <button type="submit" class="primary-btn" id="publishAnnouncementBtn">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            Publish Announcement
+                        </button>
+
+                    </form>
+
+                </div>
+
+
+                <div class="editor-section announcement-list-card">
+
+                    <h3>
+                        <i class="fa-solid fa-list"></i>
+                        Published Announcements
+                    </h3>
+
+                    <p>
+                        View and manage announcements already published.
+                    </p>
+
+                    <div id="adminAnnouncementList" class="admin-content-list">
+                        <p>Announcements will appear here.</p>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
     </main>
 
 </div>
 
 
-<!-- =====================================
-     JAVASCRIPT
-====================================== -->
-
+<!-- JAVASCRIPT -->
 <script src="course-catalog.js"></script>
-
 <script type="module" src="admin.js"></script>
 
 </body>

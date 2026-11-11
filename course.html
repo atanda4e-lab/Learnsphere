@@ -5,12 +5,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Course Learning | LearnSphere</title>
+    <!-- SEO -->
+    <title>Online Course Lessons and Quizzes | LearnSphere Nigeria</title>
 
+    <meta name="description"
+        content="Explore online courses on LearnSphere Nigeria. Access course lessons, study materials, learning resources and quizzes to improve your knowledge.">
+
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="LearnSphere Nigeria">
+    <meta name="theme-color" content="#2563eb">
+
+    <!-- OPEN GRAPH -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="LearnSphere Nigeria">
+    <meta property="og:title" content="Online Courses and Learning Resources | LearnSphere">
+    <meta property="og:description"
+        content="Learn with online courses, lessons, study materials and quizzes on LearnSphere Nigeria.">
+
+    <!-- TWITTER -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="LearnSphere Online Courses">
+    <meta name="twitter:description"
+        content="Explore online courses, lessons, study materials and quizzes on LearnSphere Nigeria.">
+
+    <!-- FAVICON -->
+    <link rel="icon" href="favicon.ico">
+
+    <!-- STYLESHEETS -->
     <link rel="stylesheet" href="course.css">
 
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 </head>
 
 <body>
@@ -44,7 +70,7 @@
             <h1 id="courseTitle">Loading Course...</h1>
 
             <p id="courseDescription">
-                Your course description will appear here.
+                Explore this course, study its lessons and improve your knowledge with LearnSphere.
             </p>
 
             <div class="course-information">
@@ -241,17 +267,130 @@
     </main>
 
 
+    <!-- COURSE REVIEWS SECTION -->
+    <section class="course-reviews" id="courseReviews">
+
+        <div class="reviews-container">
+
+            <!-- REVIEW HEADING -->
+            <div class="reviews-header">
+
+                <div>
+                    <span class="reviews-label">STUDENT FEEDBACK</span>
+
+                    <h2>Course Reviews & Ratings</h2>
+
+                    <p>See what students think about this course.</p>
+                </div>
+
+                <div class="rating-summary">
+
+                    <h3 id="averageRating">0.0</h3>
+
+                    <div id="averageStars" class="average-stars">
+                        ★★★★★
+                    </div>
+
+                    <p id="totalReviews">0 reviews</p>
+
+                </div>
+
+            </div>
+
+
+            <!-- REVIEW FORM -->
+            <div class="review-form-card" id="reviewFormCard">
+
+                <h3>Share Your Experience</h3>
+
+                <p>How would you rate this course?</p>
+
+                <!-- STAR SELECTION -->
+                <div class="star-rating" id="starRating">
+
+                    <button type="button" class="rating-star" data-rating="1"
+                        aria-label="1 star">★</button>
+
+                    <button type="button" class="rating-star" data-rating="2"
+                        aria-label="2 stars">★</button>
+
+                    <button type="button" class="rating-star" data-rating="3"
+                        aria-label="3 stars">★</button>
+
+                    <button type="button" class="rating-star" data-rating="4"
+                        aria-label="4 stars">★</button>
+
+                    <button type="button" class="rating-star" data-rating="5"
+                        aria-label="5 stars">★</button>
+
+                </div>
+
+                <p id="ratingText">Select your rating</p>
+
+
+                <!-- REVIEW TEXT -->
+                <form id="reviewForm">
+
+                    <label for="reviewText">Your Review</label>
+
+                    <textarea
+                        id="reviewText"
+                        rows="5"
+                        maxlength="1000"
+                        placeholder="Share your thoughts about the lessons, learning materials and overall course experience..."
+                        required></textarea>
+
+                    <div class="review-form-footer">
+
+                        <span id="reviewCharacterCount">0 / 1000</span>
+
+                        <button type="submit" id="submitReviewBtn">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            Submit Review
+                        </button>
+
+                    </div>
+
+                </form>
+
+                <p id="reviewMessage" class="review-message"></p>
+
+            </div>
+
+
+            <!-- ALL REVIEWS -->
+            <div class="all-reviews">
+
+                <h3>What Students Are Saying</h3>
+
+                <div id="reviewsList">
+
+                    <p class="no-reviews">
+                        No reviews yet. Be the first to review this course!
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
     <!-- FOOTER -->
     <footer class="course-footer">
 
         <p>
-            &copy; 2026 LearnSphere. Learn, Grow and Achieve.
+            &copy; 2026 LearnSphere Nigeria. Learn, Grow and Achieve.
         </p>
 
     </footer>
 
 
+    <!-- FIREBASE COURSE SCRIPT -->
    <script type="module" src="course.js"></script>
+<script type="module" src="course-reviews.js"></script>
 
 </body>
 

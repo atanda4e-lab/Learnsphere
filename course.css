@@ -546,3 +546,346 @@ body {
     }
 
 }
+/* =====================================
+   COURSE REVIEWS AND RATINGS
+===================================== */
+
+.course-reviews {
+    padding: 40px 4% 60px;
+}
+
+.reviews-container {
+    max-width: 1250px;
+    margin: auto;
+}
+
+
+/* REVIEW HEADER */
+
+.reviews-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 25px;
+    background-color: white;
+    padding: 30px;
+    border: 1px solid #e6eaf2;
+    border-radius: 12px;
+    margin-bottom: 25px;
+}
+
+.reviews-label {
+    color: #13a889;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.reviews-header h2 {
+    font-size: 26px;
+    margin: 12px 0;
+}
+
+.reviews-header p {
+    color: #788398;
+    line-height: 1.6;
+}
+
+
+/* RATING SUMMARY */
+
+.rating-summary {
+    min-width: 160px;
+    text-align: center;
+    background-color: #f5f7fc;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.rating-summary h3 {
+    font-size: 38px;
+    color: #202b3c;
+}
+
+.average-stars {
+    color: #f5a623;
+    font-size: 22px;
+    letter-spacing: 3px;
+    margin: 5px 0;
+}
+
+.rating-summary p {
+    font-size: 13px;
+}
+
+
+/* REVIEW FORM */
+
+.review-form-card {
+    background-color: white;
+    padding: 30px;
+    border: 1px solid #e6eaf2;
+    border-radius: 12px;
+    margin-bottom: 35px;
+}
+
+.review-form-card h3 {
+    font-size: 21px;
+    margin-bottom: 10px;
+}
+
+.review-form-card > p {
+    color: #788398;
+    margin-bottom: 15px;
+}
+
+
+/* STAR RATING */
+
+.star-rating {
+    display: flex;
+    gap: 7px;
+    margin-bottom: 8px;
+}
+
+.rating-star {
+    border: none;
+    background: none;
+    color: #d5dbe5;
+    font-size: 35px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.rating-star:hover,
+.rating-star.active {
+    color: #f5a623;
+    transform: scale(1.1);
+}
+
+#ratingText {
+    color: #788398;
+    font-size: 13px;
+    margin-bottom: 20px;
+}
+
+
+/* REVIEW TEXTAREA */
+
+.review-form-card label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.review-form-card textarea {
+    width: 100%;
+    padding: 15px;
+    border: 1px solid #dce2f0;
+    border-radius: 8px;
+    resize: vertical;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    outline: none;
+}
+
+.review-form-card textarea:focus {
+    border-color: #3157d5;
+}
+
+
+/* REVIEW FORM FOOTER */
+
+.review-form-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+#reviewCharacterCount {
+    color: #788398;
+    font-size: 12px;
+}
+
+#submitReviewBtn {
+    background-color: #3157d5;
+    color: white;
+    border: none;
+    padding: 13px 20px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#submitReviewBtn:hover {
+    background-color: #2447bd;
+}
+
+
+/* REVIEW MESSAGE */
+
+.review-message {
+    margin-top: 15px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.review-message.success {
+    color: #0e9277;
+}
+
+.review-message.error {
+    color: #dc3545;
+}
+
+
+/* ALL REVIEWS */
+
+.all-reviews > h3 {
+    font-size: 22px;
+    margin-bottom: 20px;
+}
+
+#reviewsList {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+
+/* REVIEW CARD */
+
+.review-card {
+    background-color: white;
+    border: 1px solid #e6eaf2;
+    border-radius: 10px;
+    padding: 22px;
+}
+
+.review-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 12px;
+}
+
+.review-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.review-avatar {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #edf1ff;
+    color: #3157d5;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 17px;
+}
+
+.review-user h4 {
+    font-size: 15px;
+    margin-bottom: 5px;
+}
+
+.review-date {
+    color: #788398;
+    font-size: 12px;
+}
+
+.review-card-stars {
+    color: #f5a623;
+    font-size: 17px;
+    letter-spacing: 2px;
+}
+
+.review-card-text {
+    color: #3f4b5e;
+    font-size: 14px;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+
+/* EDIT REVIEW BUTTON */
+
+.edit-review-btn {
+    margin-top: 15px;
+    padding: 8px 13px;
+    background-color: #edf1ff;
+    color: #3157d5;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.edit-review-btn:hover {
+    background-color: #dce5ff;
+}
+
+
+/* NO REVIEWS */
+
+.no-reviews {
+    background-color: white;
+    padding: 30px;
+    text-align: center;
+    color: #788398;
+    border: 1px solid #e6eaf2;
+    border-radius: 10px;
+}
+
+
+/* MOBILE RESPONSIVENESS */
+
+@media (max-width: 600px) {
+
+    .course-reviews {
+        padding: 20px 4% 40px;
+    }
+
+    .reviews-header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 22px;
+    }
+
+    .reviews-header h2 {
+        font-size: 22px;
+    }
+
+    .rating-summary {
+        width: 100%;
+    }
+
+    .review-form-card {
+        padding: 20px;
+    }
+
+    .review-form-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #submitReviewBtn {
+        width: 100%;
+    }
+
+    .review-card-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+}

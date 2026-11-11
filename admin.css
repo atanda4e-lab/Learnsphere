@@ -1,17 +1,21 @@
-
-/* ========================================
+/* =========================================
    LEARNSPHERE ADMIN DASHBOARD
-======================================== */
+   COMPLETE RESPONSIVE STYLESHEET
+========================================= */
 
 
-/* ========================================
+/* =========================================
    1. GENERAL SETTINGS
-======================================== */
+========================================= */
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
 }
 
 body {
@@ -30,30 +34,51 @@ textarea {
 
 button {
     cursor: pointer;
+    transition: 0.3s ease;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .hidden {
     display: none !important;
 }
 
+input,
+select,
+textarea {
+    max-width: 100%;
+}
 
-/* ========================================
-   2. ADMIN DASHBOARD LAYOUT
-======================================== */
+
+/* =========================================
+   2. DASHBOARD LAYOUT
+========================================= */
 
 #adminArea {
     display: flex;
     min-height: 100vh;
 }
 
+#adminArea.hidden {
+    display: none !important;
+}
 
-/* ========================================
+.admin-dashboard {
+    width: 100%;
+}
+
+
+/* =========================================
    3. SIDEBAR
-======================================== */
+========================================= */
 
 .admin-sidebar {
     width: 250px;
     min-width: 250px;
+    min-height: 100vh;
     background: #102a43;
     color: white;
     padding: 25px 15px;
@@ -61,37 +86,53 @@ button {
     flex-direction: column;
 }
 
-.admin-sidebar h2 {
-    font-size: 25px;
+.admin-logo {
     text-align: center;
     margin-bottom: 35px;
 }
 
-.admin-sidebar h2 span {
-    color: #16a34a;
+.admin-logo h2 {
+    font-size: 25px;
+    color: white;
+}
+
+.admin-logo h2 span {
+    color: #22c55e;
+}
+
+.admin-logo p {
+    color: #cbd5e1;
+    font-size: 13px;
 }
 
 .admin-navigation {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 9px;
 }
 
 .admin-nav-btn {
     width: 100%;
-    padding: 13px 15px;
+    min-height: 46px;
+    padding: 12px 14px;
     border: none;
     border-radius: 8px;
     background: transparent;
     color: #dbeafe;
     text-align: left;
     font-size: 14px;
-    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .admin-nav-btn i {
-    width: 25px;
-    margin-right: 8px;
+    width: 22px;
+    text-align: center;
+}
+
+.admin-nav-btn span:nth-child(2) {
+    flex: 1;
 }
 
 .admin-nav-btn:hover,
@@ -113,17 +154,30 @@ button {
     background: #dc2626;
     color: white;
     font-size: 14px;
-    transition: 0.3s;
 }
 
 #adminLogoutBtn:hover {
     background: #b91c1c;
 }
 
+.notification-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 21px;
+    height: 21px;
+    padding: 2px 6px;
+    border-radius: 20px;
+    background: #dc2626;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+}
 
-/* ========================================
+
+/* =========================================
    4. MAIN CONTENT
-======================================== */
+========================================= */
 
 .admin-main {
     flex: 1;
@@ -135,8 +189,10 @@ button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 15px;
+    gap: 20px;
     margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .admin-header h1 {
@@ -149,124 +205,132 @@ button {
     font-size: 14px;
 }
 
+.admin-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    background: white;
+    border-radius: 8px;
+    color: #102a43;
+    font-size: 14px;
+    font-weight: bold;
+}
 
-/* ========================================
+.admin-profile i {
+    color: #16a34a;
+    font-size: 20px;
+}
+
+
+/* =========================================
    5. ADMIN PAGES
-======================================== */
+========================================= */
 
 .admin-page {
     display: none;
+    width: 100%;
 }
 
 .admin-page.active {
     display: block;
 }
 
-.admin-page h2 {
+.page-heading {
+    margin-bottom: 25px;
+}
+
+.page-heading h2 {
     color: #102a43;
     font-size: 23px;
-    margin-bottom: 20px;
+    margin-bottom: 7px;
+}
+
+.page-heading p {
+    color: #64748b;
+    font-size: 14px;
 }
 
 .admin-page h3 {
     color: #102a43;
-    margin-bottom: 12px;
 }
 
 
-/* ========================================
+/* =========================================
    6. DASHBOARD STATISTICS
-======================================== */
+========================================= */
 
 .admin-stats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 20px;
-    margin-bottom: 35px;
+    margin-bottom: 30px;
 }
 
 .stat-card {
     background: white;
-    padding: 25px;
+    padding: 23px;
     border-radius: 12px;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
     border-left: 4px solid #16a34a;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+}
+
+.stat-icon {
+    margin-bottom: 12px;
+}
+
+.stat-icon i {
+    font-size: 25px;
+    color: #16a34a;
 }
 
 .stat-card h3 {
-    font-size: 14px;
     color: #64748b;
-    margin-bottom: 10px;
+    font-size: 14px;
+    margin-bottom: 8px;
 }
 
-.stat-card h2 {
-    font-size: 30px;
+.stat-card p {
     color: #102a43;
-    margin: 0;
-}
-
-.stat-card i {
-    font-size: 25px;
-    color: #16a34a;
-    margin-bottom: 15px;
+    font-size: 29px;
+    font-weight: bold;
 }
 
 
-/* ========================================
-   7. SEARCH AND FILTER
-======================================== */
+/* =========================================
+   7. GENERAL BUTTONS
+========================================= */
 
-.course-management {
-    background: white;
-    padding: 22px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-}
-
-.course-management-header {
-    display: flex;
-    justify-content: space-between;
+.primary-btn {
+    display: inline-flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.course-management-header h2 {
-    margin: 0;
-}
-
-.course-tools {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-#adminCourseSearch,
-#adminCourseFilter {
-    padding: 12px;
-    border: 1px solid #cbd5e1;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 18px;
+    border: none;
     border-radius: 7px;
-    outline: none;
-    background: white;
+    background: #16a34a;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
 }
 
-#adminCourseSearch {
-    min-width: 220px;
+.primary-btn:hover {
+    background: #15803d;
+    transform: translateY(-2px);
 }
 
-#adminCourseSearch:focus,
-#adminCourseFilter:focus {
-    border-color: #16a34a;
+.back-btn {
+    padding: 11px 16px;
+    border: none;
+    border-radius: 7px;
+    background: #64748b;
+    color: white;
+    font-size: 13px;
 }
 
-
-/* ========================================
-   8. GENERAL BUTTONS
-======================================== */
-
-button {
-    transition: 0.3s;
+.back-btn:hover {
+    background: #475569;
 }
 
 #addNewCourseBtn,
@@ -276,7 +340,6 @@ button {
     border: none;
     padding: 12px 18px;
     border-radius: 7px;
-    font-weight: bold;
 }
 
 #addNewCourseBtn:hover,
@@ -296,29 +359,85 @@ button {
     background: #d97706;
 }
 
-#backToCoursesBtn {
-    background: #64748b;
-    color: white;
-    border: none;
-    padding: 11px 17px;
-    border-radius: 7px;
+
+/* =========================================
+   8. SEARCH AND FILTER
+========================================= */
+
+.course-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 22px;
 }
 
-#backToCoursesBtn:hover {
-    background: #475569;
+.course-toolbar input,
+.course-toolbar select,
+#adminStudentSearch,
+#adminResultSearch,
+#adminCertificateSearch,
+#adminInstructorSearch,
+#adminInstructorFilter {
+    padding: 12px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: white;
+    outline: none;
+    font-size: 14px;
 }
 
-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.course-toolbar input:focus,
+.course-toolbar select:focus,
+#adminStudentSearch:focus,
+#adminResultSearch:focus,
+#adminCertificateSearch:focus,
+#adminInstructorSearch:focus,
+#adminInstructorFilter:focus {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+#adminCourseSearch {
+    flex: 1;
+    min-width: 200px;
+}
+
+#adminCourseFilter {
+    min-width: 160px;
+}
+
+#adminStudentSearch,
+#adminResultSearch,
+#adminCertificateSearch {
+    width: 100%;
+    max-width: 450px;
+    margin-bottom: 20px;
+}
+
+#adminInstructorSearch {
+    width: 100%;
+    max-width: 350px;
+}
+
+#adminInstructorFilter {
+    width: 100%;
+    max-width: 250px;
 }
 
 
-/* ========================================
-   9. COURSE CARDS
-======================================== */
+/* =========================================
+   9. COURSE MANAGEMENT
+========================================= */
 
-#adminCourseList {
+.course-management {
+    background: white;
+    padding: 22px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+}
+
+.admin-course-list {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 20px;
@@ -337,13 +456,14 @@ button:disabled {
 }
 
 .course-card h3 {
+    color: #102a43;
     font-size: 18px;
     margin-bottom: 10px;
 }
 
 .course-card p {
-    font-size: 14px;
     color: #64748b;
+    font-size: 14px;
     margin-bottom: 5px;
 }
 
@@ -351,17 +471,17 @@ button:disabled {
     display: inline-block;
     margin-top: 12px;
     padding: 5px 12px;
+    border-radius: 20px;
     background: #dcfce7;
     color: #166534;
-    border-radius: 20px;
     font-size: 12px;
     font-weight: bold;
 }
 
 .course-card-actions {
     display: flex;
-    gap: 10px;
     flex-wrap: wrap;
+    gap: 10px;
 }
 
 .edit-course-btn,
@@ -390,171 +510,227 @@ button:disabled {
 }
 
 
-/* ========================================
+/* =========================================
    10. COURSE EDITOR
-======================================== */
+========================================= */
 
-#courseEditor {
+.course-editor {
     background: white;
     padding: 25px;
     border-radius: 12px;
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
 }
 
-.editor-header {
+.editor-heading {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 15px;
+    flex-direction: column;
+    gap: 18px;
     margin-bottom: 25px;
 }
 
-.editor-header h2 {
+.editor-heading h2 {
+    color: #102a43;
+    font-size: 23px;
+}
+
+.editor-heading p {
+    color: #64748b;
+    font-size: 14px;
+}
+
+#editorCourseHeading {
     color: #102a43;
 }
 
 
-/* ========================================
-   11. FORMS
-======================================== */
+/* =========================================
+   11. EDITOR SECTIONS
+========================================= */
+
+.editor-section {
+    background: white;
+    padding: 25px;
+    margin-top: 25px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.03);
+}
+
+.editor-section h3 {
+    color: #102a43;
+    font-size: 19px;
+    margin-bottom: 15px;
+}
+
+.editor-section h3 i {
+    color: #16a34a;
+    margin-right: 8px;
+}
+
+.editor-section > p {
+    color: #64748b;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.editor-section h4 {
+    color: #102a43;
+    margin-top: 20px;
+    margin-bottom: 12px;
+}
+
+
+/* =========================================
+   12. FORMS
+========================================= */
 
 #editCourseForm,
 #editorLessonForm,
-#editorQuizForm {
+#editorQuizForm,
+#editorQuizSettingsForm,
+#courseScheduleForm {
     background: #f8fafc;
     padding: 22px;
     border-radius: 10px;
+    margin-top: 15px;
     margin-bottom: 25px;
 }
 
 .form-group {
-    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
 }
 
 .form-group label {
     display: block;
+    color: #334155;
     font-size: 14px;
     font-weight: bold;
-    margin-bottom: 7px;
-    color: #334155;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
     width: 100%;
-    padding: 12px;
+    padding: 13px 15px;
     border: 1px solid #cbd5e1;
-    border-radius: 7px;
+    border-radius: 8px;
     outline: none;
     background: white;
+    color: #1e293b;
     font-size: 14px;
+    transition: 0.3s ease;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
     border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
 }
 
 .form-group textarea {
-    min-height: 110px;
+    min-height: 100px;
     resize: vertical;
+    line-height: 1.6;
 }
 
-
-/* ========================================
-   12. PUBLICATION SECTION
-======================================== */
-
-.course-publication {
-    background: #f8fafc;
-    padding: 22px;
-    border-radius: 10px;
-    margin-top: 25px;
+.form-group small {
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.5;
 }
 
-.course-publication h3 {
-    margin-bottom: 12px;
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
 }
 
-#coursePublishStatus {
-    display: inline-block;
-    padding: 7px 13px;
-    border-radius: 20px;
-    background: #fef3c7;
-    color: #92400e;
-    font-size: 13px;
-    font-weight: bold;
-    margin-bottom: 15px;
+.form-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 7px;
 }
 
-.publication-buttons {
+.form-group label:has(input[type="checkbox"]) {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-#previewCourseBtn {
-    padding: 12px 18px;
-    border: none;
-    border-radius: 7px;
-    background: #2563eb;
-    color: white;
-}
-
-#previewCourseBtn:hover {
-    background: #1d4ed8;
+    align-items: center;
+    gap: 5px;
+    font-weight: normal;
 }
 
 
-/* ========================================
-   13. COURSE PREVIEW
-======================================== */
+/* =========================================
+   13. COURSE SCHEDULE
+========================================= */
 
-#coursePreview {
-    background: white;
-    padding: 25px;
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
+#courseScheduleForm input[type="datetime-local"] {
+    min-height: 48px;
+    cursor: pointer;
+}
+
+#courseScheduleStatus {
     margin-top: 20px;
-}
-
-#coursePreviewContent {
-    margin: 20px 0;
-}
-
-#coursePreviewContent h2 {
-    margin: 15px 0;
-}
-
-#closePreviewBtn {
-    padding: 10px 17px;
-    background: #dc2626;
-    color: white;
-    border: none;
-    border-radius: 6px;
+    padding: 16px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-left: 4px solid #16a34a;
+    border-radius: 8px;
+    color: #166534;
+    line-height: 1.7;
 }
 
 
-/* ========================================
-   14. LESSON AND QUIZ EDITOR
-======================================== */
+/* =========================================
+   14. QUIZ SETTINGS
+========================================= */
 
-.editor-section {
-    margin-top: 30px;
+#editorQuizSettingsForm {
+    border: 1px solid #e2e8f0;
 }
 
-.editor-section h3 {
-    margin-bottom: 15px;
+#editorQuizSettingsForm .form-row {
+    align-items: start;
 }
 
-#editorLessonList,
-#editorQuizList {
+#editorQuizQuestionLimit,
+#editorQuizTimeLimit,
+#editorQuizMaxAttempts {
+    max-width: 100%;
+}
+
+#editorQuestionMark {
+    max-width: 250px;
+    font-weight: bold;
+}
+
+#editorQuizTotalMarks,
+#editorQuizQuestionCount {
+    color: #15803d;
+    font-size: 18px;
+}
+
+#quizSettingsStatus {
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 8px;
+    background: #f0fdf4;
+    color: #166534;
+    font-size: 14px;
+}
+
+
+/* =========================================
+   15. QUIZ AND LESSON LISTS
+========================================= */
+
+.editor-list {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 15px;
+    margin-top: 20px;
 }
 
 .content-card {
@@ -578,319 +754,121 @@ button:disabled {
 }
 
 .content-card button {
-    margin-top: 12px;
+    margin-top: 10px;
     padding: 9px 13px;
-    background: #dc2626;
-    color: white;
     border: none;
     border-radius: 6px;
+    color: white;
 }
 
 .content-card button:hover {
-    background: #b91c1c;
+    opacity: 0.9;
+}
+
+.edit-content-btn {
+    background: #2563eb;
+}
+
+.cancel-edit-btn {
+    background: #64748b;
 }
 
 
-/* ========================================
-   15. ADMIN STUDENTS AND RESULTS
-======================================== */
+/* =========================================
+   16. PUBLICATION
+========================================= */
 
-#adminStudentList,
-#adminResultList,
-#adminCertificateList,
-#adminLessonList,
-#adminQuizList {
+#coursePublishStatus {
+    display: inline-block;
+    padding: 7px 13px;
+    border-radius: 20px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.publication-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.publication-buttons button {
+    padding: 12px 18px;
+    border: none;
+    border-radius: 7px;
+    color: white;
+    font-weight: bold;
+}
+
+#previewCourseBtn {
+    background: #2563eb;
+}
+
+#previewCourseBtn:hover {
+    background: #1d4ed8;
+}
+
+
+/* =========================================
+   17. COURSE PREVIEW
+========================================= */
+
+.course-preview {
+    background: white;
+    padding: 25px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+.preview-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.preview-heading h3 {
+    color: #102a43;
+}
+
+#coursePreviewContent {
+    margin: 20px 0;
+}
+
+#coursePreviewContent h2 {
+    margin: 15px 0;
+}
+
+#closePreviewBtn {
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 6px;
+    background: #dc2626;
+    color: white;
+    font-size: 16px;
+}
+
+
+/* =========================================
+   18. ADMIN CONTENT LISTS
+========================================= */
+
+.admin-content-list {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 15px;
-}
-
-#adminResultList .content-card,
-#adminCertificateList .content-card {
-    border-left: 4px solid #16a34a;
-}
-
-.delete-result-btn,
-.delete-certificate-btn {
-    background: #dc2626;
-    color: white;
-    border: none;
-    padding: 10px 14px;
-    border-radius: 6px;
-}
-
-.delete-result-btn:hover,
-.delete-certificate-btn:hover {
-    background: #b91c1c;
-}
-
-
-/* ========================================
-   16. EMPTY MESSAGES
-======================================== */
-
-#adminCourseList > p,
-#adminLessonList > p,
-#adminQuizList > p,
-#adminStudentList > p,
-#adminResultList > p,
-#adminCertificateList > p {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    color: #64748b;
-    text-align: center;
-    grid-column: 1 / -1;
-}
-
-
-/* ========================================
-   17. RESPONSIVE TABLET DESIGN
-======================================== */
-
-@media (max-width: 1100px) {
-
-    .admin-stats {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    #adminCourseList {
-        grid-template-columns: 1fr;
-    }
-
-}
-
-
-/* ========================================
-   18. RESPONSIVE MOBILE DESIGN
-======================================== */
-
-@media (max-width: 768px) {
-
-    #adminArea {
-        flex-direction: column;
-    }
-
-    .admin-sidebar {
-        width: 100%;
-        min-width: 0;
-        padding: 18px;
-    }
-
-    .admin-sidebar h2 {
-        margin-bottom: 18px;
-    }
-
-    .admin-navigation {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .admin-sidebar-bottom {
-        margin-top: 20px;
-        padding-top: 10px;
-    }
-
-    .admin-main {
-        padding: 20px 15px;
-    }
-
-    .admin-header h1 {
-        font-size: 22px;
-    }
-
-    #editorLessonList,
-    #editorQuizList,
-    #adminStudentList,
-    #adminResultList,
-    #adminCertificateList,
-    #adminLessonList,
-    #adminQuizList {
-        grid-template-columns: 1fr;
-    }
-
-    .course-management-header {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
-    .course-tools {
-        flex-direction: column;
-    }
-
-    #adminCourseSearch,
-    #adminCourseFilter {
-        width: 100%;
-    }
-
-}
-
-
-/* ========================================
-   19. SMALL MOBILE SCREENS
-======================================== */
-
-@media (max-width: 480px) {
-
-    .admin-stats {
-        grid-template-columns: 1fr;
-    }
-
-    .admin-navigation {
-        grid-template-columns: 1fr;
-    }
-
-    .admin-main {
-        padding: 15px 10px;
-    }
-
-    #courseEditor {
-        padding: 15px;
-    }
-
-    .course-card-actions {
-        flex-direction: column;
-    }
-
-    .course-card-actions button {
-        width: 100%;
-    }
-
-    .publication-buttons {
-        flex-direction: column;
-    }
-
-    .publication-buttons button {
-        width: 100%;
-    }
-
-}
-/* =========================================
-   LEARNSPHERE ADMIN DASHBOARD UPDATES
-========================================= */
-
-
-/* GENERAL FORM IMPROVEMENTS */
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 9px;
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    font-size: 14px;
-    font-weight: 600;
-    color: #222;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-    width: 100%;
-    padding: 13px 15px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    outline: none;
-    background: #fff;
-    color: #222;
-    font-size: 14px;
-    font-family: Arial, sans-serif;
-    transition: 0.3s ease;
-    box-sizing: border-box;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-    border-color: #16a34a;
-    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
-}
-
-.form-group textarea {
-    resize: vertical;
-    line-height: 1.6;
-}
-
-.form-group small {
-    font-size: 12px;
-    color: #777;
-    line-height: 1.5;
-}
-
-
-/* FORM ROW */
-
-.form-row {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-}
-
-
-/* EDITOR SECTION */
-
-.editor-section {
-    background: #fff;
-    padding: 25px;
-    margin-top: 25px;
-    border-radius: 12px;
-    border: 1px solid #eee;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.03);
-}
-
-.editor-section h3 {
-    font-size: 19px;
-    color: #172b21;
-    margin-bottom: 20px;
-}
-
-.editor-section h3 i {
-    color: #16a34a;
-    margin-right: 8px;
-}
-
-
-/* COURSE SCHEDULE */
-
-#courseScheduleForm {
     margin-top: 20px;
-}
-
-#courseScheduleForm input[type="datetime-local"] {
-    max-width: 100%;
-    min-height: 48px;
-    cursor: pointer;
-}
-
-#courseScheduleStatus {
-    margin-top: 20px;
-    padding: 16px;
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-left: 4px solid #16a34a;
-    border-radius: 8px;
-    color: #166534;
-    line-height: 1.7;
-}
-
-
-/* QUIZ MARKING */
-
-#editorQuestionMark {
-    max-width: 250px;
-    font-weight: 600;
-}
-
-#editorQuizTotalMarks,
-#editorQuizQuestionCount {
-    color: #15803d;
-    font-size: 18px;
 }
 
 .admin-item {
-    background: #fff;
+    background: white;
     padding: 20px;
     margin-bottom: 15px;
     border: 1px solid #e5e7eb;
@@ -905,202 +883,62 @@ button:disabled {
 
 .admin-item h3,
 .admin-item h4 {
-    color: #172b21;
+    color: #102a43;
     margin-bottom: 10px;
 }
 
 .admin-item p {
-    color: #666;
+    color: #64748b;
     font-size: 14px;
     line-height: 1.6;
 }
-
-
-/* COURSE SCHEDULE AND QUIZ SUMMARY */
 
 .admin-item strong {
     color: #15803d;
 }
 
 
-/* SEARCH INPUTS */
+/* =========================================
+   19. STUDENTS, RESULTS AND CERTIFICATES
+========================================= */
 
-#adminStudentSearch,
-#adminResultSearch,
-#adminCertificateSearch {
-    width: 100%;
-    max-width: 450px;
-    padding: 13px 16px;
-    margin: 15px 0 25px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    outline: none;
-    font-size: 14px;
-    transition: 0.3s ease;
-}
-
-#adminStudentSearch:focus,
-#adminResultSearch:focus,
-#adminCertificateSearch:focus {
-    border-color: #16a34a;
-    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
-}
-
-
-/* RESULT MANAGEMENT */
-
-#adminResultList {
+#adminStudentList,
+#adminResultList,
+#adminCertificateList,
+#adminLessonList,
+#adminQuizList {
     margin-top: 20px;
 }
 
-#adminResultList .admin-item {
+#adminResultList .content-card,
+#adminCertificateList .content-card {
     border-left: 4px solid #16a34a;
 }
 
-
-/* CERTIFICATE MANAGEMENT */
-
-#adminCertificateList {
-    margin-top: 20px;
-}
-
-#adminCertificateList .admin-item {
-    border-left: 4px solid #ca8a04;
-}
-
-
-/* BUTTON IMPROVEMENTS */
-
-.primary-btn {
-    cursor: pointer;
-    transition: 0.3s ease;
-}
-
-.primary-btn:hover {
-    transform: translateY(-2px);
-    opacity: 0.9;
-}
-
-.publication-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 20px;
-}
-
-.publication-buttons button {
-    padding: 12px 18px;
+.delete-result-btn,
+.delete-certificate-btn {
+    padding: 10px 14px;
     border: none;
-    border-radius: 7px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: 0.3s ease;
+    border-radius: 6px;
+    background: #dc2626;
+    color: white;
 }
 
-.publication-buttons button:hover {
-    transform: translateY(-2px);
-}
-
-
-/* EDITOR LIST */
-
-.editor-list {
-    margin-top: 20px;
-}
-
-.editor-list:empty {
-    display: none;
-}
-
-.editor-list .admin-item {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+.delete-result-btn:hover,
+.delete-certificate-btn:hover {
+    background: #b91c1c;
 }
 
 
-/* ADMIN CONTENT LIST */
-
-.admin-content-list {
-    margin-top: 20px;
-}
-
-
-/* RESPONSIVE DESIGN */
-
-@media screen and (max-width: 768px) {
-
-    .form-row {
-        grid-template-columns: 1fr;
-        gap: 0;
-    }
-
-    .editor-section {
-        padding: 18px;
-    }
-
-    .editor-heading {
-        gap: 15px;
-    }
-
-    .publication-buttons {
-        flex-direction: column;
-    }
-
-    .publication-buttons button {
-        width: 100%;
-    }
-
-    #adminStudentSearch,
-    #adminResultSearch,
-    #adminCertificateSearch {
-        max-width: 100%;
-    }
-
-}
-
-
-@media screen and (max-width: 480px) {
-
-    .editor-section {
-        padding: 14px;
-    }
-
-    .editor-section h3 {
-        font-size: 17px;
-    }
-
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        font-size: 13px;
-        padding: 11px;
-    }
-
-}
 /* =========================================
-   NEW LEARNSPHERE ADMIN FEATURES
+   20. INSTRUCTOR MANAGEMENT
 ========================================= */
-
-/* INSTRUCTOR MANAGEMENT */
 
 #adminInstructorList {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 15px;
     margin-top: 20px;
-}
-
-#adminInstructorSearch,
-#adminInstructorFilter {
-    width: 100%;
-    max-width: 350px;
-    padding: 12px 14px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    background: white;
-    font-size: 14px;
-    margin: 10px 8px 15px 0;
 }
 
 .instructor-status {
@@ -1152,128 +990,329 @@ button:disabled {
     background: #b91c1c;
 }
 
-/* INSTRUCTOR STATISTICS */
 
-.instructor-stats {
+/* =========================================
+   21. ANNOUNCEMENT MANAGEMENT
+========================================= */
+
+.announcement-admin-layout {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 15px;
-    margin: 20px 0;
-}
-
-/* INSTRUCTOR BADGE */
-
-#pendingInstructorBadge {
-    display: inline-block;
-    min-width: 20px;
-    padding: 2px 7px;
-    margin-left: 5px;
-    border-radius: 20px;
-    background: #dc2626;
-    color: white;
-    font-size: 11px;
-    text-align: center;
-}
-
-/* QUIZ SETTINGS */
-
-#editorQuizSettingsForm {
-    background: #f8fafc;
-    padding: 22px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    margin-bottom: 25px;
-}
-
-#editorQuizSettingsForm .form-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
+    gap: 22px;
 }
 
-.quiz-settings-status {
-    margin-top: 15px;
-    padding: 12px;
-    border-radius: 8px;
-    background: #f0fdf4;
-    color: #166534;
-    font-size: 13px;
+.announcement-form-card,
+.announcement-list-card {
+    margin-top: 0;
+    min-width: 0;
 }
 
-/* CHECKBOX SETTINGS */
+.announcement-form-card form {
+    margin-top: 20px;
+}
 
-.quiz-checkbox-group {
+#announcementTitle {
+    min-height: 48px;
+}
+
+#announcementMessage {
+    min-height: 180px;
+}
+
+#publishAnnouncementBtn {
+    width: 100%;
+    margin-top: 5px;
+}
+
+#adminAnnouncementList {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.announcement-admin-card {
+    padding: 18px;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #16a34a;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.announcement-admin-card h4 {
+    color: #102a43;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.announcement-admin-card p {
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+.announcement-admin-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
-    margin: 15px 0;
-}
-
-.quiz-checkbox-group label {
-    display: flex;
-    align-items: center;
     gap: 8px;
-    font-size: 14px;
+    margin-top: 12px;
 }
 
-.quiz-checkbox-group input {
-    width: auto;
-}
-
-/* LESSON AND QUIZ PUBLICATION */
-
-.content-publication-status {
-    display: inline-block;
+.announcement-admin-meta span {
     padding: 5px 10px;
     border-radius: 20px;
-    font-size: 12px;
+    background: #dcfce7;
+    color: #166534;
+    font-size: 11px;
     font-weight: bold;
 }
 
-.content-publication-status.published {
-    background: #dcfce7;
-    color: #166534;
+.announcement-admin-date {
+    display: block;
+    margin-top: 10px;
+    color: #64748b;
+    font-size: 12px;
 }
 
-.content-publication-status.unpublished {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-/* EDIT AND CANCEL BUTTONS */
-
-.edit-content-btn,
-.cancel-edit-btn {
-    padding: 10px 14px;
+.delete-announcement-btn {
+    margin-top: 15px;
+    padding: 9px 13px;
     border: none;
     border-radius: 6px;
+    background: #dc2626;
     color: white;
-    margin: 5px;
+    font-size: 13px;
 }
 
-.edit-content-btn {
-    background: #2563eb;
+.delete-announcement-btn:hover {
+    background: #b91c1c;
 }
 
-.cancel-edit-btn {
-    background: #64748b;
+
+/* =========================================
+   22. EMPTY STATES
+========================================= */
+
+#adminCourseList > p,
+#adminLessonList > p,
+#adminQuizList > p,
+#adminStudentList > p,
+#adminResultList > p,
+#adminCertificateList > p,
+#adminInstructorList > p,
+#adminAnnouncementList > p {
+    grid-column: 1 / -1;
+    padding: 22px;
+    border-radius: 8px;
+    background: white;
+    color: #64748b;
+    text-align: center;
 }
 
-/* RESPONSIVE */
 
-@media (max-width: 768px) {
+/* =========================================
+   23. RESPONSIVE TABLETS
+========================================= */
+
+@media (max-width: 1100px) {
+
+    .admin-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-course-list,
+    .editor-list,
+    .admin-content-list,
     #adminInstructorList {
         grid-template-columns: 1fr;
     }
 
-    .instructor-stats {
+    .announcement-admin-layout {
         grid-template-columns: 1fr;
     }
 
+}
+
+
+/* =========================================
+   24. RESPONSIVE MOBILE
+========================================= */
+
+@media (max-width: 768px) {
+
+    #adminArea {
+        flex-direction: column;
+    }
+
+    .admin-sidebar {
+        width: 100%;
+        min-width: 0;
+        min-height: auto;
+        padding: 18px;
+    }
+
+    .admin-logo {
+        margin-bottom: 20px;
+    }
+
+    .admin-navigation {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .admin-nav-btn {
+        padding: 11px 9px;
+        font-size: 12px;
+    }
+
+    .admin-sidebar-bottom {
+        margin-top: 18px;
+        padding-top: 10px;
+    }
+
+    .admin-main {
+        padding: 20px 15px;
+    }
+
+    .admin-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .admin-header h1 {
+        font-size: 22px;
+    }
+
+    .admin-profile {
+        width: 100%;
+    }
+
+    .admin-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .stat-card {
+        padding: 17px;
+    }
+
+    .stat-card p {
+        font-size: 25px;
+    }
+
+    .course-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .course-toolbar input,
+    .course-toolbar select,
+    .course-toolbar button {
+        width: 100%;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .course-editor {
+        padding: 15px;
+    }
+
+    .editor-section {
+        padding: 18px;
+    }
+
+    .editor-heading {
+        gap: 15px;
+    }
+
+    .publication-buttons {
+        flex-direction: column;
+    }
+
+    .publication-buttons button {
+        width: 100%;
+    }
+
+    #adminStudentSearch,
+    #adminResultSearch,
+    #adminCertificateSearch,
     #adminInstructorSearch,
     #adminInstructorFilter {
         max-width: 100%;
+        width: 100%;
     }
 
-    #editorQuizSettingsForm {
-        padding: 15px;
+    .announcement-admin-layout {
+        grid-template-columns: 1fr;
     }
+
+}
+
+
+/* =========================================
+   25. SMALL MOBILE SCREENS
+========================================= */
+
+@media (max-width: 480px) {
+
+    .admin-main {
+        padding: 15px 10px;
+    }
+
+    .admin-navigation {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-header h1 {
+        font-size: 20px;
+    }
+
+    .page-heading h2 {
+        font-size: 20px;
+    }
+
+    .course-editor {
+        padding: 12px;
+    }
+
+    .editor-section {
+        padding: 14px;
+    }
+
+    .editor-section h3 {
+        font-size: 17px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: 13px;
+        padding: 11px;
+    }
+
+    .course-card-actions {
+        flex-direction: column;
+    }
+
+    .course-card-actions button {
+        width: 100%;
+    }
+
+    .publication-buttons button {
+        width: 100%;
+    }
+
+    .announcement-admin-card {
+        padding: 14px;
+    }
+
 }
