@@ -1530,11 +1530,19 @@ async function showLesson(index) {
 }
 
 
-// ========================================
+/// ========================================
 // 24. COMPLETE LESSON
 // ========================================
 
 async function completeLesson() {
+
+    if (!currentStudent || !currentCourse) {
+
+        alert("Please log in as a student.");
+
+        return;
+
+    }
 
     const schedule = checkCourseSchedule();
 
@@ -1542,68 +1550,108 @@ async function completeLesson() {
 
         alert(schedule.message);
 
-        window.location.href = "student-dashboard.html";
-
         return;
 
     }
 
     const lesson = courseLessons[currentLessonIndex];
 
-    if (!lesson) return;
+    if (!lesson) {
+
+        alert("Lesson not found.");
+
+        return;
+
+    }
+
+    const studentId = currentStudent.uid;
+
+    const courseId = currentCourse.id;
+
+    const lessonId = lesson.id;
+
+    const completionId =
+        studentId + "_" + courseId + "_" + lessonId;
+
+    const completionReference = doc(
+        db,
+        "completedLessons",
+        completionId
+    );
 
     completeLessonBtn.disabled = true;
 
+    completeLessonBtn.textContent = "Saving...";
+
     try {
 
-        const lessonId = currentStudent.uid + "_" +
-            currentCourse.id + "_" + lesson.id;
+        // Save completion directly to Firestore.
+        // No preliminary getDoc() request is needed.
 
-        const lessonReference = doc(
-            db,
-            "completedLessons",
-            lessonId
+        await setDoc(completionReference, {
+
+            studentId: studentId,
+
+            studentName: currentStudent.fullName,
+
+            courseId: courseId,
+
+            lessonId: lessonId,
+
+            completed: true,
+
+            completedAt: serverTimestamp()
+
+        }, {
+
+            merge: true
+
+        });
+
+        console.log(
+            "Lesson completion saved successfully:",
+            completionId
         );
 
-        const existing = await getDoc(lessonReference);
+        completeLessonBtn.textContent = "Completed ✓";
 
-        if (!existing.exists()) {
+        completeLessonBtn.disabled = true;
 
-            await setDoc(lessonReference, {
-
-                studentId: currentStudent.uid,
-
-                studentName: currentStudent.fullName,
-
-                courseId: currentCourse.id,
-
-                lessonId: lesson.id,
-
-                completedAt: serverTimestamp()
-
-            });
-
-        }
-
-        alert("Lesson marked as completed!");
+        // Refresh lesson list
 
         await displayLessons();
 
+        // Refresh course progress
+
         await updateProgress();
+
+        // Check certificate eligibility
 
         await checkCourseCompletionAndIssueCertificate();
 
-        await showLesson(currentLessonIndex);
+        alert("Congratulations! Lesson marked as completed.");
 
     }
 
     catch (error) {
 
-        console.error("Lesson completion error:", error);
+        console.error(
+            "Lesson completion error:",
+            error
+        );
 
-        showError("Unable to save lesson: " + error.message);
+        console.error(
+            "Error code:",
+            error.code
+        );
 
         completeLessonBtn.disabled = false;
+
+        completeLessonBtn.textContent = "Mark as Completed";
+
+        showError(
+            "Unable to save lesson: " + error.message
+        );
 
     }
 
