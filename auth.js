@@ -1,6 +1,7 @@
 // ========================================
 // LEARNSPHERE AUTHENTICATION SYSTEM
 // STUDENT, INSTRUCTOR AND ADMIN
+// FIREBASE VERSION 12.2.1
 // ========================================
 
 
@@ -13,7 +14,8 @@ import { auth, db } from "./firebase.js";
 import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    signOut
+    signOut,
+    deleteUser
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
 import {
@@ -28,70 +30,41 @@ import {
 // 2. GET HTML ELEMENTS
 // ========================================
 
-// Account buttons
+const studentAccountBtn = document.getElementById("studentAccountBtn");
 
-const studentAccountBtn =
-    document.getElementById("studentAccountBtn");
+const instructorAccountBtn = document.getElementById("instructorAccountBtn");
 
-const instructorAccountBtn =
-    document.getElementById("instructorAccountBtn");
-
-const adminAccountBtn =
-    document.getElementById("adminAccountBtn");
+const adminAccountBtn = document.getElementById("adminAccountBtn");
 
 
-// Account sections
+const studentAuthSection = document.getElementById("studentAuthSection");
 
-const studentAuthSection =
-    document.getElementById("studentAuthSection");
+const instructorAuthSection = document.getElementById("instructorAuthSection");
 
-const instructorAuthSection =
-    document.getElementById("instructorAuthSection");
-
-const adminAuthSection =
-    document.getElementById("adminAuthSection");
+const adminAuthSection = document.getElementById("adminAuthSection");
 
 
-// Student tabs
+const loginTab = document.getElementById("loginTab");
 
-const loginTab =
-    document.getElementById("loginTab");
-
-const registerTab =
-    document.getElementById("registerTab");
+const registerTab = document.getElementById("registerTab");
 
 
-// Instructor tabs
+const instructorLoginTab = document.getElementById("instructorLoginTab");
 
-const instructorLoginTab =
-    document.getElementById("instructorLoginTab");
-
-const instructorRegisterTab =
-    document.getElementById("instructorRegisterTab");
+const instructorRegisterTab = document.getElementById("instructorRegisterTab");
 
 
-// Student forms
+const loginForm = document.getElementById("loginForm");
 
-const loginForm =
-    document.getElementById("loginForm");
-
-const registerForm =
-    document.getElementById("registerForm");
+const registerForm = document.getElementById("registerForm");
 
 
-// Instructor forms
+const instructorLoginForm = document.getElementById("instructorLoginForm");
 
-const instructorLoginForm =
-    document.getElementById("instructorLoginForm");
-
-const instructorRegisterForm =
-    document.getElementById("instructorRegisterForm");
+const instructorRegisterForm = document.getElementById("instructorRegisterForm");
 
 
-// Admin form
-
-const adminLoginForm =
-    document.getElementById("adminLoginForm");
+const adminLoginForm = document.getElementById("adminLoginForm");
 
 
 // ========================================
@@ -106,9 +79,7 @@ function showMessage(elementId, message, success = false) {
 
     element.textContent = message;
 
-    element.style.color = success
-        ? "#13a889"
-        : "#e04444";
+    element.style.color = success ? "#13a889" : "#e04444";
 
 }
 
@@ -141,7 +112,7 @@ function clearMessages() {
 
 
 // ========================================
-// 5. FIREBASE ERROR MESSAGES
+// 5. GET AUTH ERROR MESSAGE
 // ========================================
 
 function getAuthErrorMessage(error) {
@@ -155,7 +126,7 @@ function getAuthErrorMessage(error) {
             return "Please enter a valid email address.";
 
         case "auth/weak-password":
-            return "Your password must contain at least 6 characters.";
+            return "Password must contain at least 6 characters.";
 
         case "auth/user-not-found":
         case "auth/wrong-password":
@@ -166,10 +137,13 @@ function getAuthErrorMessage(error) {
             return "Too many attempts. Please try again later.";
 
         case "auth/network-request-failed":
-            return "Network error. Please check your internet connection.";
+            return "Network error. Check your internet connection.";
+
+        case "permission-denied":
+            return "You do not have permission to perform this action.";
 
         default:
-            return error.message || "Something went wrong. Please try again.";
+            return error.message || "Something went wrong.";
 
     }
 
@@ -177,7 +151,30 @@ function getAuthErrorMessage(error) {
 
 
 // ========================================
-// 6. ACCOUNT TYPE SWITCHING
+// 6. BUTTON LOADING
+// ========================================
+
+function setButtonLoading(button, loading, message, originalHTML) {
+
+    if (!button) return;
+
+    button.disabled = loading;
+
+    if (loading) {
+
+        button.textContent = message;
+
+    } else {
+
+        button.innerHTML = originalHTML;
+
+    }
+
+}
+
+
+// ========================================
+// 7. ACCOUNT SWITCHING
 // ========================================
 
 function selectAccount(type) {
@@ -191,26 +188,17 @@ function selectAccount(type) {
     adminAuthSection.hidden = type !== "admin";
 
 
-    studentAccountBtn.classList.toggle(
-        "active",
-        type === "student"
-    );
+    studentAccountBtn.classList.toggle("active", type === "student");
 
-    instructorAccountBtn.classList.toggle(
-        "active",
-        type === "instructor"
-    );
+    instructorAccountBtn.classList.toggle("active", type === "instructor");
 
-    adminAccountBtn.classList.toggle(
-        "active",
-        type === "admin"
-    );
+    adminAccountBtn.classList.toggle("active", type === "admin");
 
 }
 
 
 // ========================================
-// 7. STUDENT LOGIN AND REGISTRATION TABS
+// 8. STUDENT TABS
 // ========================================
 
 function showStudentLogin() {
@@ -244,7 +232,7 @@ function showStudentRegister() {
 
 
 // ========================================
-// 8. INSTRUCTOR LOGIN AND REGISTRATION TABS
+// 9. INSTRUCTOR TABS
 // ========================================
 
 function showInstructorLogin() {
@@ -278,7 +266,7 @@ function showInstructorRegister() {
 
 
 // ========================================
-// 9. ACCOUNT BUTTON EVENTS
+// 10. ACCOUNT BUTTON EVENTS
 // ========================================
 
 studentAccountBtn.addEventListener("click", () => {
@@ -307,7 +295,7 @@ adminAccountBtn.addEventListener("click", () => {
 
 
 // ========================================
-// 10. STUDENT TAB EVENTS
+// 11. TAB EVENTS
 // ========================================
 
 loginTab.addEventListener("click", showStudentLogin);
@@ -315,19 +303,9 @@ loginTab.addEventListener("click", showStudentLogin);
 registerTab.addEventListener("click", showStudentRegister);
 
 
-// ========================================
-// 11. INSTRUCTOR TAB EVENTS
-// ========================================
+instructorLoginTab.addEventListener("click", showInstructorLogin);
 
-instructorLoginTab.addEventListener(
-    "click",
-    showInstructorLogin
-);
-
-instructorRegisterTab.addEventListener(
-    "click",
-    showInstructorRegister
-);
+instructorRegisterTab.addEventListener("click", showInstructorRegister);
 
 
 // ========================================
@@ -340,34 +318,24 @@ registerForm.addEventListener("submit", async (event) => {
 
     clearMessages();
 
-    const fullName =
-        document.getElementById("fullName").value.trim();
+    const fullName = document.getElementById("fullName").value.trim();
 
-    const email =
-        document.getElementById("registerEmail").value.trim();
+    const email = document.getElementById("registerEmail").value.trim();
 
-    const university =
-        document.getElementById("university").value.trim();
+    const university = document.getElementById("university").value.trim();
 
-    const department =
-        document.getElementById("department").value.trim();
+    const department = document.getElementById("department").value.trim();
 
-    const level =
-        document.getElementById("level").value;
+    const level = document.getElementById("level").value;
 
-    const password =
-        document.getElementById("registerPassword").value;
+    const password = document.getElementById("registerPassword").value;
 
-    const confirmPassword =
-        document.getElementById("confirmPassword").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
 
 
     if (password !== confirmPassword) {
 
-        showMessage(
-            "registerMessage",
-            "Passwords do not match."
-        );
+        showMessage("registerMessage", "Passwords do not match.");
 
         return;
 
@@ -376,32 +344,27 @@ registerForm.addEventListener("submit", async (event) => {
 
     if (password.length < 6) {
 
-        showMessage(
-            "registerMessage",
-            "Password must contain at least 6 characters."
-        );
+        showMessage("registerMessage", "Password must contain at least 6 characters.");
 
         return;
 
     }
 
 
-    const submitButton =
-        registerForm.querySelector(".auth-submit");
+    const submitButton = registerForm.querySelector(".auth-submit");
 
-    submitButton.disabled = true;
+    const originalHTML = submitButton.innerHTML;
 
-    submitButton.textContent = "Creating account...";
+    setButtonLoading(submitButton, true, "Creating account...", originalHTML);
 
 
     try {
 
-        const userCredential =
-            await createUserWithEmailAndPassword(
-                auth,
-                email,
-                password
-            );
+        const userCredential = await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
 
         const user = userCredential.user;
 
@@ -430,37 +393,26 @@ registerForm.addEventListener("submit", async (event) => {
         await signOut(auth);
 
 
-        showMessage(
-            "registerMessage",
-            "Account created successfully. You can now log in.",
-            true
-        );
-
         registerForm.reset();
 
         showStudentLogin();
 
         showMessage(
             "loginMessage",
-            "Your account is ready. Please log in.",
+            "Account created successfully. Please log in.",
             true
         );
+
 
     } catch (error) {
 
         console.error("Student registration error:", error);
 
-        showMessage(
-            "registerMessage",
-            getAuthErrorMessage(error)
-        );
+        showMessage("registerMessage", getAuthErrorMessage(error));
 
     } finally {
 
-        submitButton.disabled = false;
-
-        submitButton.innerHTML =
-            'Create Student Account <i class="fa-solid fa-arrow-right"></i>';
+        setButtonLoading(submitButton, false, "", originalHTML);
 
     }
 
@@ -477,38 +429,32 @@ loginForm.addEventListener("submit", async (event) => {
 
     clearMessages();
 
-    const email =
-        document.getElementById("loginEmail").value.trim();
+    const email = document.getElementById("loginEmail").value.trim();
 
-    const password =
-        document.getElementById("loginPassword").value;
+    const password = document.getElementById("loginPassword").value;
 
 
-    const submitButton =
-        loginForm.querySelector(".auth-submit");
+    const submitButton = loginForm.querySelector(".auth-submit");
 
-    submitButton.disabled = true;
+    const originalHTML = submitButton.innerHTML;
 
-    submitButton.textContent = "Logging in...";
+    setButtonLoading(submitButton, true, "Logging in...", originalHTML);
 
 
     try {
 
-        const userCredential =
-            await signInWithEmailAndPassword(
-                auth,
-                email,
-                password
-            );
+        const userCredential = await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
 
         const user = userCredential.user;
 
 
-        const studentRef =
-            doc(db, "students", user.uid);
+        const studentRef = doc(db, "students", user.uid);
 
-        const studentSnapshot =
-            await getDoc(studentRef);
+        const studentSnapshot = await getDoc(studentRef);
 
 
         if (
@@ -530,21 +476,16 @@ loginForm.addEventListener("submit", async (event) => {
 
         window.location.href = "student-dashboard.html";
 
+
     } catch (error) {
 
         console.error("Student login error:", error);
 
-        showMessage(
-            "loginMessage",
-            getAuthErrorMessage(error)
-        );
+        showMessage("loginMessage", getAuthErrorMessage(error));
 
     } finally {
 
-        submitButton.disabled = false;
-
-        submitButton.innerHTML =
-            'Login as Student <i class="fa-solid fa-arrow-right"></i>';
+        setButtonLoading(submitButton, false, "", originalHTML);
 
     }
 
@@ -555,287 +496,328 @@ loginForm.addEventListener("submit", async (event) => {
 // 14. INSTRUCTOR REGISTRATION
 // ========================================
 
-instructorRegisterForm.addEventListener(
-    "submit",
-    async (event) => {
+instructorRegisterForm.addEventListener("submit", async (event) => {
 
-        event.preventDefault();
+    event.preventDefault();
 
-        clearMessages();
-
-        const fullName =
-            document.getElementById("instructorFullName")
-                .value.trim();
-
-        const email =
-            document.getElementById("instructorRegisterEmail")
-                .value.trim();
-
-        const university =
-            document.getElementById("instructorUniversity")
-                .value.trim();
-
-        const department =
-            document.getElementById("instructorDepartment")
-                .value.trim();
-
-        const password =
-            document.getElementById("instructorRegisterPassword")
-                .value;
-
-        const confirmPassword =
-            document.getElementById("instructorConfirmPassword")
-                .value;
+    clearMessages();
 
 
-        if (password !== confirmPassword) {
+    // BASIC INFORMATION
 
-            showMessage(
-                "instructorRegisterMessage",
-                "Passwords do not match."
-            );
+    const fullName = document.getElementById("instructorFullName").value.trim();
 
-            return;
-
-        }
+    const email = document.getElementById("instructorRegisterEmail").value.trim();
 
 
-        if (password.length < 6) {
+    // ACADEMIC INFORMATION
 
-            showMessage(
-                "instructorRegisterMessage",
-                "Password must contain at least 6 characters."
-            );
+    const university = document.getElementById("instructorUniversity").value.trim();
 
-            return;
+    const faculty = document.getElementById("instructorFaculty").value.trim();
 
-        }
+    const department = document.getElementById("instructorDepartment").value.trim();
 
 
-        const submitButton =
-            instructorRegisterForm.querySelector(".auth-submit");
+    // TEACHING INFORMATION
 
-        submitButton.disabled = true;
+    const specialisation = document.getElementById("instructorSpecialisation").value.trim();
 
-        submitButton.textContent = "Submitting application...";
-
-
-        try {
-
-            const userCredential =
-                await createUserWithEmailAndPassword(
-                    auth,
-                    email,
-                    password
-                );
-
-            const user = userCredential.user;
+    const courses = document.getElementById("instructorCourses").value.trim();
 
 
-            // Save instructor application
+    // PASSWORD
 
-            await setDoc(
-                doc(db, "instructors", user.uid),
-                {
+    const password = document.getElementById("instructorRegisterPassword").value;
 
-                    uid: user.uid,
-
-                    fullName: fullName,
-
-                    email: email,
-
-                    university: university,
-
-                    department: department,
-
-                    role: "instructor",
-
-                    status: "pending",
-
-                    createdAt: serverTimestamp(),
-
-                    approvedAt: null
-
-                }
-            );
+    const confirmPassword = document.getElementById("instructorConfirmPassword").value;
 
 
-            await signOut(auth);
+    // VALIDATION
 
+    if (password !== confirmPassword) {
 
-            instructorRegisterForm.reset();
+        showMessage(
+            "instructorRegisterMessage",
+            "Passwords do not match."
+        );
 
-            showInstructorLogin();
-
-
-            showMessage(
-                "instructorLoginMessage",
-                "Application submitted successfully. Please wait for admin approval.",
-                true
-            );
-
-
-        } catch (error) {
-
-            console.error(
-                "Instructor registration error:",
-                error
-            );
-
-            showMessage(
-                "instructorRegisterMessage",
-                getAuthErrorMessage(error)
-            );
-
-        } finally {
-
-            submitButton.disabled = false;
-
-            submitButton.innerHTML =
-                'Submit Instructor Application <i class="fa-solid fa-arrow-right"></i>';
-
-        }
+        return;
 
     }
 
-);
+
+    if (password.length < 6) {
+
+        showMessage(
+            "instructorRegisterMessage",
+            "Password must contain at least 6 characters."
+        );
+
+        return;
+
+    }
+
+
+    const submitButton = instructorRegisterForm.querySelector(".auth-submit");
+
+    const originalHTML = submitButton.innerHTML;
+
+    setButtonLoading(
+        submitButton,
+        true,
+        "Submitting application...",
+        originalHTML
+    );
+
+
+    let createdUser = null;
+
+
+    try {
+
+        // CREATE FIREBASE ACCOUNT
+
+        const userCredential = await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
+
+        createdUser = userCredential.user;
+
+
+        // SAVE INSTRUCTOR APPLICATION
+
+        await setDoc(
+            doc(db, "instructors", createdUser.uid),
+            {
+
+                uid: createdUser.uid,
+
+                fullName: fullName,
+
+                email: email,
+
+                university: university,
+
+                faculty: faculty,
+
+                department: department,
+
+                specialisation: specialisation,
+
+                courses: courses,
+
+                role: "instructor",
+
+                status: "pending",
+
+                createdAt: serverTimestamp(),
+
+                approvedAt: null
+
+            }
+        );
+
+
+        // SIGN OUT AFTER REGISTRATION
+
+        await signOut(auth);
+
+
+        // RESET FORM
+
+        instructorRegisterForm.reset();
+
+
+        // SHOW LOGIN SECTION
+
+        showInstructorLogin();
+
+
+        showMessage(
+            "instructorLoginMessage",
+            "Application submitted successfully! Your application is awaiting admin approval.",
+            true
+        );
+
+
+    } catch (error) {
+
+        console.error("Instructor registration error:", error);
+
+
+        // CLEAN UP AUTH ACCOUNT IF PROFILE CREATION FAILED
+
+        if (createdUser) {
+
+            try {
+
+                await deleteUser(createdUser);
+
+            } catch (deleteError) {
+
+                console.error(
+                    "Account cleanup error:",
+                    deleteError
+                );
+
+            }
+
+        }
+
+
+        showMessage(
+            "instructorRegisterMessage",
+            getAuthErrorMessage(error)
+        );
+
+    } finally {
+
+        setButtonLoading(submitButton, false, "", originalHTML);
+
+    }
+
+});
 
 
 // ========================================
 // 15. INSTRUCTOR LOGIN
 // ========================================
 
-instructorLoginForm.addEventListener(
-    "submit",
-    async (event) => {
+instructorLoginForm.addEventListener("submit", async (event) => {
 
-        event.preventDefault();
+    event.preventDefault();
 
-        clearMessages();
-
-        const email =
-            document.getElementById("instructorLoginEmail")
-                .value.trim();
-
-        const password =
-            document.getElementById("instructorLoginPassword")
-                .value;
+    clearMessages();
 
 
-        const submitButton =
-            instructorLoginForm.querySelector(".auth-submit");
+    const email = document.getElementById("instructorLoginEmail").value.trim();
 
-        submitButton.disabled = true;
-
-        submitButton.textContent = "Checking account...";
+    const password = document.getElementById("instructorLoginPassword").value;
 
 
-        try {
+    const submitButton = instructorLoginForm.querySelector(".auth-submit");
 
-            const userCredential =
-                await signInWithEmailAndPassword(
-                    auth,
-                    email,
-                    password
-                );
+    const originalHTML = submitButton.innerHTML;
 
-            const user = userCredential.user;
-
-
-            const instructorRef =
-                doc(db, "instructors", user.uid);
-
-            const instructorSnapshot =
-                await getDoc(instructorRef);
+    setButtonLoading(
+        submitButton,
+        true,
+        "Checking account...",
+        originalHTML
+    );
 
 
-            if (!instructorSnapshot.exists()) {
+    try {
 
-                await signOut(auth);
+        const userCredential = await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
 
-                showMessage(
-                    "instructorLoginMessage",
-                    "Instructor account not found."
-                );
-
-                return;
-
-            }
+        const user = userCredential.user;
 
 
-            const instructor =
-                instructorSnapshot.data();
+        const instructorRef = doc(db, "instructors", user.uid);
+
+        const instructorSnapshot = await getDoc(instructorRef);
 
 
-            if (instructor.role !== "instructor") {
+        if (!instructorSnapshot.exists()) {
 
-                await signOut(auth);
-
-                showMessage(
-                    "instructorLoginMessage",
-                    "This account is not authorised as an instructor."
-                );
-
-                return;
-
-            }
-
-
-            if (instructor.status === "pending") {
-
-                await signOut(auth);
-
-                showMessage(
-                    "instructorLoginMessage",
-                    "Your application is awaiting admin approval."
-                );
-
-                return;
-
-            }
-
-
-            if (instructor.status !== "approved") {
-
-                await signOut(auth);
-
-                showMessage(
-                    "instructorLoginMessage",
-                    "Your instructor application has not been approved."
-                );
-
-                return;
-
-            }
-
-
-            window.location.href = "instructor-dashboard.html";
-
-
-        } catch (error) {
-
-            console.error(
-                "Instructor login error:",
-                error
-            );
+            await signOut(auth);
 
             showMessage(
                 "instructorLoginMessage",
-                getAuthErrorMessage(error)
+                "Instructor account not found."
             );
 
-        } finally {
-
-            submitButton.disabled = false;
-
-            submitButton.innerHTML =
-                'Login as Instructor <i class="fa-solid fa-arrow-right"></i>';
+            return;
 
         }
 
+
+        const instructor = instructorSnapshot.data();
+
+
+        if (instructor.role !== "instructor") {
+
+            await signOut(auth);
+
+            showMessage(
+                "instructorLoginMessage",
+                "This account is not authorised as an instructor."
+            );
+
+            return;
+
+        }
+
+
+        if (instructor.status === "pending") {
+
+            await signOut(auth);
+
+            showMessage(
+                "instructorLoginMessage",
+                "Your application is still awaiting admin approval."
+            );
+
+            return;
+
+        }
+
+
+        if (instructor.status === "rejected") {
+
+            await signOut(auth);
+
+            showMessage(
+                "instructorLoginMessage",
+                "Your application was not approved. Please contact the administrator."
+            );
+
+            return;
+
+        }
+
+
+        if (instructor.status !== "approved") {
+
+            await signOut(auth);
+
+            showMessage(
+                "instructorLoginMessage",
+                "Your instructor account is not yet active."
+            );
+
+            return;
+
+        }
+
+
+        window.location.href = "instructor-dashboard.html";
+
+
+    } catch (error) {
+
+        console.error("Instructor login error:", error);
+
+        showMessage(
+            "instructorLoginMessage",
+            getAuthErrorMessage(error)
+        );
+
+    } finally {
+
+        setButtonLoading(submitButton, false, "", originalHTML);
+
     }
 
-);
+});
 
 
 // ========================================
@@ -848,38 +830,38 @@ adminLoginForm.addEventListener("submit", async (event) => {
 
     clearMessages();
 
-    const email =
-        document.getElementById("adminEmail").value.trim();
 
-    const password =
-        document.getElementById("adminPassword").value;
+    const email = document.getElementById("adminEmail").value.trim();
+
+    const password = document.getElementById("adminPassword").value;
 
 
-    const submitButton =
-        adminLoginForm.querySelector(".auth-submit");
+    const submitButton = adminLoginForm.querySelector(".auth-submit");
 
-    submitButton.disabled = true;
+    const originalHTML = submitButton.innerHTML;
 
-    submitButton.textContent = "Checking administrator...";
+    setButtonLoading(
+        submitButton,
+        true,
+        "Checking administrator...",
+        originalHTML
+    );
 
 
     try {
 
-        const userCredential =
-            await signInWithEmailAndPassword(
-                auth,
-                email,
-                password
-            );
+        const userCredential = await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
 
         const user = userCredential.user;
 
 
-        const adminRef =
-            doc(db, "admins", user.uid);
+        const adminRef = doc(db, "admins", user.uid);
 
-        const adminSnapshot =
-            await getDoc(adminRef);
+        const adminSnapshot = await getDoc(adminRef);
 
 
         if (
@@ -913,10 +895,7 @@ adminLoginForm.addEventListener("submit", async (event) => {
 
     } finally {
 
-        submitButton.disabled = false;
-
-        submitButton.innerHTML =
-            'Login as Administrator <i class="fa-solid fa-arrow-right"></i>';
+        setButtonLoading(submitButton, false, "", originalHTML);
 
     }
 
@@ -927,11 +906,9 @@ adminLoginForm.addEventListener("submit", async (event) => {
 // 17. INITIAL PAGE MODE
 // ========================================
 
-const urlParams =
-    new URLSearchParams(window.location.search);
+const urlParams = new URLSearchParams(window.location.search);
 
-const mode =
-    urlParams.get("mode");
+const mode = urlParams.get("mode");
 
 
 if (mode === "register") {
@@ -960,5 +937,5 @@ if (mode === "register") {
 
 
 // ========================================
-// END OF AUTHENTICATION SYSTEM
+// END OF LEARNSPHERE AUTHENTICATION
 // ========================================

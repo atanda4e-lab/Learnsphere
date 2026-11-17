@@ -2921,14 +2921,21 @@ function displayInstructors() {
 
     const filtered = instructors.filter(instructor => {
 
-        const name = String(instructor.fullName || "").toLowerCase();
+        const searchableText = [
 
-        const email = String(instructor.email || "").toLowerCase();
+            instructor.fullName,
+            instructor.email,
+            instructor.university,
+            instructor.faculty,
+            instructor.department,
+            instructor.specialisation,
+            instructor.courses
+
+        ].join(" ").toLowerCase();
 
         const status = instructor.status || "pending";
 
-        const matchesSearch =
-            name.includes(search) || email.includes(search);
+        const matchesSearch = searchableText.includes(search);
 
         const matchesFilter =
             filter === "all" || status === filter;
@@ -2939,7 +2946,12 @@ function displayInstructors() {
 
     if (!filtered.length) {
 
-        container.innerHTML = "<p>No instructor applications found.</p>";
+        container.innerHTML = `
+            <div class="empty-message">
+                <h3>No Instructor Applications Found</h3>
+                <p>There are no applications matching your search.</p>
+            </div>
+        `;
 
         updateInstructorStatistics();
 
@@ -2953,26 +2965,59 @@ function displayInstructors() {
 
         return `
 
-            <div class="admin-item">
+            <div class="admin-item instructor-admin-card">
 
-                <h3>${escapeHTML(instructor.fullName || "Unnamed Instructor")}</h3>
-
-                <p>Email: ${escapeHTML(instructor.email || "Not available")}</p>
-
-                <p>University: ${escapeHTML(instructor.university || "Not provided")}</p>
-
-                <p>Department: ${escapeHTML(instructor.department || "Not provided")}</p>
+                <h3>
+                    ${escapeHTML(instructor.fullName || "Unnamed Instructor")}
+                </h3>
 
                 <p>
-                    Status:
-                    <strong class="instructor-status ${escapeHTML(status)}">
+                    <strong>Email:</strong>
+                    ${escapeHTML(instructor.email || "Not available")}
+                </p>
+
+                <p>
+                    <strong>University:</strong>
+                    ${escapeHTML(instructor.university || "Not provided")}
+                </p>
+
+                <p>
+                    <strong>Faculty:</strong>
+                    ${escapeHTML(instructor.faculty || "Not provided")}
+                </p>
+
+                <p>
+                    <strong>Department:</strong>
+                    ${escapeHTML(instructor.department || "Not provided")}
+                </p>
+
+                <p>
+                    <strong>Specialisation:</strong>
+                    ${escapeHTML(instructor.specialisation || "Not provided")}
+                </p>
+
+                <p>
+                    <strong>Courses Interested in Teaching:</strong>
+                    ${escapeHTML(instructor.courses || "Not provided")}
+                </p>
+
+                <p>
+                    <strong>Application Date:</strong>
+                    ${escapeHTML(formatDate(instructor.createdAt))}
+                </p>
+
+                <p>
+                    <strong>Status:</strong>
+
+                    <span class="instructor-status ${escapeHTML(status)}">
                         ${escapeHTML(status.toUpperCase())}
-                    </strong>
+                    </span>
                 </p>
 
                 ${
                     status === "pending"
                     ? `
+
                         <button
                             type="button"
                             onclick="approveInstructor('${escapeHTML(instructor.id)}')"
@@ -2988,6 +3033,7 @@ function displayInstructors() {
                         >
                             Reject Application
                         </button>
+
                     `
                     : ""
                 }
@@ -3001,8 +3047,6 @@ function displayInstructors() {
     updateInstructorStatistics();
 
 }
-
-
 // =====================================================
 // 54. UPDATE INSTRUCTOR STATISTICS
 // =====================================================

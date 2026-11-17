@@ -36,8 +36,13 @@ import {
 
 let currentUser = null;
 let instructorData = null;
+
 let instructorCourses = [];
+let instructorLessons = [];
+let instructorQuizzes = [];
+
 let departmentStudents = [];
+let enrolledStudents = [];
 
 
 // ========================================
@@ -45,17 +50,12 @@ let departmentStudents = [];
 // ========================================
 
 const notification = document.getElementById("notification");
-
 const logoutBtn = document.getElementById("logoutBtn");
-
 const menuBtn = document.getElementById("menuBtn");
-
 const sidebar = document.getElementById("sidebar");
 
 const createCourseForm = document.getElementById("createCourseForm");
-
 const createLessonForm = document.getElementById("createLessonForm");
-
 const createQuizForm = document.getElementById("createQuizForm");
 
 
@@ -105,10 +105,6 @@ function escapeHTML(value) {
 
 }
 
-
-// IMPORTANT:
-// Your Firestore instructor name field is "full name"
-// with a space, so we read that exact field.
 
 function getInstructorName() {
 
@@ -160,50 +156,6 @@ function getInstructorEmail() {
 }
 
 
-function isCoursePublished(course) {
-
-    return (
-        course.published === true ||
-        course.isPublished === true
-    );
-
-}
-
-
-function showNotification(message, type = "success") {
-
-    if (!notification) {
-        alert(message);
-        return;
-    }
-
-    notification.textContent = message;
-
-    notification.className = "notification " + type;
-
-    notification.style.display = "block";
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-
-    setTimeout(() => {
-        notification.style.display = "none";
-    }, 5000);
-
-}
-
-
-function getCourseById(courseId) {
-
-    return instructorCourses.find(
-        course => course.id === courseId
-    );
-
-}
-
-
 function getStudentName(student) {
 
     return (
@@ -219,6 +171,71 @@ function getStudentName(student) {
 }
 
 
+function isCoursePublished(course) {
+
+    return (
+        course.published === true ||
+        course.isPublished === true
+    );
+
+}
+
+
+function isMyCourse(course) {
+
+    return course.instructorId === currentUser?.uid;
+
+}
+
+
+function sortByNewest(items) {
+
+    return [...items].sort((a, b) => {
+
+        const dateA = a.createdAt?.toMillis?.() || 0;
+        const dateB = b.createdAt?.toMillis?.() || 0;
+
+        return dateB - dateA;
+
+    });
+
+}
+
+
+function getCourseById(courseId) {
+
+    return instructorCourses.find(
+        course => course.id === courseId
+    );
+
+}
+
+
+function showNotification(message, type = "success") {
+
+    if (!notification) {
+
+        alert(message);
+        return;
+
+    }
+
+    notification.textContent = message;
+    notification.className = "notification " + type;
+    notification.style.display = "block";
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+    setTimeout(() => {
+        notification.style.display = "none";
+    }, 5000);
+
+}
+
+
 // ========================================
 // 5. NAVIGATION
 // ========================================
@@ -226,9 +243,7 @@ function getStudentName(student) {
 function navigateTo(sectionId) {
 
     document.querySelectorAll(".dashboard-section").forEach(section => {
-
         section.classList.remove("active");
-
     });
 
     const target = getElement(sectionId);
@@ -249,12 +264,24 @@ function navigateTo(sectionId) {
 
     sidebar?.classList.remove("show");
 
+    if (sectionId === "dashboard") {
+        loadDashboard();
+    }
+
     if (sectionId === "courses") {
         loadCourses();
     }
 
     if (sectionId === "lessons") {
+
         loadCourseOptions();
+
+        const courseId = getElement("lessonCourseSelect")?.value;
+
+        if (courseId) {
+            loadLessons(courseId);
+        }
+
     }
 
     if (sectionId === "quizzes") {
@@ -289,18 +316,14 @@ document.querySelectorAll(".nav-link").forEach(link => {
 document.querySelectorAll("[data-go]").forEach(button => {
 
     button.addEventListener("click", () => {
-
         navigateTo(button.dataset.go);
-
     });
 
 });
 
 
 menuBtn?.addEventListener("click", () => {
-
     sidebar?.classList.toggle("show");
-
 });
 
 
@@ -313,7 +336,6 @@ onAuthStateChanged(auth, async user => {
     if (!user) {
 
         window.location.href = "auth.html";
-
         return;
 
     }
@@ -385,10 +407,7 @@ async function verifyInstructor() {
 
     } catch (error) {
 
-        console.error(
-            "Instructor verification error:",
-            error
-        );
+        console.error("Instructor verification error:", error);
 
         showNotification(
             "Unable to verify instructor: " + error.message,
@@ -401,7 +420,7 @@ async function verifyInstructor() {
 
 
 // ========================================
-// 8. DISPLAY INSTRUCTOR PROFILE
+// 8. INSTRUCTOR PROFILE
 // ========================================
 
 function displayInstructorProfile() {
@@ -409,51 +428,52 @@ function displayInstructorProfile() {
     if (!instructorData || !currentUser) return;
 
     const name = getInstructorName();
-
     const email = getInstructorEmail();
-
-    const university =
-        instructorData.university ||
-        instructorData.institution ||
-        "Not available";
-
-    const department =
-        instructorData.department ||
-        "Not available";
-
-    const status =
-        instructorData.status ||
-        "Not available";
 
     const initial = name.charAt(0).toUpperCase();
 
-    // Welcome message
-
     setElementContent("welcomeName", name);
-
-    // Header
-
     setElementContent("headerInstructorName", name);
-
     setElementContent("headerAvatar", initial);
 
-    // Profile
-
     setElementContent("profileAvatar", initial);
-
     setElementContent("profileName", name);
-
     setElementContent("profileEmail", email);
 
     setElementContent("profileFullName", name);
-
     setElementContent("profileEmailAddress", email);
 
-    setElementContent("profileUniversity", university);
+    setElementContent(
+        "profileUniversity",
+        instructorData.university ||
+        instructorData.institution ||
+        "Not available"
+    );
 
-    setElementContent("profileDepartment", department);
+    setElementContent(
+        "profileDepartment",
+        instructorData.department || "Not available"
+    );
 
-    setElementContent("profileStatus", status);
+    setElementContent(
+        "profileFaculty",
+        instructorData.faculty || "Not available"
+    );
+
+    setElementContent(
+        "profileSpecialisation",
+        instructorData.specialisation || "Not available"
+    );
+
+    setElementContent(
+        "profileCourses",
+        instructorData.courses || "Not available"
+    );
+
+    setElementContent(
+        "profileStatus",
+        instructorData.status || "Not available"
+    );
 
 }
 
@@ -467,6 +487,8 @@ async function loadDashboard() {
     displayInstructorProfile();
 
     await loadCourses();
+
+    await loadInstructorContent();
 
     await loadStudents();
 
@@ -485,23 +507,21 @@ async function loadCourses() {
 
     try {
 
-        const department = instructorData.department;
-
         const coursesQuery = query(
             collection(db, "courses"),
-            where("department", "==", department)
+            where("department", "==", instructorData.department)
         );
 
         const snapshot = await getDocs(coursesQuery);
 
-        instructorCourses = snapshot.docs.map(courseDoc => {
+        instructorCourses = snapshot.docs.map(courseDoc => ({
 
-            return {
-                id: courseDoc.id,
-                ...courseDoc.data()
-            };
+            id: courseDoc.id,
+            ...courseDoc.data()
 
-        });
+        }));
+
+        instructorCourses = sortByNewest(instructorCourses);
 
         displayCourses();
 
@@ -509,18 +529,13 @@ async function loadCourses() {
 
     } catch (error) {
 
-        console.error(
-            "Course loading error:",
-            error
-        );
+        console.error("Course loading error:", error);
 
         const container = getElement("myCourses");
 
         if (container) {
-
             container.textContent =
                 "Unable to load courses: " + error.message;
-
         }
 
     }
@@ -529,7 +544,7 @@ async function loadCourses() {
 
 
 // ========================================
-// 11. DISPLAY COURSES
+// 11. DISPLAY DEPARTMENT COURSES
 // ========================================
 
 function displayCourses() {
@@ -540,8 +555,12 @@ function displayCourses() {
 
     if (instructorCourses.length === 0) {
 
-        container.innerHTML =
-            "<p>No courses found in your department.</p>";
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3>No courses available</h3>
+                <p>There are currently no courses in your department.</p>
+            </div>
+        `;
 
         return;
 
@@ -555,14 +574,12 @@ function displayCourses() {
 
         card.className = "course-card";
 
+        const published = isCoursePublished(course);
+        const owner = isMyCourse(course);
+
         const image =
             course.image ||
             "https://placehold.co/600x300?text=LearnSphere";
-
-        const isOwner =
-            course.instructorId === currentUser.uid;
-
-        const published = isCoursePublished(course);
 
         card.innerHTML = `
 
@@ -579,7 +596,7 @@ function displayCourses() {
 
                 <p>
                     Course Code:
-                    ${escapeHTML(course.courseCode || "Not available")}
+                    ${escapeHTML(course.courseCode || "N/A")}
                 </p>
 
                 <p>
@@ -593,13 +610,12 @@ function displayCourses() {
                 </p>
 
                 <p>
-                    Instructor:
-                    ${escapeHTML(course.instructorName || "LearnSphere Admin")}
+                    Status:
+                    ${published ? "Published" : "Draft"}
                 </p>
 
                 <p>
-                    Status:
-                    ${published ? "Published" : "Draft"}
+                    ${owner ? "Created by you" : "Department course"}
                 </p>
 
                 <div class="course-actions">
@@ -607,36 +623,26 @@ function displayCourses() {
                     <button
                         data-action="lessons"
                         data-id="${escapeHTML(course.id)}">
-                        Lessons
+                        View Lessons
                     </button>
 
                     ${
-                        isOwner
-                        ? `
+                        owner ? `
 
                             <button
                                 data-action="publish"
                                 data-id="${escapeHTML(course.id)}">
-
                                 ${published ? "Unpublish" : "Publish"}
-
                             </button>
 
                             <button
                                 data-action="delete"
                                 data-id="${escapeHTML(course.id)}"
                                 class="delete-btn">
-
                                 Delete
-
                             </button>
 
-                        `
-                        : `
-                            <span class="course-owner">
-                                Department Course
-                            </span>
-                        `
+                        ` : ""
                     }
 
                 </div>
@@ -663,7 +669,6 @@ document.addEventListener("click", async event => {
     if (!button || !currentUser) return;
 
     const action = button.dataset.action;
-
     const courseId = button.dataset.id;
 
     const course = getCourseById(courseId);
@@ -686,10 +691,10 @@ document.addEventListener("click", async event => {
 
     }
 
-    if (course.instructorId !== currentUser.uid) {
+    if (!isMyCourse(course)) {
 
         showNotification(
-            "You cannot manage this course.",
+            "You can view this course, but only its creator can manage it.",
             "error"
         );
 
@@ -698,22 +703,18 @@ document.addEventListener("click", async event => {
     }
 
     if (action === "publish") {
-
         await toggleCoursePublication(course);
-
     }
 
     if (action === "delete") {
-
         await deleteCourse(course);
-
     }
 
 });
 
 
 // ========================================
-// 13. PUBLISH COURSE
+// 13. PUBLISH OR UNPUBLISH COURSE
 // ========================================
 
 async function toggleCoursePublication(course) {
@@ -733,14 +734,12 @@ async function toggleCoursePublication(course) {
 
         showNotification(
             newStatus
-                ? "Course published successfully."
-                : "Course unpublished successfully."
+                ? "Your course has been published successfully."
+                : "Your course has been unpublished."
         );
 
         await loadCourses();
-
         await loadDashboardStatistics();
-
         await loadRecentCourses();
 
     } catch (error) {
@@ -763,7 +762,7 @@ async function toggleCoursePublication(course) {
 
 async function deleteCourse(course) {
 
-    if (course.instructorId !== currentUser.uid) {
+    if (!isMyCourse(course)) {
 
         showNotification(
             "You cannot delete another instructor's course.",
@@ -774,7 +773,9 @@ async function deleteCourse(course) {
 
     }
 
-    if (!confirm("Are you sure you want to delete this course?")) {
+    if (!confirm(
+        "Are you sure you want to delete this course? Its lessons, quizzes and enrolments will not be automatically deleted."
+    )) {
         return;
     }
 
@@ -787,9 +788,9 @@ async function deleteCourse(course) {
         showNotification("Course deleted successfully.");
 
         await loadCourses();
-
+        await loadInstructorContent();
+        await loadStudents();
         await loadDashboardStatistics();
-
         await loadRecentCourses();
 
     } catch (error) {
@@ -819,7 +820,6 @@ createCourseForm?.addEventListener("submit", async event => {
     if (button) {
 
         button.disabled = true;
-
         button.textContent = "Creating Course...";
 
     }
@@ -863,11 +863,7 @@ createCourseForm?.addEventListener("submit", async event => {
         };
 
         if (!courseData.title || !courseData.courseCode) {
-
-            throw new Error(
-                "Course title and course code are required."
-            );
-
+            throw new Error("Course title and course code are required.");
         }
 
         if (
@@ -875,11 +871,7 @@ createCourseForm?.addEventListener("submit", async event => {
             courseData.closingDate &&
             courseData.closingDate < courseData.openingDate
         ) {
-
-            throw new Error(
-                "Closing date cannot be earlier than opening date."
-            );
-
+            throw new Error("Closing date cannot be earlier than opening date.");
         }
 
         await addDoc(
@@ -889,12 +881,13 @@ createCourseForm?.addEventListener("submit", async event => {
 
         createCourseForm.reset();
 
-        showNotification("Course created successfully.");
+        showNotification(
+            "Course created successfully. You can publish it from My Courses."
+        );
 
         await loadCourses();
-
+        await loadInstructorContent();
         await loadDashboardStatistics();
-
         await loadRecentCourses();
 
         navigateTo("courses");
@@ -913,7 +906,6 @@ createCourseForm?.addEventListener("submit", async event => {
         if (button) {
 
             button.disabled = false;
-
             button.textContent = "Create Course";
 
         }
@@ -932,9 +924,7 @@ function loadCourseOptions() {
     const selects = [
 
         getElement("lessonCourseSelect"),
-
         getElement("quizCourseSelect"),
-
         getElement("studentCourseFilter")
 
     ];
@@ -955,7 +945,6 @@ function loadCourseOptions() {
         const defaultOption = document.createElement("option");
 
         defaultOption.value = "";
-
         defaultOption.textContent = firstOption;
 
         select.appendChild(defaultOption);
@@ -978,9 +967,7 @@ function loadCourseOptions() {
                 option => option.value === previousValue
             )
         ) {
-
             select.value = previousValue;
-
         }
 
     });
@@ -1000,15 +987,23 @@ createLessonForm?.addEventListener("submit", async event => {
 
     const course = getCourseById(courseId);
 
-    if (!course) {
+    if (!course || !isMyCourse(course)) {
 
         showNotification(
-            "Please select a valid course.",
+            "You can only add lessons to courses you created.",
             "error"
         );
 
         return;
 
+    }
+
+    const submitButton = createLessonForm.querySelector(
+        'button[type="submit"]'
+    );
+
+    if (submitButton) {
+        submitButton.disabled = true;
     }
 
     try {
@@ -1044,11 +1039,7 @@ createLessonForm?.addEventListener("submit", async event => {
         };
 
         if (!lessonData.title || !lessonData.content) {
-
-            throw new Error(
-                "Lesson title and content are required."
-            );
-
+            throw new Error("Lesson title and content are required.");
         }
 
         await addDoc(
@@ -1058,10 +1049,12 @@ createLessonForm?.addEventListener("submit", async event => {
 
         createLessonForm.reset();
 
-        showNotification("Lesson added successfully.");
+        showNotification(
+            "Lesson created successfully. Publish it when ready."
+        );
 
         await loadLessons(courseId);
-
+        await loadInstructorContent();
         await loadDashboardStatistics();
 
     } catch (error) {
@@ -1073,13 +1066,19 @@ createLessonForm?.addEventListener("submit", async event => {
             "error"
         );
 
+    } finally {
+
+        if (submitButton) {
+            submitButton.disabled = false;
+        }
+
     }
 
 });
 
 
 // ========================================
-// 18. LOAD LESSONS
+// 18. LOAD COURSE LESSONS
 // ========================================
 
 async function loadLessons(courseId) {
@@ -1090,8 +1089,17 @@ async function loadLessons(courseId) {
 
     if (!courseId) {
 
-        container.textContent =
-            "Select a course to view lessons.";
+        container.textContent = "Select a course to view its lessons.";
+
+        return;
+
+    }
+
+    const course = getCourseById(courseId);
+
+    if (!course) {
+
+        container.textContent = "Course not found.";
 
         return;
 
@@ -1112,8 +1120,7 @@ async function loadLessons(courseId) {
 
         if (snapshot.empty) {
 
-            container.textContent =
-                "No lessons available for this course.";
+            container.textContent = "No lessons available for this course yet.";
 
             return;
 
@@ -1123,8 +1130,7 @@ async function loadLessons(courseId) {
 
             const lesson = lessonDoc.data();
 
-            const isOwner =
-                lesson.instructorId === currentUser.uid;
+            const owner = lesson.instructorId === currentUser.uid;
 
             const item = document.createElement("div");
 
@@ -1146,8 +1152,7 @@ async function loadLessons(courseId) {
                 </p>
 
                 ${
-                    isOwner
-                    ? `
+                    owner ? `
 
                         <div class="course-actions">
 
@@ -1155,9 +1160,7 @@ async function loadLessons(courseId) {
                                 data-lesson-action="publish"
                                 data-id="${escapeHTML(lessonDoc.id)}"
                                 data-course="${escapeHTML(courseId)}">
-
                                 ${lesson.published ? "Unpublish" : "Publish"}
-
                             </button>
 
                             <button
@@ -1165,15 +1168,12 @@ async function loadLessons(courseId) {
                                 data-lesson-action="delete"
                                 data-id="${escapeHTML(lessonDoc.id)}"
                                 data-course="${escapeHTML(courseId)}">
-
                                 Delete
-
                             </button>
 
                         </div>
 
-                    `
-                    : "<p>Department lesson</p>"
+                    ` : ""
                 }
 
             `;
@@ -1218,28 +1218,18 @@ document.addEventListener("click", async event => {
 
     try {
 
-        const lessonRef = doc(
-            db,
-            "lessons",
-            lessonId
-        );
+        const lessonRef = doc(db, "lessons", lessonId);
 
         const lessonSnap = await getDoc(lessonRef);
 
         if (!lessonSnap.exists()) {
-
             throw new Error("Lesson not found.");
-
         }
 
         const lesson = lessonSnap.data();
 
         if (lesson.instructorId !== currentUser.uid) {
-
-            throw new Error(
-                "You cannot manage another instructor's lesson."
-            );
-
+            throw new Error("You cannot manage another instructor's lesson.");
         }
 
         if (action === "publish") {
@@ -1252,13 +1242,19 @@ document.addEventListener("click", async event => {
 
             });
 
-            showNotification("Lesson status updated.");
+            showNotification(
+                lesson.published
+                    ? "Lesson unpublished."
+                    : "Lesson published successfully."
+            );
 
         }
 
         if (action === "delete") {
 
-            if (!confirm("Delete this lesson?")) return;
+            if (!confirm("Are you sure you want to delete this lesson?")) {
+                return;
+            }
 
             await deleteDoc(lessonRef);
 
@@ -1267,17 +1263,14 @@ document.addEventListener("click", async event => {
         }
 
         await loadLessons(courseId);
-
+        await loadInstructorContent();
         await loadDashboardStatistics();
 
     } catch (error) {
 
         console.error("Lesson action error:", error);
 
-        showNotification(
-            error.message,
-            "error"
-        );
+        showNotification(error.message, "error");
 
     }
 
@@ -1296,15 +1289,23 @@ createQuizForm?.addEventListener("submit", async event => {
 
     const course = getCourseById(courseId);
 
-    if (!course) {
+    if (!course || !isMyCourse(course)) {
 
         showNotification(
-            "Please select a valid course.",
+            "You can only create quizzes for courses you created.",
             "error"
         );
 
         return;
 
+    }
+
+    const submitButton = createQuizForm.querySelector(
+        'button[type="submit"]'
+    );
+
+    if (submitButton) {
+        submitButton.disabled = true;
     }
 
     try {
@@ -1362,9 +1363,7 @@ createQuizForm?.addEventListener("submit", async event => {
             quizData.passMark > 100
         ) {
 
-            throw new Error(
-                "Please enter valid quiz settings."
-            );
+            throw new Error("Please enter valid quiz settings.");
 
         }
 
@@ -1375,12 +1374,10 @@ createQuizForm?.addEventListener("submit", async event => {
 
         createQuizForm.reset();
 
-        showNotification(
-            "Quiz settings created successfully."
-        );
+        showNotification("Quiz settings created successfully.");
 
         await loadQuizzes();
-
+        await loadInstructorContent();
         await loadDashboardStatistics();
 
     } catch (error) {
@@ -1391,6 +1388,12 @@ createQuizForm?.addEventListener("submit", async event => {
             "Unable to create quiz: " + error.message,
             "error"
         );
+
+    } finally {
+
+        if (submitButton) {
+            submitButton.disabled = false;
+        }
 
     }
 
@@ -1415,136 +1418,97 @@ async function loadQuizzes() {
 
         let totalFound = 0;
 
-        let permissionErrors = 0;
-
         for (const course of instructorCourses) {
 
-            try {
-
-                const quizQuery = query(
-                    collection(db, "quizSettings"),
-                    where("courseId", "==", course.id)
-                );
-
-                const snapshot = await getDocs(quizQuery);
-
-                snapshot.forEach(quizDoc => {
-
-                    const quiz = quizDoc.data();
-
-                    const isOwner =
-                        quiz.instructorId === currentUser.uid;
-
-                    const item = document.createElement("div");
-
-                    item.className = "quiz-item";
-
-                    item.innerHTML = `
-
-                        <h4>
-                            ${escapeHTML(quiz.title || "Untitled Quiz")}
-                        </h4>
-
-                        <p>
-                            Course:
-                            ${escapeHTML(course.title || "")}
-                        </p>
-
-                        <p>
-                            Questions:
-                            ${escapeHTML(quiz.questionLimit || 0)}
-                        </p>
-
-                        <p>
-                            Duration:
-                            ${escapeHTML(quiz.timeLimitMinutes || 0)}
-                            minutes
-                        </p>
-
-                        <p>
-                            Attempts:
-                            ${escapeHTML(quiz.maxAttempts || 1)}
-                        </p>
-
-                        <p>
-                            Pass Mark:
-                            ${escapeHTML(quiz.passMark || 50)}%
-                        </p>
-
-                        <p>
-                            Status:
-                            ${quiz.published ? "Published" : "Draft"}
-                        </p>
-
-                        ${
-                            isOwner
-                            ? `
-
-                                <div class="course-actions">
-
-                                    <button
-                                        data-quiz-action="publish"
-                                        data-id="${escapeHTML(quizDoc.id)}">
-
-                                        ${quiz.published ? "Unpublish" : "Publish"}
-
-                                    </button>
-
-                                    <button
-                                        class="delete-btn"
-                                        data-quiz-action="delete"
-                                        data-id="${escapeHTML(quizDoc.id)}">
-
-                                        Delete
-
-                                    </button>
-
-                                </div>
-
-                            `
-                            : "<p>Department quiz</p>"
-                        }
-
-                    `;
-
-                    container.appendChild(item);
-
-                    totalFound++;
-
-                });
-
-            } catch (error) {
-
-                permissionErrors++;
-
-                console.error(
-                    "Quiz loading error for course:",
-                    course.title,
-                    error
-                );
-
-            }
-
-        }
-
-        if (totalFound === 0 && permissionErrors === 0) {
-
-            container.textContent =
-                "No quizzes available yet.";
-
-        } else if (totalFound === 0 && permissionErrors > 0) {
-
-            container.textContent =
-                "Quiz records could not be accessed. Check Firestore quizSettings permissions and courseId fields.";
-
-        }
-
-        if (permissionErrors > 0) {
-
-            console.warn(
-                permissionErrors +
-                " course quiz queries failed. Other courses were still checked."
+            const quizQuery = query(
+                collection(db, "quizSettings"),
+                where("courseId", "==", course.id)
             );
+
+            const snapshot = await getDocs(quizQuery);
+
+            snapshot.forEach(quizDoc => {
+
+                const quiz = quizDoc.data();
+
+                const owner = quiz.instructorId === currentUser.uid;
+
+                const item = document.createElement("div");
+
+                item.className = "quiz-item";
+
+                item.innerHTML = `
+
+                    <h4>
+                        ${escapeHTML(quiz.title || "Untitled Quiz")}
+                    </h4>
+
+                    <p>
+                        Course:
+                        ${escapeHTML(course.title || "")}
+                    </p>
+
+                    <p>
+                        Questions:
+                        ${escapeHTML(quiz.questionLimit || 0)}
+                    </p>
+
+                    <p>
+                        Duration:
+                        ${escapeHTML(quiz.timeLimitMinutes || 0)} minutes
+                    </p>
+
+                    <p>
+                        Attempts:
+                        ${escapeHTML(quiz.maxAttempts || 1)}
+                    </p>
+
+                    <p>
+                        Pass Mark:
+                        ${escapeHTML(quiz.passMark || 50)}%
+                    </p>
+
+                    <p>
+                        Status:
+                        ${quiz.published ? "Published" : "Draft"}
+                    </p>
+
+                    ${
+                        owner ? `
+
+                            <div class="course-actions">
+
+                                <button
+                                    data-quiz-action="publish"
+                                    data-id="${escapeHTML(quizDoc.id)}">
+                                    ${quiz.published ? "Unpublish" : "Publish"}
+                                </button>
+
+                                <button
+                                    class="delete-btn"
+                                    data-quiz-action="delete"
+                                    data-id="${escapeHTML(quizDoc.id)}">
+                                    Delete
+                                </button>
+
+                            </div>
+
+                        ` : ""
+                    }
+
+                `;
+
+                container.appendChild(item);
+
+                totalFound++;
+
+            });
+
+        }
+
+        if (totalFound === 0) {
+
+            container.textContent = "No quizzes available yet.";
 
         }
 
@@ -1576,28 +1540,18 @@ document.addEventListener("click", async event => {
 
     try {
 
-        const quizRef = doc(
-            db,
-            "quizSettings",
-            quizId
-        );
+        const quizRef = doc(db, "quizSettings", quizId);
 
         const quizSnap = await getDoc(quizRef);
 
         if (!quizSnap.exists()) {
-
             throw new Error("Quiz not found.");
-
         }
 
         const quiz = quizSnap.data();
 
         if (quiz.instructorId !== currentUser.uid) {
-
-            throw new Error(
-                "You cannot manage another instructor's quiz."
-            );
-
+            throw new Error("You cannot manage another instructor's quiz.");
         }
 
         if (action === "publish") {
@@ -1610,13 +1564,19 @@ document.addEventListener("click", async event => {
 
             });
 
-            showNotification("Quiz status updated.");
+            showNotification(
+                quiz.published
+                    ? "Quiz unpublished."
+                    : "Quiz published successfully."
+            );
 
         }
 
         if (action === "delete") {
 
-            if (!confirm("Delete this quiz settings?")) return;
+            if (!confirm("Are you sure you want to delete these quiz settings?")) {
+                return;
+            }
 
             await deleteDoc(quizRef);
 
@@ -1625,17 +1585,14 @@ document.addEventListener("click", async event => {
         }
 
         await loadQuizzes();
-
+        await loadInstructorContent();
         await loadDashboardStatistics();
 
     } catch (error) {
 
         console.error("Quiz action error:", error);
 
-        showNotification(
-            error.message,
-            "error"
-        );
+        showNotification(error.message, "error");
 
     }
 
@@ -1643,7 +1600,83 @@ document.addEventListener("click", async event => {
 
 
 // ========================================
-// 23. LOAD ALL DEPARTMENT STUDENTS
+// 23. LOAD DEPARTMENT LESSONS AND QUIZZES
+// ========================================
+
+async function loadInstructorContent() {
+
+    instructorLessons = [];
+    instructorQuizzes = [];
+
+    for (const course of instructorCourses) {
+
+        try {
+
+            const lessonQuery = query(
+                collection(db, "lessons"),
+                where("courseId", "==", course.id)
+            );
+
+            const lessonSnapshot = await getDocs(lessonQuery);
+
+            lessonSnapshot.forEach(lessonDoc => {
+
+                instructorLessons.push({
+
+                    id: lessonDoc.id,
+                    ...lessonDoc.data()
+
+                });
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Could not load lessons for:",
+                course.title,
+                error
+            );
+
+        }
+
+        try {
+
+            const quizQuery = query(
+                collection(db, "quizSettings"),
+                where("courseId", "==", course.id)
+            );
+
+            const quizSnapshot = await getDocs(quizQuery);
+
+            quizSnapshot.forEach(quizDoc => {
+
+                instructorQuizzes.push({
+
+                    id: quizDoc.id,
+                    ...quizDoc.data()
+
+                });
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Could not load quizzes for:",
+                course.title,
+                error
+            );
+
+        }
+
+    }
+
+}
+
+
+// ========================================
+// 24. LOAD DEPARTMENT STUDENTS
 // ========================================
 
 async function loadStudents() {
@@ -1656,125 +1689,43 @@ async function loadStudents() {
 
     try {
 
-        const department = instructorData.department;
-
-        // Firestore rules require this department filter.
-        // The department value must match the instructor's
-        // department exactly.
-
         const studentsQuery = query(
             collection(db, "students"),
-            where("department", "==", department)
+            where("department", "==", instructorData.department)
         );
 
         const snapshot = await getDocs(studentsQuery);
 
-        // Use document IDs to avoid duplicate records.
+        departmentStudents = snapshot.docs.map(studentDoc => ({
 
-        const uniqueStudents = new Map();
+            id: studentDoc.id,
+            ...studentDoc.data()
 
-        snapshot.docs.forEach(studentDoc => {
+        }));
 
-            uniqueStudents.set(studentDoc.id, {
-
-                id: studentDoc.id,
-
-                ...studentDoc.data()
-
-            });
-
-        });
-
-        departmentStudents = Array.from(
-            uniqueStudents.values()
-        );
-
-        let students = [...departmentStudents];
-
-        const selectedCourse =
-            getElement("studentCourseFilter")?.value;
-
-        // Filter students by course enrollment.
-
-        if (selectedCourse) {
-
-            try {
-
-                const enrollmentQuery = query(
-                    collection(db, "enrollments"),
-                    where("courseId", "==", selectedCourse)
-                );
-
-                const enrollmentSnapshot = await getDocs(
-                    enrollmentQuery
-                );
-
-                const enrolledIds = new Set();
-
-                enrollmentSnapshot.docs.forEach(item => {
-
-                    const enrollment = item.data();
-
-                    if (enrollment.studentId) {
-                        enrolledIds.add(enrollment.studentId);
-                    }
-
-                    if (enrollment.studentUid) {
-                        enrolledIds.add(enrollment.studentUid);
-                    }
-
-                });
-
-                students = students.filter(student => {
-
-                    return (
-                        enrolledIds.has(student.id) ||
-                        enrolledIds.has(student.uid)
-                    );
-
-                });
-
-            } catch (error) {
-
-                console.error(
-                    "Enrollment filtering error:",
-                    error
-                );
-
-                showNotification(
-                    "Could not filter by enrollment. Showing all department students.",
-                    "error"
-                );
-
-                students = [...departmentStudents];
-
-            }
-
-        }
+        enrolledStudents = departmentStudents;
 
         container.innerHTML = "";
 
-        if (students.length === 0) {
+        if (departmentStudents.length === 0) {
 
             container.textContent =
-                "No students found for this selection.";
+                "No students found in your department.";
 
             return;
 
         }
 
-        students.forEach(student => {
+        departmentStudents.forEach(student => {
 
             const item = document.createElement("div");
 
             item.className = "student-item";
 
-            const studentName = getStudentName(student);
-
             item.innerHTML = `
 
                 <h4>
-                    ${escapeHTML(studentName)}
+                    ${escapeHTML(getStudentName(student))}
                 </h4>
 
                 <p>
@@ -1803,20 +1754,12 @@ async function loadStudents() {
 
         });
 
-        console.log(
-            "Department students loaded:",
-            departmentStudents.length
-        );
-
     } catch (error) {
 
-        console.error(
-            "Student loading error:",
-            error
-        );
+        console.error("Student loading error:", error);
 
         container.textContent =
-            "Unable to load department students: " + error.message;
+            "Unable to load students: " + error.message;
 
     }
 
@@ -1824,123 +1767,46 @@ async function loadStudents() {
 
 
 // ========================================
-// 24. STUDENT FILTER
+// 25. STUDENT FILTER
 // ========================================
 
 getElement("studentCourseFilter")?.addEventListener(
     "change",
-    loadStudents
+    () => loadStudents()
 );
 
 
 // ========================================
-// 25. DASHBOARD STATISTICS
+// 26. DASHBOARD STATISTICS
 // ========================================
 
 async function loadDashboardStatistics() {
 
-    try {
+    setElementContent(
+        "totalCourses",
+        instructorCourses.length
+    );
 
-        // Department student count
+    setElementContent(
+        "totalStudents",
+        departmentStudents.length
+    );
 
-        const studentsQuery = query(
-            collection(db, "students"),
-            where("department", "==", instructorData.department)
-        );
+    setElementContent(
+        "totalLessons",
+        instructorLessons.length
+    );
 
-        const studentsSnapshot = await getDocs(studentsQuery);
-
-        // Count lessons and quizzes course by course.
-
-        let totalLessons = 0;
-
-        let totalQuizzes = 0;
-
-        for (const course of instructorCourses) {
-
-            try {
-
-                const lessonQuery = query(
-                    collection(db, "lessons"),
-                    where("courseId", "==", course.id)
-                );
-
-                const lessonSnapshot = await getDocs(lessonQuery);
-
-                totalLessons += lessonSnapshot.size;
-
-            } catch (error) {
-
-                console.error(
-                    "Lesson statistics error:",
-                    course.title,
-                    error
-                );
-
-            }
-
-            try {
-
-                const quizQuery = query(
-                    collection(db, "quizSettings"),
-                    where("courseId", "==", course.id)
-                );
-
-                const quizSnapshot = await getDocs(quizQuery);
-
-                totalQuizzes += quizSnapshot.size;
-
-            } catch (error) {
-
-                console.error(
-                    "Quiz statistics error:",
-                    course.title,
-                    error
-                );
-
-            }
-
-        }
-
-        setElementContent(
-            "totalCourses",
-            instructorCourses.length
-        );
-
-        setElementContent(
-            "totalStudents",
-            studentsSnapshot.size
-        );
-
-        setElementContent(
-            "totalLessons",
-            totalLessons
-        );
-
-        setElementContent(
-            "totalQuizzes",
-            totalQuizzes
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Dashboard statistics error:",
-            error
-        );
-
-        showNotification(
-            "Some dashboard statistics could not be loaded: " + error.message,
-            "error"
-        );
-
-    }
+    setElementContent(
+        "totalQuizzes",
+        instructorQuizzes.length
+    );
 
 }
 
 
 // ========================================
-// 26. RECENT COURSES
+// 27. RECENT COURSES
 // ========================================
 
 async function loadRecentCourses() {
@@ -1954,7 +1820,7 @@ async function loadRecentCourses() {
     if (recentCourses.length === 0) {
 
         container.textContent =
-            "No courses available in your department.";
+            "No courses available in your department yet.";
 
         return;
 
@@ -2005,7 +1871,7 @@ async function loadRecentCourses() {
 
 
 // ========================================
-// 27. LOGOUT
+// 28. LOGOUT
 // ========================================
 
 logoutBtn?.addEventListener("click", async () => {
@@ -2031,7 +1897,7 @@ logoutBtn?.addEventListener("click", async () => {
 
 
 // ========================================
-// 28. DASHBOARD READY
+// 29. DASHBOARD READY
 // ========================================
 
 console.log(

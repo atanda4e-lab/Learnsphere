@@ -1,6 +1,6 @@
 /* ========================================
    LEARNSPHERE INSTRUCTOR DASHBOARD
-   MAIN STYLESHEET
+   IMPROVED MAIN STYLESHEET
 ======================================== */
 
 * {
@@ -13,18 +13,20 @@
     --primary: #15803d;
     --primary-dark: #166534;
     --primary-light: #dcfce7;
-    --background: #f4f7f5;
+    --background: #f3f7f4;
     --white: #ffffff;
     --text: #1f2937;
     --muted: #6b7280;
     --border: #e5e7eb;
     --danger: #dc2626;
+    --shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
 }
 
 body {
     font-family: Arial, Helvetica, sans-serif;
     background: var(--background);
     color: var(--text);
+    line-height: 1.5;
 }
 
 button,
@@ -56,16 +58,18 @@ button {
     display: flex;
     flex-direction: column;
     z-index: 1000;
-    transition: 0.3s;
+    transition: 0.3s ease;
+    overflow-y: auto;
 }
 
 .logo {
     padding: 28px 22px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .logo h2 {
     font-size: 25px;
+    letter-spacing: -1px;
 }
 
 .logo h2 span {
@@ -91,7 +95,7 @@ button {
     margin-bottom: 7px;
     color: #d1fae5;
     text-decoration: none;
-    border-radius: 8px;
+    border-radius: 9px;
     font-size: 14px;
     transition: 0.3s;
 }
@@ -100,6 +104,7 @@ button {
 .nav-link.active {
     background: var(--primary);
     color: white;
+    transform: translateX(3px);
 }
 
 .nav-link span {
@@ -118,6 +123,11 @@ button {
     background: #dc2626;
     color: white;
     font-size: 14px;
+    transition: 0.3s;
+}
+
+.logout-btn:hover {
+    background: #b91c1c;
 }
 
 /* MAIN CONTENT */
@@ -132,12 +142,13 @@ button {
 .top-header {
     background: white;
     padding: 18px 22px;
-    border-radius: 12px;
+    border-radius: 13px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    box-shadow: var(--shadow);
     margin-bottom: 30px;
+    border: 1px solid #f0f0f0;
 }
 
 .header-title h2 {
@@ -184,6 +195,7 @@ button {
     border: none;
     background: none;
     font-size: 24px;
+    color: var(--primary);
 }
 
 /* SECTIONS */
@@ -201,8 +213,9 @@ button {
 }
 
 .welcome-section h1 {
-    font-size: 27px;
+    font-size: 28px;
     margin-bottom: 8px;
+    letter-spacing: -0.5px;
 }
 
 .welcome-section h1 span {
@@ -244,15 +257,22 @@ button {
 .stat-card {
     background: white;
     padding: 23px;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    border-radius: 13px;
+    box-shadow: var(--shadow);
+    border: 1px solid #f0f0f0;
+    transition: 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.07);
 }
 
 .stat-icon {
-    width: 43px;
-    height: 43px;
+    width: 45px;
+    height: 45px;
     background: var(--primary-light);
-    border-radius: 10px;
+    border-radius: 11px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -267,7 +287,7 @@ button {
 }
 
 .stat-card h2 {
-    font-size: 28px;
+    font-size: 29px;
     color: var(--primary);
 }
 
@@ -276,9 +296,10 @@ button {
 .content-card {
     background: white;
     padding: 25px;
-    border-radius: 12px;
+    border-radius: 13px;
     margin-bottom: 25px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    box-shadow: var(--shadow);
+    border: 1px solid #f0f0f0;
 }
 
 .section-heading {
@@ -306,13 +327,15 @@ button {
     background: var(--primary);
     color: white;
     border: none;
-    border-radius: 7px;
+    border-radius: 8px;
     font-size: 14px;
+    font-weight: 600;
     transition: 0.3s;
 }
 
 .primary-btn:hover {
     background: var(--primary-dark);
+    transform: translateY(-2px);
 }
 
 button:disabled {
@@ -349,23 +372,24 @@ form {
     width: 100%;
     padding: 13px;
     border: 1px solid var(--border);
-    border-radius: 7px;
+    border-radius: 8px;
     outline: none;
     background: white;
     font-size: 14px;
     color: var(--text);
+    transition: 0.3s;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(21,128,61,0.08);
+    box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.09);
 }
 
 .form-group textarea {
     resize: vertical;
-    line-height: 1.6;
+    line-height: 1.7;
 }
 
 hr {
@@ -388,19 +412,25 @@ hr {
 
 .course-card {
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
     background: white;
+    transition: 0.3s;
+}
+
+.course-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07);
 }
 
 .course-card img {
     width: 100%;
-    height: 170px;
+    height: 180px;
     object-fit: cover;
 }
 
 .course-card-body {
-    padding: 17px;
+    padding: 18px;
 }
 
 .course-card h3 {
@@ -411,7 +441,7 @@ hr {
 .course-card p {
     color: var(--muted);
     font-size: 13px;
-    line-height: 1.6;
+    line-height: 1.7;
     margin-bottom: 10px;
 }
 
@@ -423,12 +453,18 @@ hr {
 }
 
 .course-actions button {
-    padding: 9px 12px;
+    padding: 9px 13px;
     border: none;
-    border-radius: 6px;
+    border-radius: 7px;
     background: var(--primary-light);
     color: var(--primary-dark);
     font-size: 12px;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.course-actions button:hover {
+    opacity: 0.8;
 }
 
 .course-actions .delete-btn {
@@ -447,10 +483,18 @@ hr {
 .lesson-item,
 .quiz-item,
 .student-item {
-    padding: 16px;
+    padding: 17px;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 9px;
     margin-bottom: 12px;
+    background: #fff;
+    transition: 0.3s;
+}
+
+.lesson-item:hover,
+.quiz-item:hover,
+.student-item:hover {
+    border-color: #86efac;
 }
 
 .lesson-item h4,
@@ -464,7 +508,7 @@ hr {
 .student-item p {
     font-size: 13px;
     color: var(--muted);
-    line-height: 1.6;
+    line-height: 1.7;
 }
 
 /* PROFILE */
@@ -557,10 +601,12 @@ hr {
 
     .sidebar {
         left: -260px;
+        box-shadow: none;
     }
 
     .sidebar.show {
         left: 0;
+        box-shadow: 5px 0 20px rgba(0, 0, 0, 0.15);
     }
 
     .main-content {
@@ -604,7 +650,7 @@ hr {
     }
 
     .welcome-section h1 {
-        font-size: 22px;
+        font-size: 23px;
     }
 
     .stats-grid {
@@ -666,6 +712,14 @@ hr {
     .section-heading {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .welcome-section h1 {
+        font-size: 20px;
+    }
+
+    .content-card {
+        padding: 15px;
     }
 
 }

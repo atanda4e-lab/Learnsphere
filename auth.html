@@ -21,6 +21,8 @@
 
     <div class="auth-container">
 
+        <!-- LEFT SIDE -->
+
         <div class="auth-left">
 
             <a href="index.html" class="logo">
@@ -30,7 +32,9 @@
 
             <div class="auth-left-content">
 
-                <span class="auth-label">WELCOME TO LEARNSPHERE</span>
+                <span class="auth-label">
+                    WELCOME TO LEARNSPHERE
+                </span>
 
                 <h1>
                     Your Learning Journey
@@ -70,6 +74,8 @@
         </div>
 
 
+        <!-- RIGHT SIDE -->
+
         <div class="auth-right">
 
             <div class="auth-box">
@@ -81,7 +87,9 @@
 
                 <div class="auth-heading">
 
-                    <span class="section-label">ACCOUNT ACCESS</span>
+                    <span class="section-label">
+                        ACCOUNT ACCESS
+                    </span>
 
                     <h2>Welcome Back!</h2>
 
@@ -124,7 +132,9 @@
                 </div>
 
 
+                <!-- ================================= -->
                 <!-- STUDENT SECTION -->
+                <!-- ================================= -->
 
                 <div id="studentAuthSection">
 
@@ -133,23 +143,31 @@
                         <button type="button"
                             class="auth-tab active"
                             id="loginTab">
+
                             Student Login
+
                         </button>
 
                         <button type="button"
                             class="auth-tab"
                             id="registerTab">
+
                             Create Account
+
                         </button>
 
                     </div>
 
 
+                    <!-- STUDENT LOGIN -->
+
                     <form id="loginForm">
 
                         <div class="form-group">
 
-                            <label for="loginEmail">Email Address</label>
+                            <label for="loginEmail">
+                                Email Address
+                            </label>
 
                             <div class="input-box">
 
@@ -167,7 +185,9 @@
 
                         <div class="form-group">
 
-                            <label for="loginPassword">Password</label>
+                            <label for="loginPassword">
+                                Password
+                            </label>
 
                             <div class="input-box">
 
@@ -182,11 +202,13 @@
 
                         </div>
 
+
                         <p class="form-message" id="loginMessage"></p>
 
                         <button type="submit" class="auth-submit">
 
                             Login as Student
+
                             <i class="fa-solid fa-arrow-right"></i>
 
                         </button>
@@ -194,11 +216,15 @@
                     </form>
 
 
+                    <!-- STUDENT REGISTRATION -->
+
                     <form id="registerForm" hidden>
 
                         <div class="form-group">
 
-                            <label for="fullName">Full Name</label>
+                            <label for="fullName">
+                                Full Name
+                            </label>
 
                             <div class="input-box">
 
@@ -216,7 +242,9 @@
 
                         <div class="form-group">
 
-                            <label for="registerEmail">Email Address</label>
+                            <label for="registerEmail">
+                                Email Address
+                            </label>
 
                             <div class="input-box">
 
@@ -234,7 +262,9 @@
 
                         <div class="form-group">
 
-                            <label for="university">University</label>
+                            <label for="university">
+                                University
+                            </label>
 
                             <div class="input-box">
 
@@ -242,8 +272,27 @@
 
                                 <input type="text"
                                     id="university"
-                                    placeholder="Enter your university"
+                                    list="studentUniversityOptions"
+                                    placeholder="Select or enter university"
                                     required>
+
+                                <datalist id="studentUniversityOptions">
+
+                                    <option value="Kwara State University (KWASU)">
+                                    <option value="University of Ilorin (UNILORIN)">
+                                    <option value="University of Ibadan (UI)">
+                                    <option value="Obafemi Awolowo University (OAU)">
+                                    <option value="University of Lagos (UNILAG)">
+                                    <option value="Lagos State University (LASU)">
+                                    <option value="University of Nigeria (UNN)">
+                                    <option value="Ahmadu Bello University (ABU)">
+                                    <option value="University of Benin (UNIBEN)">
+                                    <option value="Covenant University">
+                                    <option value="Babcock University">
+                                    <option value="Federal University of Technology, Akure">
+                                    <option value="Federal University of Technology, Minna">
+
+                                </datalist>
 
                             </div>
 
@@ -252,7 +301,9 @@
 
                         <div class="form-group">
 
-                            <label for="department">Department</label>
+                            <label for="department">
+                                Department
+                            </label>
 
                             <div class="input-box">
 
@@ -260,8 +311,37 @@
 
                                 <input type="text"
                                     id="department"
-                                    placeholder="Enter your department"
+                                    list="studentDepartmentOptions"
+                                    placeholder="Select or enter department"
                                     required>
+
+                                <datalist id="studentDepartmentOptions">
+
+                                    <option value="Computer Science">
+                                    <option value="Information Technology">
+                                    <option value="Software Engineering">
+                                    <option value="Cyber Security">
+                                    <option value="Accounting">
+                                    <option value="Business Administration">
+                                    <option value="Economics">
+                                    <option value="Banking and Finance">
+                                    <option value="Mass Communication">
+                                    <option value="Political Science">
+                                    <option value="Public Administration">
+                                    <option value="Mathematics">
+                                    <option value="Statistics">
+                                    <option value="Physics">
+                                    <option value="Chemistry">
+                                    <option value="Biology">
+                                    <option value="Microbiology">
+                                    <option value="Biochemistry">
+                                    <option value="English Language">
+                                    <option value="Education">
+                                    <option value="Electrical Engineering">
+                                    <option value="Mechanical Engineering">
+                                    <option value="Civil Engineering">
+
+                                </datalist>
 
                             </div>
 
@@ -270,7 +350,9 @@
 
                         <div class="form-group">
 
-                            <label for="level">Academic Level</label>
+                            <label for="level">
+                                Academic Level
+                            </label>
 
                             <div class="input-box">
 
@@ -278,7 +360,10 @@
 
                                 <select id="level" required>
 
-                                    <option value="">Select your level</option>
+                                    <option value="">
+                                        Select your level
+                                    </option>
+
                                     <option value="100">100 Level</option>
                                     <option value="200">200 Level</option>
                                     <option value="300">300 Level</option>
@@ -294,7 +379,9 @@
 
                         <div class="form-group">
 
-                            <label for="registerPassword">Password</label>
+                            <label for="registerPassword">
+                                Password
+                            </label>
 
                             <div class="input-box">
 
@@ -312,7 +399,9 @@
 
                         <div class="form-group">
 
-                            <label for="confirmPassword">Confirm Password</label>
+                            <label for="confirmPassword">
+                                Confirm Password
+                            </label>
 
                             <div class="input-box">
 
@@ -333,6 +422,7 @@
                         <button type="submit" class="auth-submit">
 
                             Create Student Account
+
                             <i class="fa-solid fa-arrow-right"></i>
 
                         </button>
@@ -342,7 +432,9 @@
                 </div>
 
 
+                <!-- ================================= -->
                 <!-- INSTRUCTOR SECTION -->
+                <!-- ================================= -->
 
                 <div id="instructorAuthSection" hidden>
 
@@ -351,13 +443,17 @@
                         <button type="button"
                             class="auth-tab active"
                             id="instructorLoginTab">
+
                             Instructor Login
+
                         </button>
 
                         <button type="button"
                             class="auth-tab"
                             id="instructorRegisterTab">
+
                             Apply as Instructor
+
                         </button>
 
                     </div>
@@ -413,6 +509,7 @@
                         <button type="submit" class="auth-submit">
 
                             Login as Instructor
+
                             <i class="fa-solid fa-arrow-right"></i>
 
                         </button>
@@ -433,16 +530,21 @@
                             <h3>Instructor Application</h3>
 
                             <p>
-                                Register to become a LearnSphere instructor.
+                                Join LearnSphere as an instructor and
+                                share your knowledge with students.
                                 Your application requires admin approval.
                             </p>
 
                         </div>
 
 
+                        <!-- FULL NAME -->
+
                         <div class="form-group">
 
-                            <label for="instructorFullName">Full Name</label>
+                            <label for="instructorFullName">
+                                Full Name
+                            </label>
 
                             <div class="input-box">
 
@@ -457,6 +559,8 @@
 
                         </div>
 
+
+                        <!-- EMAIL -->
 
                         <div class="form-group">
 
@@ -478,10 +582,12 @@
                         </div>
 
 
+                        <!-- UNIVERSITY -->
+
                         <div class="form-group">
 
                             <label for="instructorUniversity">
-                                University
+                                University / Institution
                             </label>
 
                             <div class="input-box">
@@ -490,13 +596,57 @@
 
                                 <input type="text"
                                     id="instructorUniversity"
-                                    placeholder="Enter your university"
+                                    list="instructorUniversityOptions"
+                                    placeholder="Select or enter your university"
+                                    required>
+
+                                <datalist id="instructorUniversityOptions">
+
+                                    <option value="Kwara State University (KWASU)">
+                                    <option value="University of Ilorin (UNILORIN)">
+                                    <option value="University of Ibadan (UI)">
+                                    <option value="Obafemi Awolowo University (OAU)">
+                                    <option value="University of Lagos (UNILAG)">
+                                    <option value="Lagos State University (LASU)">
+                                    <option value="University of Nigeria (UNN)">
+                                    <option value="Ahmadu Bello University (ABU)">
+                                    <option value="University of Benin (UNIBEN)">
+                                    <option value="Covenant University">
+                                    <option value="Babcock University">
+                                    <option value="Federal University of Technology, Akure">
+                                    <option value="Federal University of Technology, Minna">
+                                    <option value="Other">
+
+                                </datalist>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- FACULTY -->
+
+                        <div class="form-group">
+
+                            <label for="instructorFaculty">
+                                Faculty / College
+                            </label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-building"></i>
+
+                                <input type="text"
+                                    id="instructorFaculty"
+                                    placeholder="Enter your faculty or college"
                                     required>
 
                             </div>
 
                         </div>
 
+
+                        <!-- DEPARTMENT -->
 
                         <div class="form-group">
 
@@ -510,13 +660,89 @@
 
                                 <input type="text"
                                     id="instructorDepartment"
-                                    placeholder="Enter your department"
+                                    list="instructorDepartmentOptions"
+                                    placeholder="Select or enter your department"
+                                    required>
+
+                                <datalist id="instructorDepartmentOptions">
+
+                                    <option value="Computer Science">
+                                    <option value="Information Technology">
+                                    <option value="Software Engineering">
+                                    <option value="Cyber Security">
+                                    <option value="Accounting">
+                                    <option value="Business Administration">
+                                    <option value="Economics">
+                                    <option value="Banking and Finance">
+                                    <option value="Mass Communication">
+                                    <option value="Political Science">
+                                    <option value="Public Administration">
+                                    <option value="Mathematics">
+                                    <option value="Statistics">
+                                    <option value="Physics">
+                                    <option value="Chemistry">
+                                    <option value="Biology">
+                                    <option value="Microbiology">
+                                    <option value="Biochemistry">
+                                    <option value="English Language">
+                                    <option value="Education">
+                                    <option value="Electrical Engineering">
+                                    <option value="Mechanical Engineering">
+                                    <option value="Civil Engineering">
+                                    <option value="Other">
+
+                                </datalist>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- SPECIALISATION -->
+
+                        <div class="form-group">
+
+                            <label for="instructorSpecialisation">
+                                Area of Specialisation
+                            </label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-lightbulb"></i>
+
+                                <input type="text"
+                                    id="instructorSpecialisation"
+                                    placeholder="e.g. Web Development, Accounting"
                                     required>
 
                             </div>
 
                         </div>
 
+
+                        <!-- COURSES -->
+
+                        <div class="form-group">
+
+                            <label for="instructorCourses">
+                                Courses You Can Teach
+                            </label>
+
+                            <div class="input-box">
+
+                                <i class="fa-solid fa-book-open"></i>
+
+                                <input type="text"
+                                    id="instructorCourses"
+                                    placeholder="e.g. CSC 101, CSC 201"
+                                    required>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- PASSWORD -->
 
                         <div class="form-group">
 
@@ -537,6 +763,8 @@
 
                         </div>
 
+
+                        <!-- CONFIRM PASSWORD -->
 
                         <div class="form-group">
 
@@ -564,6 +792,7 @@
                         <button type="submit" class="auth-submit">
 
                             Submit Instructor Application
+
                             <i class="fa-solid fa-arrow-right"></i>
 
                         </button>
@@ -573,7 +802,9 @@
                 </div>
 
 
+                <!-- ================================= -->
                 <!-- ADMIN SECTION -->
+                <!-- ================================= -->
 
                 <div id="adminAuthSection" hidden>
 
@@ -596,7 +827,9 @@
 
                         <div class="form-group">
 
-                            <label for="adminEmail">Admin Email</label>
+                            <label for="adminEmail">
+                                Admin Email
+                            </label>
 
                             <div class="input-box">
 
@@ -614,7 +847,9 @@
 
                         <div class="form-group">
 
-                            <label for="adminPassword">Admin Password</label>
+                            <label for="adminPassword">
+                                Admin Password
+                            </label>
 
                             <div class="input-box">
 
@@ -636,6 +871,7 @@
                             class="auth-submit admin-submit">
 
                             Login as Administrator
+
                             <i class="fa-solid fa-arrow-right"></i>
 
                         </button>
@@ -645,11 +881,16 @@
                 </div>
 
 
+                <!-- BACK HOME -->
+
                 <div class="back-home">
 
                     <a href="index.html">
+
                         <i class="fa-solid fa-arrow-left"></i>
+
                         Back to Homepage
+
                     </a>
 
                 </div>
@@ -661,7 +902,10 @@
     </div>
 
 
+    <!-- AUTHENTICATION JAVASCRIPT -->
+
     <script type="module" src="auth.js"></script>
 
 </body>
+
 </html>
