@@ -7,203 +7,220 @@
 
     <title>Student Dashboard | LearnSphere</title>
 
-    <link rel="stylesheet" href="student-dashboard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <link rel="stylesheet" href="student-dashboard.css">
 </head>
 
 <body>
 
-    <div class="dashboard-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
 
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
+        <div class="sidebar-brand">
+            <a href="#" class="brand-logo">
+                <span class="brand-icon"><i class="fas fa-graduation-cap"></i></span>
+                Learn<span>Sphere</span>
+            </a>
 
-            <div class="logo">
-                <h2>Learn<span>Sphere</span></h2>
+            <button class="sidebar-close" id="closeSidebarBtn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+
+        <!-- STUDENT PROFILE -->
+        <div class="sidebar-user">
+            <div class="user-avatar">
+                <i class="fas fa-user-graduate"></i>
             </div>
 
-            <div class="sidebar-profile">
+            <div class="user-details">
+                <h3 id="studentName">Student</h3>
+                <p>Student Account</p>
+            </div>
 
-                <div class="profile-avatar">
-                    <i class="fa-solid fa-user"></i>
+            <i class="fas fa-ellipsis-v user-menu-icon"></i>
+        </div>
+
+
+        <!-- NAVIGATION -->
+        <nav class="sidebar-navigation">
+
+            <p class="nav-label">MAIN MENU</p>
+
+            <a href="#" class="sidebar-link active" data-section="overview">
+                <i class="fas fa-th-large"></i>
+                <span>Overview</span>
+            </a>
+
+            <a href="#" class="sidebar-link" data-section="explore">
+                <i class="fas fa-compass"></i>
+                <span>Explore Courses</span>
+            </a>
+
+            <a href="#" class="sidebar-link" data-section="courses">
+                <i class="fas fa-book-open"></i>
+                <span>My Learning</span>
+            </a>
+
+
+            <p class="nav-label">ACADEMIC</p>
+
+            <a href="#" class="sidebar-link" data-section="results">
+                <i class="fas fa-chart-column"></i>
+                <span>My Results</span>
+            </a>
+
+            <a href="#" class="sidebar-link" data-section="certificates">
+                <i class="fas fa-award"></i>
+                <span>Certificates</span>
+            </a>
+
+            <a href="#" class="sidebar-link" data-section="announcements">
+                <i class="fas fa-bullhorn"></i>
+                <span>Announcements</span>
+            </a>
+
+            <a href="#" class="sidebar-link" data-section="notifications">
+                <i class="fas fa-bell"></i>
+                <span>Notifications</span>
+                <span id="notificationNavCount" class="nav-badge"></span>
+            </a>
+
+
+            <p class="nav-label">ACCOUNT</p>
+
+            <a href="#" class="sidebar-link" data-section="profile">
+                <i class="fas fa-user-circle"></i>
+                <span>My Profile</span>
+            </a>
+
+        </nav>
+
+
+        <!-- SIDEBAR FOOTER -->
+        <div class="sidebar-bottom">
+
+            <div class="sidebar-help">
+                <div class="help-icon">
+                    <i class="fas fa-headset"></i>
                 </div>
 
                 <div>
-                    <h3 id="studentName">Student</h3>
-                    <p>Student Account</p>
+                    <h4>Need Help?</h4>
+                    <p>We're here to help you.</p>
                 </div>
-
             </div>
 
-            <!-- NAVIGATION -->
-            <nav class="sidebar-navigation">
+            <button id="logoutBtn" class="logout-button">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Sign Out</span>
+            </button>
 
-                <a href="#" class="sidebar-link active" data-section="overview">
-                    <i class="fa-solid fa-house"></i>
-                    <span>Overview</span>
-                </a>
+        </div>
 
-                <a href="#" class="sidebar-link" data-section="explore">
-                    <i class="fa-solid fa-compass"></i>
-                    <span>Explore Courses</span>
-                </a>
+    </aside>
 
-                <a href="#" class="sidebar-link" data-section="courses">
-                    <i class="fa-solid fa-book-open"></i>
-                    <span>My Courses</span>
-                </a>
 
-                <a href="#" class="sidebar-link" data-section="results">
-                    <i class="fa-solid fa-chart-line"></i>
-                    <span>My Results</span>
-                </a>
+    <!-- SIDEBAR OVERLAY -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-                <a href="#" class="sidebar-link" data-section="certificates">
-                    <i class="fa-solid fa-certificate"></i>
-                    <span>Certificates</span>
-                </a>
 
-                <a href="#" class="sidebar-link" data-section="profile">
-                    <i class="fa-solid fa-user"></i>
-                    <span>My Profile</span>
-                </a>
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
 
-                <!-- ANNOUNCEMENTS -->
-                <a href="#" class="sidebar-link" data-section="announcements">
-                    <i class="fa-solid fa-bullhorn"></i>
-                    <span>Announcements</span>
-                </a>
 
-                <!-- NOTIFICATIONS -->
-                <a href="#" class="sidebar-link" data-section="notifications">
-                    <i class="fa-solid fa-bell"></i>
-                    <span>Notifications</span>
-                    <span class="notification-nav-count" id="sidebarUnreadCount">0</span>
-                </a>
+        <!-- TOP HEADER -->
+        <header class="top-header">
 
-                <!-- VERIFY CERTIFICATE -->
-                <a href="verify-certificate.html" class="nav-link">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <span>Verify Certificate</span>
-                </a>
+            <div class="header-left">
 
-            </nav>
-
-            <div class="sidebar-bottom">
-
-                <button id="logoutBtn">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                    Logout
+                <button class="menu-toggle" id="menuBtn">
+                    <i class="fas fa-bars"></i>
                 </button>
 
-            </div>
-
-        </aside>
-
-
-        <!-- MAIN CONTENT -->
-        <main class="main-content">
-
-            <!-- HEADER -->
-            <header class="dashboard-header">
-
-                <div>
-                    <h1>Student Dashboard</h1>
-                    <p>Manage your learning activities in one place.</p>
+                <div class="header-title">
+                    <h2>Student Dashboard</h2>
+                    <p>Welcome to your learning space.</p>
                 </div>
 
-                <div class="header-right">
+            </div>
 
-                    <!-- NOTIFICATION BELL -->
-                    <div class="notification-wrapper">
 
-                        <button
-                            class="notification-bell"
-                            id="notificationBell"
-                            type="button"
-                            aria-label="Open notifications">
+            <div class="header-right">
 
-                            <i class="fa-regular fa-bell"></i>
+                <div class="header-date" id="dashboardDate"></div>
 
-                            <span
-                                class="notification-badge"
-                                id="notificationBadge">
-                            </span>
+                <div class="notification-wrapper">
 
-                        </button>
+                    <button class="notification-button" id="notificationBell">
+                        <i class="far fa-bell"></i>
+                        <span id="notificationBadge"></span>
+                    </button>
 
-                        <!-- NOTIFICATION DROPDOWN -->
-                        <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-dropdown" id="notificationDropdown">
 
-                            <div class="notification-dropdown-header">
-
+                        <div class="dropdown-heading">
+                            <div>
                                 <h3>Notifications</h3>
-
-                                <span id="dropdownUnreadCount">0</span>
-
+                                <p>You have <span id="dropdownUnreadCount">0</span> unread notifications</p>
                             </div>
+                        </div>
 
-                            <div
-                                class="notification-dropdown-list"
-                                id="notificationDropdownList">
-
-                                <p>No notifications yet.</p>
-
-                            </div>
-
-                            <div class="notification-dropdown-footer">
-
-                                <button
-                                    type="button"
-                                    data-section="notifications">
-                                    View All Notifications
-                                </button>
-
-                            </div>
-
+                        <div id="notificationDropdownList">
+                            <p>No notifications available.</p>
                         </div>
 
                     </div>
 
-                    <!-- PROFILE AVATAR -->
-                    <div class="header-avatar">
-                        <i class="fa-solid fa-user"></i>
-                    </div>
-
                 </div>
 
-            </header>
+            </div>
+
+        </header>
 
 
-            <!-- OVERVIEW -->
-            <section class="dashboard-section active" id="overview">
+        <!-- PAGE CONTENT -->
+        <div class="dashboard-content">
 
-                <div class="welcome-card">
 
-                    <div>
+            <!-- =====================================
+                 OVERVIEW
+            ====================================== -->
 
-                        <p class="welcome-label">WELCOME BACK</p>
+            <section id="overview" class="dashboard-section active">
 
-                        <h2>
-                            Hello, <span id="welcomeName">Student</span>!
-                        </h2>
+                <!-- WELCOME BANNER -->
+                <div class="welcome-banner">
+
+                    <div class="welcome-content">
+
+                        <span class="welcome-tag">YOUR LEARNING JOURNEY</span>
+
+                        <h1>Welcome back, <span id="welcomeName">Student</span>!</h1>
 
                         <p>
-                            Continue learning and make progress
-                            towards your academic goals.
+                            Every lesson brings you closer to your goals.
+                            Keep learning and make today count.
                         </p>
 
-                        <button class="primary-btn" data-section="explore">
+                        <a href="#" class="primary-button" data-section="explore">
                             Explore Courses
-                            <i class="fa-solid fa-arrow-right"></i>
-                        </button>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
 
                     </div>
 
-                    <div class="welcome-icon">
-                        <i class="fa-solid fa-graduation-cap"></i>
+                    <div class="welcome-illustration">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span class="decoration decoration-one"></span>
+                        <span class="decoration decoration-two"></span>
                     </div>
 
                 </div>
@@ -213,83 +230,159 @@
                 <div class="statistics-grid">
 
                     <div class="stat-card">
-
-                        <div class="stat-icon blue">
-                            <i class="fa-solid fa-book"></i>
+                        <div class="stat-card-top">
+                            <span class="stat-icon purple">
+                                <i class="fas fa-book-open"></i>
+                            </span>
+                            <span class="stat-label">MY COURSES</span>
                         </div>
 
-                        <div>
-                            <p>Enrolled Courses</p>
-                            <h2 id="enrolledCourses">0</h2>
+                        <h2 id="enrolledCourses">0</h2>
+                        <p>Enrolled courses</p>
+                    </div>
+
+
+                    <div class="stat-card">
+                        <div class="stat-card-top">
+                            <span class="stat-icon blue">
+                                <i class="fas fa-book-reader"></i>
+                            </span>
+                            <span class="stat-label">LESSONS</span>
+                        </div>
+
+                        <h2 id="completedLessons">0</h2>
+                        <p>Completed lessons</p>
+                    </div>
+
+
+                    <div class="stat-card">
+                        <div class="stat-card-top">
+                            <span class="stat-icon orange">
+                                <i class="fas fa-clipboard-check"></i>
+                            </span>
+                            <span class="stat-label">QUIZZES</span>
+                        </div>
+
+                        <h2 id="completedQuizzes">0</h2>
+                        <p>Completed quizzes</p>
+                    </div>
+
+
+                    <div class="stat-card">
+                        <div class="stat-card-top">
+                            <span class="stat-icon green">
+                                <i class="fas fa-certificate"></i>
+                            </span>
+                            <span class="stat-label">ACHIEVEMENTS</span>
+                        </div>
+
+                        <h2 id="earnedCertificates">0</h2>
+                        <p>Certificates earned</p>
+                    </div>
+
+                </div>
+
+
+                <!-- LEARNING PROGRESS -->
+                <div class="overview-grid">
+
+                    <div class="content-card progress-card">
+
+                        <div class="card-header">
+                            <div>
+                                <h3>Overall Learning Progress</h3>
+                                <p>Track your academic development.</p>
+                            </div>
+
+                            <span class="card-header-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </span>
+                        </div>
+
+                        <div class="overall-progress">
+
+                            <div class="progress-info">
+                                <span>Course completion</span>
+                                <strong id="overallProgressText">0%</strong>
+                            </div>
+
+                            <div class="progress-track">
+                                <div class="progress-fill" id="overallProgressBar"></div>
+                            </div>
+
+                        </div>
+
+                        <p id="overallProgressDetails">
+                            Start learning to track your progress.
+                        </p>
+
+                    </div>
+
+
+                    <div class="content-card weekly-card">
+
+                        <div class="card-header">
+                            <div>
+                                <h3>Weekly Learning Goal</h3>
+                                <p>Make progress every week.</p>
+                            </div>
+
+                            <span class="card-header-icon">
+                                <i class="fas fa-bullseye"></i>
+                            </span>
+                        </div>
+
+                        <h2 id="weeklyGoalText">0 of 5 lessons completed this week</h2>
+
+                        <div class="progress-track">
+                            <div class="progress-fill" id="weeklyGoalProgress"></div>
                         </div>
 
                     </div>
 
-                    <div class="stat-card">
 
-                        <div class="stat-icon green">
-                            <i class="fa-solid fa-circle-check"></i>
+                    <div class="content-card streak-card">
+
+                        <div class="card-header">
+                            <div>
+                                <h3>Learning Streak</h3>
+                                <p>Consistency creates success.</p>
+                            </div>
+
+                            <span class="card-header-icon">
+                                <i class="fas fa-fire"></i>
+                            </span>
                         </div>
 
-                        <div>
-                            <p>Completed Lessons</p>
-                            <h2 id="completedLessons">0</h2>
+                        <div class="streak-number">
+                            <h2 id="learningStreak">0</h2>
+                            <span>Days</span>
                         </div>
 
-                    </div>
-
-                    <div class="stat-card">
-
-                        <div class="stat-icon orange">
-                            <i class="fa-solid fa-clipboard-check"></i>
-                        </div>
-
-                        <div>
-                            <p>Completed Quizzes</p>
-                            <h2 id="completedQuizzes">0</h2>
-                        </div>
-
-                    </div>
-
-                    <div class="stat-card">
-
-                        <div class="stat-icon purple">
-                            <i class="fa-solid fa-award"></i>
-                        </div>
-
-                        <div>
-                            <p>Certificates</p>
-                            <h2 id="earnedCertificates">0</h2>
-                        </div>
+                        <p>Keep your learning streak alive!</p>
 
                     </div>
 
                 </div>
 
 
-                <!-- RECENT COURSES -->
-                <div class="content-card">
+                <!-- CONTINUE LEARNING -->
+                <div class="content-card continue-card">
 
                     <div class="section-heading">
-
                         <div>
                             <h2>Continue Learning</h2>
-                            <p>Continue with your enrolled courses.</p>
+                            <p>Pick up where you left off.</p>
                         </div>
 
-                        <button class="text-btn" data-section="courses">
-                            View All
-                        </button>
-
+                        <a href="#" data-section="courses" class="text-link">
+                            My Courses
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
                     </div>
 
-                    <div class="course-grid" id="overviewCourseList">
-
-                        <div class="empty-state">
-                            <i class="fa-solid fa-book-open"></i>
-                            <p>You have not enrolled in any courses yet.</p>
-                        </div>
-
+                    <div id="continueLearningContainer">
+                        <p>Your recent learning activity will appear here.</p>
                     </div>
 
                 </div>
@@ -297,31 +390,25 @@
             </section>
 
 
-            <!-- EXPLORE COURSES -->
-            <section class="dashboard-section" id="explore">
 
-                <div class="page-heading">
+            <!-- =====================================
+                 EXPLORE COURSES
+            ====================================== -->
 
-                    <h2>Explore Courses</h2>
+            <section id="explore" class="dashboard-section">
 
-                    <p>
-                        Discover new courses and enrol to start learning.
-                    </p>
-
+                <div class="page-introduction">
+                    <span class="page-tag">LEARN SOMETHING NEW</span>
+                    <h1>Explore Courses</h1>
+                    <p>Discover courses designed to build your knowledge and skills.</p>
                 </div>
 
-                <!-- SEARCH AND FILTER -->
-                <div class="course-search-area">
 
-                    <div class="search-box">
+                <div class="course-search-panel">
 
-                        <i class="fa-solid fa-magnifying-glass"></i>
-
-                        <input
-                            type="text"
-                            id="courseSearch"
-                            placeholder="Search course name...">
-
+                    <div class="search-input">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="courseSearch" placeholder="Search courses...">
                     </div>
 
                     <select id="departmentFilter">
@@ -329,308 +416,205 @@
                     </select>
 
                     <select id="levelFilter">
-
                         <option value="">All Levels</option>
                         <option value="100">100 Level</option>
                         <option value="200">200 Level</option>
                         <option value="300">300 Level</option>
                         <option value="400">400 Level</option>
                         <option value="500">500 Level</option>
-
                     </select>
 
                 </div>
 
-                <div class="explore-summary">
 
-                    <p>
-                        Available courses:
-                        <strong id="availableCourseCount">0</strong>
-                    </p>
-
+                <div class="results-heading">
+                    <h3>Available Courses</h3>
+                    <span><strong id="availableCourseCount">0</strong> courses found</span>
                 </div>
 
-                <!-- EXPLORE COURSE LIST -->
-                <div class="course-grid" id="exploreCourseList">
-
-                    <div class="empty-state">
-                        <i class="fa-solid fa-book-open"></i>
-                        <p>Loading courses...</p>
-                    </div>
-
-                </div>
+                <div id="exploreCourseList" class="course-grid"></div>
 
             </section>
 
 
-            <!-- MY COURSES -->
-            <section class="dashboard-section" id="courses">
 
-                <div class="page-heading">
+            <!-- =====================================
+                 MY LEARNING
+            ====================================== -->
 
-                    <h2>My Courses</h2>
+            <section id="courses" class="dashboard-section">
 
-                    <p>
-                        All the courses you have enrolled in.
-                    </p>
-
+                <div class="page-introduction">
+                    <span class="page-tag">YOUR ACADEMIC SPACE</span>
+                    <h1>My Learning</h1>
+                    <p>Manage your enrolled courses and track your progress.</p>
                 </div>
 
-                <div class="course-grid" id="studentCourseList">
-
-                    <div class="empty-state">
-                        <i class="fa-solid fa-book"></i>
-                        <p>No enrolled courses found.</p>
-                    </div>
-
-                </div>
+                <div id="studentCourseList" class="course-grid"></div>
 
             </section>
 
 
-            <!-- RESULTS -->
-            <section class="dashboard-section" id="results">
 
-                <div class="page-heading">
+            <!-- =====================================
+                 RESULTS
+            ====================================== -->
 
-                    <h2>My Results</h2>
+            <section id="results" class="dashboard-section">
 
-                    <p>
-                        Check your quiz scores and learning performance.
-                    </p>
-
+                <div class="page-introduction">
+                    <span class="page-tag">ACADEMIC PERFORMANCE</span>
+                    <h1>My Results</h1>
+                    <p>Review your quiz scores and monitor your performance.</p>
                 </div>
 
-                <div class="content-card">
-
-                    <div id="studentResultList">
-
-                        <div class="empty-state">
-                            <i class="fa-solid fa-chart-column"></i>
-                            <p>You have not completed any quizzes yet.</p>
-                        </div>
-
-                    </div>
-
-                </div>
+                <div id="studentResultList"></div>
 
             </section>
 
 
-            <!-- CERTIFICATES -->
-            <section class="dashboard-section" id="certificates">
 
-                <div class="page-heading">
+            <!-- =====================================
+                 CERTIFICATES
+            ====================================== -->
 
-                    <h2>My Certificates</h2>
+            <section id="certificates" class="dashboard-section">
 
-                    <p>
-                        Download certificates for courses you have completed.
-                    </p>
-
+                <div class="page-introduction">
+                    <span class="page-tag">YOUR ACHIEVEMENTS</span>
+                    <h1>My Certificates</h1>
+                    <p>View and download the certificates you have earned.</p>
                 </div>
 
-                <div class="certificate-grid" id="studentCertificateList">
-
-                    <div class="empty-state">
-                        <i class="fa-solid fa-certificate"></i>
-                        <p>You have not earned any certificates yet.</p>
-                    </div>
-
-                </div>
+                <div id="studentCertificateList"></div>
 
             </section>
 
 
-            <!-- PROFILE -->
-            <section class="dashboard-section" id="profile">
 
-                <div class="page-heading">
+            <!-- =====================================
+                 ANNOUNCEMENTS
+            ====================================== -->
 
-                    <h2>My Profile</h2>
+            <section id="announcements" class="dashboard-section">
 
-                    <p>Your LearnSphere student information.</p>
-
+                <div class="page-introduction">
+                    <span class="page-tag">STAY INFORMED</span>
+                    <h1>Announcements</h1>
+                    <p>Important updates and information from LearnSphere.</p>
                 </div>
 
-                <div class="content-card profile-card">
-
-                    <div class="large-avatar">
-                        <i class="fa-solid fa-user"></i>
-                    </div>
-
-                    <div class="profile-details">
-
-                        <div class="profile-item">
-                            <span>Full Name</span>
-                            <h3 id="profileFullName">Not available</h3>
-                        </div>
-
-                        <div class="profile-item">
-                            <span>Email Address</span>
-                            <h3 id="profileEmail">Not available</h3>
-                        </div>
-
-                        <div class="profile-item">
-                            <span>Department</span>
-                            <h3 id="profileDepartment">Not available</h3>
-                        </div>
-
-                        <div class="profile-item">
-                            <span>Level</span>
-                            <h3 id="profileLevel">Not available</h3>
-                        </div>
-
-                        <div class="profile-item">
-                            <span>University</span>
-                            <h3 id="profileUniversity">Not available</h3>
-                        </div>
-
-                    </div>
-
-                </div>
+                <div id="announcementsList"></div>
 
             </section>
 
 
-            <!-- ANNOUNCEMENTS -->
-            <section class="dashboard-section" id="announcements">
 
-                <div class="page-heading">
+            <!-- =====================================
+                 NOTIFICATIONS
+            ====================================== -->
 
-                    <h2>Announcements</h2>
+            <section id="notifications" class="dashboard-section">
 
-                    <p>
-                        Important news, updates and information from LearnSphere.
-                    </p>
+                <div class="page-introduction">
+                    <span class="page-tag">YOUR UPDATES</span>
 
-                </div>
-
-                <div class="content-card">
-
-                    <div class="section-heading">
-
+                    <div class="notification-page-heading">
                         <div>
-                            <h2>Latest Announcements</h2>
-                            <p>Stay informed about platform updates and activities.</p>
+                            <h1>Notifications</h1>
+                            <p>Stay updated on your learning activities.</p>
                         </div>
 
+                        <button id="notificationPageMarkAllBtn" class="secondary-button">
+                            <i class="fas fa-check-double"></i>
+                            Mark all as read
+                        </button>
+                    </div>
+                </div>
+
+
+                <div class="notification-overview">
+
+                    <div class="notification-stat">
+                        <h2 id="totalNotifications">0</h2>
+                        <p>Total Notifications</p>
                     </div>
 
-                    <div id="announcementsList">
-
-                        <div class="empty-state">
-                            <i class="fa-solid fa-bullhorn"></i>
-                            <p>Loading announcements...</p>
-                        </div>
-
+                    <div class="notification-stat">
+                        <h2 id="pageUnreadNotifications">0</h2>
+                        <p>Unread Notifications</p>
                     </div>
 
                 </div>
+
+
+                <div class="notification-filter">
+
+                    <button class="active" data-notification-filter="all">All</button>
+
+                    <button data-notification-filter="unread">Unread</button>
+
+                    <button data-notification-filter="read">Read</button>
+
+                </div>
+
+
+                <div id="notificationPageList"></div>
 
             </section>
 
 
-            <!-- NOTIFICATIONS -->
-            <section class="dashboard-section" id="notifications">
 
-                <div class="page-heading">
+            <!-- =====================================
+                 PROFILE
+            ====================================== -->
 
-                    <h2>Notifications</h2>
+            <section id="profile" class="dashboard-section">
 
-                    <p>
-                        Stay updated with your learning activities.
-                    </p>
-
+                <div class="page-introduction">
+                    <span class="page-tag">ACCOUNT INFORMATION</span>
+                    <h1>My Profile</h1>
+                    <p>View your personal and academic information.</p>
                 </div>
 
-                <div class="notification-page-heading">
 
-                    <h3>Your Notifications</h3>
+                <div class="profile-panel">
 
-                    <button
-                        class="notification-mark-all-btn"
-                        id="notificationPageMarkAllBtn"
-                        type="button">
+                    <div class="profile-banner">
 
-                        <i class="fa-solid fa-check-double"></i>
-                        Mark All as Read
-
-                    </button>
-
-                </div>
-
-                <!-- NOTIFICATION STATISTICS -->
-                <div class="notification-summary-grid">
-
-                    <div class="notification-summary-card">
-
-                        <div class="notification-summary-icon">
-                            <i class="fa-solid fa-bell"></i>
+                        <div class="profile-large-avatar">
+                            <i class="fas fa-user-graduate"></i>
                         </div>
 
                         <div>
-                            <h3 id="totalNotifications">0</h3>
-                            <p>Total Notifications</p>
+                            <h2 id="profileFullName">Student Name</h2>
+                            <p>LearnSphere Student</p>
                         </div>
 
                     </div>
 
-                    <div class="notification-summary-card unread">
 
-                        <div class="notification-summary-icon">
-                            <i class="fa-solid fa-envelope"></i>
+                    <div class="profile-details-grid">
+
+                        <div class="profile-detail">
+                            <span><i class="fas fa-envelope"></i> Email Address</span>
+                            <h3 id="profileEmail">Loading...</h3>
                         </div>
 
-                        <div>
-                            <h3 id="pageUnreadNotifications">0</h3>
-                            <p>Unread Notifications</p>
+                        <div class="profile-detail">
+                            <span><i class="fas fa-building"></i> Department</span>
+                            <h3 id="profileDepartment">Loading...</h3>
                         </div>
 
-                    </div>
+                        <div class="profile-detail">
+                            <span><i class="fas fa-graduation-cap"></i> Academic Level</span>
+                            <h3 id="profileLevel">Loading...</h3>
+                        </div>
 
-                </div>
-
-                <!-- NOTIFICATION FILTERS -->
-                <div class="notification-filter-area">
-
-                    <button
-                        class="notification-filter active"
-                        data-notification-filter="all"
-                        type="button">
-
-                        All
-
-                    </button>
-
-                    <button
-                        class="notification-filter"
-                        data-notification-filter="unread"
-                        type="button">
-
-                        Unread
-
-                    </button>
-
-                    <button
-                        class="notification-filter"
-                        data-notification-filter="read"
-                        type="button">
-
-                        Read
-
-                    </button>
-
-                </div>
-
-                <!-- NOTIFICATION LIST -->
-                <div class="notification-page-list" id="notificationPageList">
-
-                    <div class="notification-empty">
-
-                        <i class="fa-regular fa-bell"></i>
-
-                        <p>No notifications yet.</p>
+                        <div class="profile-detail">
+                            <span><i class="fas fa-university"></i> University</span>
+                            <h3 id="profileUniversity">Loading...</h3>
+                        </div>
 
                     </div>
 
@@ -639,25 +623,24 @@
             </section>
 
 
-            <!-- FOOTER -->
-            <footer class="dashboard-footer">
-
-                <p>
-                    &copy; <span id="currentYear"></span>
-                    LearnSphere. All rights reserved.
-                </p>
-
-            </footer>
-
-        </main>
-
-    </div>
+        </div>
 
 
-    <!-- PDF LIBRARY -->
+        <!-- FOOTER -->
+        <footer class="dashboard-footer">
+            <p>
+                &copy; <span id="currentYear">2026</span>
+                LearnSphere. All rights reserved.
+            </p>
+        </footer>
+
+    </main>
+
+
+    <!-- PDF GENERATION LIBRARY -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    <!-- DASHBOARD JAVASCRIPT -->
+    <!-- FIREBASE DASHBOARD JAVASCRIPT -->
     <script type="module" src="student-dashboard.js"></script>
 
 </body>

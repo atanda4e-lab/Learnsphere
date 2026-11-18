@@ -1,8 +1,6 @@
 // ==========================================
 // LEARNSPHERE STUDENT DASHBOARD
 // COMPLETE FIREBASE VERSION
-// COURSES, ENROLLMENT, RESULTS, CERTIFICATES,
-// ANNOUNCEMENTS AND NOTIFICATIONS
 // ==========================================
 
 
@@ -43,10 +41,11 @@ let studentResults = [];
 let studentCertificates = [];
 let completedLessons = [];
 let studentAnnouncements = [];
-
 let studentNotifications = [];
 
 let activeNotificationFilter = "all";
+
+const WEEKLY_LEARNING_GOAL = 5;
 
 
 // ==========================================
@@ -136,13 +135,48 @@ function getCourseById(courseId) {
 }
 
 
-function displayEmptyState(message, icon = "fa-solid fa-circle-info") {
+function displayEmptyState(
+    message,
+    icon = "fa-solid fa-circle-info"
+) {
     return `
         <div class="empty-state">
             <i class="${icon}"></i>
             <p>${escapeHTML(message)}</p>
         </div>
     `;
+}
+
+
+function getLessonDate(lesson) {
+    return (
+        lesson.completedAt ||
+        lesson.completedOn ||
+        lesson.createdAt ||
+        lesson.timestamp ||
+        lesson.date ||
+        null
+    );
+}
+
+
+function getResultDate(result) {
+    return (
+        result.submittedAt ||
+        result.date ||
+        result.createdAt ||
+        null
+    );
+}
+
+
+function getEnrollmentDate(enrollment) {
+    return (
+        enrollment.enrolledAt ||
+        enrollment.createdAt ||
+        enrollment.date ||
+        null
+    );
 }
 
 
@@ -179,8 +213,6 @@ function getNotificationTrackingKey(type) {
     return "learnsphere_seen_" + type + "_" + getStudentId();
 }
 
-
-// LOAD OLD LOCAL STORAGE NOTIFICATIONS
 
 function getLegacyNotifications() {
     try {
@@ -236,8 +268,6 @@ function getLegacyNotifications() {
 }
 
 
-// SAVE OLD LOCAL STORAGE NOTIFICATIONS
-
 function saveLegacyNotifications() {
     const oldNotifications = studentNotifications
         .filter(function (item) {
@@ -277,7 +307,6 @@ async function loadStudentNotifications() {
         return;
     }
 
-    // Load old browser notifications first.
     const legacyNotifications = getLegacyNotifications();
 
     let firestoreNotifications = [];
@@ -320,7 +349,6 @@ async function loadStudentNotifications() {
         );
     }
 
-    // Merge both notification sources.
     const merged = new Map();
 
     legacyNotifications.forEach(function (item) {
@@ -388,7 +416,6 @@ async function addStudentNotification(
     } catch (error) {
         console.error("Notification creation error:", error);
 
-        // Keep a notification in the browser if Firestore fails.
         const localNotification = {
             id: "legacy-" + Date.now(),
             studentId: getStudentId(),
@@ -431,7 +458,6 @@ async function detectNewNotificationItems(
     try {
         const saved = localStorage.getItem(trackingKey);
 
-        // First visit: save current items as baseline.
         if (saved === null) {
             localStorage.setItem(
                 trackingKey,
@@ -629,7 +655,6 @@ function notificationEmptyMessage() {
 function displayNotifications() {
     const unreadCount = getUnreadNotificationCount();
 
-    // Header badge
     const badge = getElement("notificationBadge");
 
     if (badge) {
@@ -639,7 +664,6 @@ function displayNotifications() {
 
     setText("dropdownUnreadCount", unreadCount);
 
-    // Sidebar badge
     const sidebarCount = getElement("sidebarUnreadCount");
 
     if (sidebarCount) {
@@ -653,7 +677,6 @@ function displayNotifications() {
     setText("totalNotifications", studentNotifications.length);
     setText("pageUnreadNotifications", unreadCount);
 
-    // Dropdown
     const dropdownList = getElement("notificationDropdownList");
 
     if (dropdownList) {
@@ -664,7 +687,6 @@ function displayNotifications() {
             : notificationEmptyMessage();
     }
 
-    // Notifications page
     const pageList = getElement("notificationPageList");
 
     if (pageList) {
@@ -699,7 +721,7 @@ function displayNotifications() {
 
 
 // ==========================================
-// 10. MARK NOTIFICATIONS AS READ
+// 10. NOTIFICATION ACTIONS
 // ==========================================
 
 async function markNotificationAsRead(notificationId) {
@@ -758,10 +780,6 @@ async function markAllNotificationsAsRead() {
 }
 
 
-// ==========================================
-// 11. DELETE NOTIFICATIONS
-// ==========================================
-
 async function deleteStudentNotification(notificationId) {
     const notification = studentNotifications.find(function (item) {
         return String(item.id) === String(notificationId);
@@ -793,7 +811,7 @@ async function deleteStudentNotification(notificationId) {
 
 
 // ==========================================
-// 12. NOTIFICATION EVENTS
+// 11. NOTIFICATION EVENTS
 // ==========================================
 
 document.querySelectorAll("[data-notification-filter]").forEach(
@@ -811,7 +829,10 @@ document.querySelectorAll("[data-notification-filter]").forEach(
 const markAllReadBtn = getElement("markAllReadBtn");
 
 if (markAllReadBtn) {
-    markAllReadBtn.addEventListener("click", markAllNotificationsAsRead);
+    markAllReadBtn.addEventListener(
+        "click",
+        markAllNotificationsAsRead
+    );
 }
 
 
@@ -878,7 +899,7 @@ document.addEventListener("click", function (event) {
 
 
 // ==========================================
-// 13. LOAD COURSES
+// 12. LOAD COURSES
 // ==========================================
 
 async function loadCourses() {
@@ -899,7 +920,7 @@ async function loadCourses() {
 
 
 // ==========================================
-// 14. LOAD ENROLLMENTS
+// 13. LOAD ENROLLMENTS
 // ==========================================
 
 async function loadStudentEnrollments() {
@@ -920,7 +941,7 @@ async function loadStudentEnrollments() {
 
 
 // ==========================================
-// 15. LOAD QUIZ RESULTS
+// 14. LOAD QUIZ RESULTS
 // ==========================================
 
 async function loadStudentResults() {
@@ -941,7 +962,7 @@ async function loadStudentResults() {
 
 
 // ==========================================
-// 16. LOAD CERTIFICATES
+// 15. LOAD CERTIFICATES
 // ==========================================
 
 async function loadStudentCertificates() {
@@ -962,7 +983,7 @@ async function loadStudentCertificates() {
 
 
 // ==========================================
-// 17. LOAD COMPLETED LESSONS
+// 16. LOAD COMPLETED LESSONS
 // ==========================================
 
 async function loadCompletedLessons() {
@@ -983,7 +1004,7 @@ async function loadCompletedLessons() {
 
 
 // ==========================================
-// 18. LOAD ANNOUNCEMENTS
+// 17. LOAD ANNOUNCEMENTS
 // ==========================================
 
 async function loadStudentAnnouncements() {
@@ -1050,7 +1071,7 @@ async function loadStudentAnnouncements() {
 
 
 // ==========================================
-// 19. DISPLAY ANNOUNCEMENTS
+// 18. DISPLAY ANNOUNCEMENTS
 // ==========================================
 
 function displayStudentAnnouncements() {
@@ -1095,7 +1116,7 @@ function displayStudentAnnouncements() {
 
 
 // ==========================================
-// 20. LOAD ALL STUDENT DATA
+// 19. LOAD ALL STUDENT DATA
 // ==========================================
 
 async function loadAllStudentData() {
@@ -1126,7 +1147,7 @@ async function loadAllStudentData() {
 
 
 // ==========================================
-// 21. CHECK ENROLLMENT
+// 20. CHECK ENROLLMENT
 // ==========================================
 
 function isStudentEnrolled(courseId) {
@@ -1137,7 +1158,7 @@ function isStudentEnrolled(courseId) {
 
 
 // ==========================================
-// 22. COURSE CARD
+// 21. COURSE CARD
 // ==========================================
 
 function createCourseCard(course) {
@@ -1197,7 +1218,7 @@ function createCourseCard(course) {
 
 
 // ==========================================
-// 23. DISPLAY ENROLLED COURSES
+// 22. DISPLAY ENROLLED COURSES
 // ==========================================
 
 function loadStudentCourses() {
@@ -1231,7 +1252,7 @@ function loadStudentCourses() {
 
 
 // ==========================================
-// 24. EXPLORE COURSES
+// 23. EXPLORE COURSES
 // ==========================================
 
 function loadExploreCourses() {
@@ -1245,10 +1266,6 @@ function loadExploreCourses() {
     displayExploreCourseCards(availableCourses);
 }
 
-
-// ==========================================
-// 25. DEPARTMENT FILTERS
-// ==========================================
 
 function displayDepartmentFilters(courses) {
     const filter = getElement("departmentFilter");
@@ -1283,10 +1300,6 @@ function displayDepartmentFilters(courses) {
         : "";
 }
 
-
-// ==========================================
-// 26. DISPLAY EXPLORE COURSE CARDS
-// ==========================================
 
 function displayExploreCourseCards(courses) {
     const list = getElement("exploreCourseList");
@@ -1369,7 +1382,7 @@ function displayExploreCourseCards(courses) {
 
 
 // ==========================================
-// 27. SEARCH AND FILTER COURSES
+// 24. SEARCH AND FILTER COURSES
 // ==========================================
 
 function filterExploreCourses() {
@@ -1455,7 +1468,7 @@ if (levelFilter) {
 
 
 // ==========================================
-// 28. ENROLL STUDENT IN COURSE
+// 25. ENROLL STUDENT IN COURSE
 // ==========================================
 
 async function enrolStudentInCourse(courseId, button) {
@@ -1503,6 +1516,7 @@ async function enrolStudentInCourse(courseId, button) {
         loadStudentCourses();
         loadExploreCourses();
         updateDashboardStatistics();
+        updateNewDashboardFeatures();
 
         alert(
             "You have successfully enrolled in " +
@@ -1525,10 +1539,6 @@ async function enrolStudentInCourse(courseId, button) {
 }
 
 
-// ==========================================
-// 29. ENROLLMENT BUTTON EVENTS
-// ==========================================
-
 document.addEventListener("click", function (event) {
     const button = event.target.closest(".enrol-button");
 
@@ -1542,7 +1552,7 @@ document.addEventListener("click", function (event) {
 
 
 // ==========================================
-// 30. DISPLAY QUIZ RESULTS
+// 26. DISPLAY QUIZ RESULTS
 // ==========================================
 
 function displayStudentResults() {
@@ -1560,11 +1570,8 @@ function displayStudentResults() {
     }
 
     const sortedResults = [...studentResults].sort(function (a, b) {
-        return getDateValue(
-            b.submittedAt || b.date || b.createdAt
-        ) - getDateValue(
-            a.submittedAt || a.date || a.createdAt
-        );
+        return getDateValue(getResultDate(b)) -
+            getDateValue(getResultDate(a));
     });
 
     resultList.innerHTML = sortedResults.map(function (result) {
@@ -1601,11 +1608,7 @@ function displayStudentResults() {
 
                     <span>
                         Date:
-                        ${formatDate(
-                            result.submittedAt ||
-                            result.date ||
-                            result.createdAt
-                        )}
+                        ${formatDate(getResultDate(result))}
                     </span>
 
                 </div>
@@ -1616,7 +1619,7 @@ function displayStudentResults() {
 
 
 // ==========================================
-// 31. DISPLAY CERTIFICATES
+// 27. DISPLAY CERTIFICATES
 // ==========================================
 
 function displayStudentCertificates() {
@@ -1688,7 +1691,7 @@ function displayStudentCertificates() {
 
 
 // ==========================================
-// 32. DOWNLOAD CERTIFICATE PDF
+// 28. DOWNLOAD CERTIFICATE PDF
 // ==========================================
 
 function downloadCertificate(certificateId) {
@@ -1854,8 +1857,6 @@ function downloadCertificate(certificateId) {
 }
 
 
-// CERTIFICATE BUTTON EVENTS
-
 document.addEventListener("click", function (event) {
     const button = event.target.closest(".download-btn");
 
@@ -1868,7 +1869,7 @@ document.addEventListener("click", function (event) {
 
 
 // ==========================================
-// 33. DASHBOARD STATISTICS
+// 29. DASHBOARD STATISTICS
 // ==========================================
 
 function studentResultsForCurrentStudent() {
@@ -1894,30 +1895,677 @@ function updateDashboardStatistics() {
             return String(lesson.studentId) === studentId;
         }).length;
 
-    setText(
-        "enrolledCourses",
-        studentEnrollments.length
+    setText("enrolledCourses", studentEnrollments.length);
+    setText("completedLessons", lessonCount);
+    setText("completedQuizzes", resultCount);
+    setText("earnedCertificates", certificateCount);
+}
+
+
+// ==========================================
+// 30. NEW FEATURE: COURSE PROGRESS
+// ==========================================
+
+function getCompletedLessonsForCourse(courseId) {
+    return completedLessons.filter(function (lesson) {
+        return String(lesson.courseId) === String(courseId);
+    });
+}
+
+
+function getCourseTotalLessons(course) {
+    return Number(
+        course.totalLessons ||
+        course.lessonCount ||
+        course.lessonsCount ||
+        course.numberOfLessons ||
+        0
+    );
+}
+
+
+function getCourseProgress(course) {
+    const completed = getCompletedLessonsForCourse(course.id).length;
+    const total = getCourseTotalLessons(course);
+
+    if (!total) {
+        return {
+            completed: completed,
+            total: 0,
+            percentage: 0,
+            known: false
+        };
+    }
+
+    const percentage = Math.min(
+        100,
+        Math.round((completed / total) * 100)
     );
 
-    setText(
-        "completedLessons",
-        lessonCount
+    return {
+        completed: completed,
+        total: total,
+        percentage: percentage,
+        known: true
+    };
+}
+
+
+// ==========================================
+// 31. NEW FEATURE: CONTINUE LEARNING
+// ==========================================
+
+function getLatestLearningItem() {
+    const sortedLessons = [...completedLessons].sort(function (a, b) {
+        return getDateValue(getLessonDate(b)) -
+            getDateValue(getLessonDate(a));
+    });
+
+    for (const lesson of sortedLessons) {
+        const course = getCourseById(lesson.courseId);
+
+        if (course && isStudentEnrolled(course.id)) {
+            return {
+                course: course,
+                lesson: lesson
+            };
+        }
+    }
+
+    return null;
+}
+
+
+function displayContinueLearning() {
+    const container = getElement("continueLearningContainer");
+
+    if (!container) return;
+
+    const latestItem = getLatestLearningItem();
+
+    const enrolledCourses = studentEnrollments
+        .map(function (enrollment) {
+            return getCourseById(enrollment.courseId);
+        })
+        .filter(function (course) {
+            return course && isCoursePublished(course);
+        });
+
+    if (!enrolledCourses.length) {
+        container.innerHTML = `
+            <div class="continue-learning-empty">
+                <div class="continue-learning-empty-icon">
+                    <i class="fa-solid fa-book-open"></i>
+                </div>
+
+                <h3>Your learning journey starts here</h3>
+
+                <p>
+                    Enrol in a course and continue learning
+                    from your student dashboard.
+                </p>
+
+                <button class="continue-learning-action"
+                        data-section="explore">
+                    Explore Courses
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        `;
+
+        return;
+    }
+
+    let course = latestItem
+        ? latestItem.course
+        : enrolledCourses[0];
+
+    const progress = getCourseProgress(course);
+
+    const lesson = latestItem ? latestItem.lesson : null;
+
+    const lessonTitle = lesson
+        ? lesson.lessonTitle || lesson.title || "Your last completed lesson"
+        : "Start learning this course";
+
+    const lessonId = lesson
+        ? lesson.lessonId || lesson.id
+        : "";
+
+    const courseLink = lessonId
+        ? `course.html?id=${encodeURIComponent(course.id)}&lessonId=${encodeURIComponent(lessonId)}`
+        : `course.html?id=${encodeURIComponent(course.id)}`;
+
+    container.innerHTML = `
+        <article class="continue-learning-card">
+
+            <div class="continue-learning-image">
+                ${
+                    course.image || course.thumbnail
+                        ? `<img src="${escapeHTML(course.image || course.thumbnail)}"
+                               alt="${escapeHTML(course.title)}">`
+                        : `<i class="fa-solid fa-graduation-cap"></i>`
+                }
+            </div>
+
+            <div class="continue-learning-content">
+
+                <span class="continue-learning-label">
+                    <i class="fa-solid fa-book-open"></i>
+                    PICK UP WHERE YOU LEFT OFF
+                </span>
+
+                <h3>${escapeHTML(course.title)}</h3>
+
+                <p class="continue-learning-lesson">
+                    ${escapeHTML(lessonTitle)}
+                </p>
+
+                ${
+                    progress.known
+                        ? `
+                            <div class="continue-learning-progress">
+                                <div class="continue-learning-progress-info">
+                                    <span>Course progress</span>
+                                    <strong>${progress.percentage}%</strong>
+                                </div>
+
+                                <div class="continue-learning-progress-track">
+                                    <span style="width: ${progress.percentage}%"></span>
+                                </div>
+                            </div>
+                        `
+                        : `
+                            <p class="continue-learning-progress-note">
+                                ${progress.completed} completed lessons
+                            </p>
+                        `
+                }
+
+                <a href="${courseLink}"
+                   class="continue-learning-action">
+                    Continue Learning
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+
+            </div>
+        </article>
+    `;
+}
+
+
+// ==========================================
+// 32. NEW FEATURE: OVERALL LEARNING PROGRESS
+// ==========================================
+
+function displayOverallLearningProgress() {
+    const enrolledCourses = studentEnrollments
+        .map(function (enrollment) {
+            return getCourseById(enrollment.courseId);
+        })
+        .filter(function (course) {
+            return course && isCoursePublished(course);
+        });
+
+    let totalLessons = 0;
+    let completedCount = 0;
+    let coursesWithLessonCounts = 0;
+
+    enrolledCourses.forEach(function (course) {
+        const progress = getCourseProgress(course);
+
+        if (progress.known) {
+            totalLessons += progress.total;
+            completedCount += progress.completed;
+            coursesWithLessonCounts++;
+        }
+    });
+
+    const progressBar = getElement("overallProgressBar");
+
+    if (!enrolledCourses.length) {
+        if (progressBar) {
+            progressBar.style.width = "0%";
+        }
+
+        setText("overallProgressText", "0%");
+        setText("overallProgressDetails", "Enrol in a course to begin tracking your progress.");
+
+        return;
+    }
+
+    if (!coursesWithLessonCounts || !totalLessons) {
+        const completed = completedLessons.length;
+
+        if (progressBar) {
+            progressBar.style.width = "0%";
+        }
+
+        setText("overallProgressText", "--");
+        setText(
+            "overallProgressDetails",
+            completed + " lessons completed. Add lesson counts to courses to calculate your overall progress."
+        );
+
+        return;
+    }
+
+    const percentage = Math.min(
+        100,
+        Math.round((completedCount / totalLessons) * 100)
     );
 
-    setText(
-        "completedQuizzes",
-        resultCount
-    );
+    if (progressBar) {
+        progressBar.style.width = percentage + "%";
+    }
+
+    setText("overallProgressText", percentage + "%");
 
     setText(
-        "earnedCertificates",
-        certificateCount
+        "overallProgressDetails",
+        completedCount + " of " + totalLessons + " lessons completed"
     );
 }
 
 
 // ==========================================
-// 34. DASHBOARD NAVIGATION
+// 33. NEW FEATURE: LEARNING STREAK
+// ==========================================
+
+function getLearningDays() {
+    const days = new Set();
+
+    completedLessons.forEach(function (lesson) {
+        const dateValue = getDateValue(getLessonDate(lesson));
+
+        if (!dateValue) return;
+
+        const date = new Date(dateValue);
+
+        const dayKey = [
+            date.getFullYear(),
+            date.getMonth() + 1,
+            date.getDate()
+        ].join("-");
+
+        days.add(dayKey);
+    });
+
+    return Array.from(days).sort();
+}
+
+
+function getCurrentLearningStreak() {
+    const days = getLearningDays();
+
+    if (!days.length) return 0;
+
+    const daySet = new Set(days);
+
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const todayKey = [
+        today.getFullYear(),
+        today.getMonth() + 1,
+        today.getDate()
+    ].join("-");
+
+    const yesterdayKey = [
+        yesterday.getFullYear(),
+        yesterday.getMonth() + 1,
+        yesterday.getDate()
+    ].join("-");
+
+    let currentDate;
+
+    if (daySet.has(todayKey)) {
+        currentDate = today;
+    } else if (daySet.has(yesterdayKey)) {
+        currentDate = yesterday;
+    } else {
+        return 0;
+    }
+
+    let streak = 0;
+
+    while (true) {
+        const key = [
+            currentDate.getFullYear(),
+            currentDate.getMonth() + 1,
+            currentDate.getDate()
+        ].join("-");
+
+        if (!daySet.has(key)) {
+            break;
+        }
+
+        streak++;
+
+        currentDate.setDate(currentDate.getDate() - 1);
+    }
+
+    return streak;
+}
+
+
+function displayLearningStreak() {
+    const streak = getCurrentLearningStreak();
+
+    setText("learningStreak", streak);
+
+    const streakMessage = getElement("learningStreakMessage");
+
+    if (streakMessage) {
+        streakMessage.textContent = streak > 0
+            ? "Keep your learning streak going!"
+            : "Complete a lesson today to start your streak.";
+    }
+}
+
+
+// ==========================================
+// 34. NEW FEATURE: WEEKLY LEARNING GOAL
+// ==========================================
+
+function getStartOfWeek() {
+    const date = new Date();
+
+    date.setHours(0, 0, 0, 0);
+
+    const day = date.getDay();
+
+    const difference = day === 0 ? 6 : day - 1;
+
+    date.setDate(date.getDate() - difference);
+
+    return date;
+}
+
+
+function getLessonsCompletedThisWeek() {
+    const startOfWeek = getStartOfWeek();
+
+    return completedLessons.filter(function (lesson) {
+        const timestamp = getDateValue(getLessonDate(lesson));
+
+        return timestamp >= startOfWeek.getTime();
+    }).length;
+}
+
+
+function displayWeeklyLearningGoal() {
+    const completedThisWeek = getLessonsCompletedThisWeek();
+
+    const goal = WEEKLY_LEARNING_GOAL;
+
+    const percentage = Math.min(
+        100,
+        Math.round((completedThisWeek / goal) * 100)
+    );
+
+    const progressBar = getElement("weeklyGoalProgress");
+
+    if (progressBar) {
+        progressBar.style.width = percentage + "%";
+    }
+
+    setText(
+        "weeklyGoalText",
+        completedThisWeek + " of " + goal + " lessons completed this week"
+    );
+}
+
+
+// ==========================================
+// 35. NEW FEATURE: RECENT ACTIVITY
+// ==========================================
+
+function getRecentActivities() {
+    let activities = [];
+
+    studentEnrollments.forEach(function (item) {
+        activities.push({
+            title: "Course Enrolled",
+            description: "You enrolled in " +
+                (item.courseTitle || "a course"),
+            date: getEnrollmentDate(item),
+            icon: "fa-solid fa-book-open",
+            type: "enrollment"
+        });
+    });
+
+    completedLessons.forEach(function (item) {
+        const course = getCourseById(item.courseId);
+
+        activities.push({
+            title: "Lesson Completed",
+            description:
+                (item.lessonTitle || item.title || "A lesson") +
+                (course ? " in " + course.title : ""),
+            date: getLessonDate(item),
+            icon: "fa-solid fa-circle-check",
+            type: "lesson"
+        });
+    });
+
+    studentResults.forEach(function (item) {
+        const course = getCourseById(item.courseId);
+
+        activities.push({
+            title: "Quiz Completed",
+            description:
+                "You completed a quiz in " +
+                (item.courseTitle || course?.title || "a course"),
+            date: getResultDate(item),
+            icon: "fa-solid fa-chart-column",
+            type: "result"
+        });
+    });
+
+    studentCertificates.forEach(function (item) {
+        activities.push({
+            title: "Certificate Earned",
+            description: "You earned a certificate in " +
+                (item.courseTitle || "a course"),
+            date: item.issuedAt,
+            icon: "fa-solid fa-award",
+            type: "certificate"
+        });
+    });
+
+    return activities
+        .filter(function (item) {
+            return getDateValue(item.date) > 0;
+        })
+        .sort(function (a, b) {
+            return getDateValue(b.date) -
+                getDateValue(a.date);
+        })
+        .slice(0, 6);
+}
+
+
+function displayRecentActivity() {
+    const container = getElement("recentActivityList");
+
+    if (!container) return;
+
+    const activities = getRecentActivities();
+
+    if (!activities.length) {
+        container.innerHTML = displayEmptyState(
+            "Your recent learning activities will appear here.",
+            "fa-solid fa-clock"
+        );
+
+        return;
+    }
+
+    container.innerHTML = activities.map(function (item) {
+        return `
+            <div class="recent-activity-item">
+
+                <div class="recent-activity-icon">
+                    <i class="${item.icon}"></i>
+                </div>
+
+                <div class="recent-activity-content">
+                    <h4>${escapeHTML(item.title)}</h4>
+                    <p>${escapeHTML(item.description)}</p>
+                    <span>${formatNotificationTime(item.date)}</span>
+                </div>
+
+            </div>
+        `;
+    }).join("");
+}
+
+
+// ==========================================
+// 36. NEW FEATURE: RECENT QUIZ RESULTS
+// ==========================================
+
+function displayRecentQuizResults() {
+    const container = getElement("recentQuizResults");
+
+    if (!container) return;
+
+    const recentResults = [...studentResults]
+        .sort(function (a, b) {
+            return getDateValue(getResultDate(b)) -
+                getDateValue(getResultDate(a));
+        })
+        .slice(0, 5);
+
+    if (!recentResults.length) {
+        container.innerHTML = displayEmptyState(
+            "Your quiz results will appear here after completing a quiz.",
+            "fa-solid fa-chart-column"
+        );
+
+        return;
+    }
+
+    container.innerHTML = recentResults.map(function (result) {
+        const course = getCourseById(result.courseId);
+
+        const title =
+            result.courseTitle ||
+            course?.title ||
+            "Course";
+
+        const percentage = Number(
+            result.percentage ??
+            result.scorePercentage ??
+            0
+        );
+
+        return `
+            <div class="recent-quiz-item">
+
+                <div class="recent-quiz-info">
+                    <h4>${escapeHTML(title)}</h4>
+                    <span>${formatDate(getResultDate(result))}</span>
+                </div>
+
+                <div class="recent-quiz-score ${percentage >= 50 ? "passed" : "failed"}">
+                    ${percentage}%
+                </div>
+
+            </div>
+        `;
+    }).join("");
+}
+
+
+// ==========================================
+// 37. NEW FEATURE: RECOMMENDED COURSES
+// ==========================================
+
+function displayRecommendedCourses() {
+    const container = getElement("recommendedCourses");
+
+    if (!container) return;
+
+    const recommendations = studentCourses.filter(function (course) {
+        return isCoursePublished(course) &&
+            !isStudentEnrolled(course.id);
+    }).slice(0, 3);
+
+    if (!recommendations.length) {
+        container.innerHTML = displayEmptyState(
+            "You are enrolled in all currently available courses.",
+            "fa-solid fa-graduation-cap"
+        );
+
+        return;
+    }
+
+    container.innerHTML = recommendations.map(function (course) {
+        const image = course.image || course.thumbnail || "";
+
+        return `
+            <article class="recommended-course-card">
+
+                <div class="recommended-course-image">
+                    ${
+                        image
+                            ? `<img src="${escapeHTML(image)}"
+                                   alt="${escapeHTML(course.title)}">`
+                            : `<i class="fa-solid fa-book-open"></i>`
+                    }
+                </div>
+
+                <div class="recommended-course-content">
+                    <h4>${escapeHTML(course.title || "Untitled Course")}</h4>
+
+                    <p>
+                        ${escapeHTML(course.department || "General")}
+                        •
+                        ${escapeHTML(course.level || "All Levels")}
+                    </p>
+
+                    <a href="course.html?id=${encodeURIComponent(course.id)}"
+                       class="recommended-course-link">
+                        View Course
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+
+            </article>
+        `;
+    }).join("");
+}
+
+
+// ==========================================
+// 38. UPDATE ALL NEW DASHBOARD FEATURES
+// ==========================================
+
+function updateNewDashboardFeatures() {
+    displayContinueLearning();
+
+    displayOverallLearningProgress();
+
+    displayLearningStreak();
+
+    displayWeeklyLearningGoal();
+
+    displayRecentActivity();
+
+    displayRecentQuizResults();
+
+    displayRecommendedCourses();
+}
+
+
+// ==========================================
+// 39. DASHBOARD NAVIGATION
 // ==========================================
 
 function showDashboardSection(sectionName) {
@@ -1950,11 +2598,16 @@ function showDashboardSection(sectionName) {
     if (notificationDropdown) {
         notificationDropdown.classList.remove("show");
     }
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
 }
 
 
 // ==========================================
-// 35. SIDEBAR EVENTS
+// 40. SIDEBAR EVENTS
 // ==========================================
 
 document.querySelectorAll(".sidebar-link").forEach(
@@ -1986,7 +2639,7 @@ document.querySelectorAll("[data-section]").forEach(
 
 
 // ==========================================
-// 36. LOGOUT
+// 41. LOGOUT
 // ==========================================
 
 const logoutButton = getElement("logoutBtn");
@@ -2015,7 +2668,7 @@ if (logoutButton) {
 
 
 // ==========================================
-// 37. LOAD DASHBOARD
+// 42. LOAD DASHBOARD
 // ==========================================
 
 function loadDashboard() {
@@ -2036,11 +2689,18 @@ function loadDashboard() {
     updateDashboardStatistics();
 
     displayNotifications();
+
+    updateNewDashboardFeatures();
+
+    setText(
+        "currentYear",
+        new Date().getFullYear()
+    );
 }
 
 
 // ==========================================
-// 38. FIREBASE AUTHENTICATION
+// 43. FIREBASE AUTHENTICATION
 // ==========================================
 
 onAuthStateChanged(auth, async function (user) {
@@ -2084,7 +2744,6 @@ onAuthStateChanged(auth, async function (user) {
     }
 
     try {
-        // Get student profile
         const studentRef = doc(
             db,
             "students",
@@ -2142,16 +2801,12 @@ onAuthStateChanged(auth, async function (user) {
 
         loadStudentInformation();
 
-        // Load all student data
         await loadAllStudentData();
 
-        // Load both old and new notifications
         await loadStudentNotifications();
 
-        // Check for newly published items
         await checkForNewStudentActivity();
 
-        // Display dashboard
         loadDashboard();
 
         console.log(
@@ -2173,7 +2828,7 @@ onAuthStateChanged(auth, async function (user) {
 
 
 // ==========================================
-// 39. CURRENT YEAR
+// 44. CURRENT YEAR
 // ==========================================
 
 setText(

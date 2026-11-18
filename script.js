@@ -1,623 +1,374 @@
-// ==========================================
-// LEARNSPHERE STUDENT HOMEPAGE
-// ==========================================
+// ======================================
+// LEARNSPHERE HOMEPAGE JAVASCRIPT
+// ======================================
 
 
-// ==========================================
-// 1. GET HTML ELEMENTS
-// ==========================================
+// 1. MOBILE NAVIGATION MENU
+const menuBtn = document.getElementById("menuBtn");
+const navbar = document.getElementById("navbar");
 
+if (menuBtn && navbar) {
+    menuBtn.addEventListener("click", function () {
+        navbar.classList.toggle("active");
+
+        const isOpen = navbar.classList.contains("active");
+
+        menuBtn.setAttribute("aria-expanded", isOpen);
+    });
+
+    // Close menu after clicking a navigation link
+    navbar.querySelectorAll("a").forEach(function (link) {
+        link.addEventListener("click", function () {
+            navbar.classList.remove("active");
+            menuBtn.setAttribute("aria-expanded", "false");
+        });
+    });
+}
+
+
+// 2. GET HOMEPAGE ELEMENTS
 const courseContainer = document.getElementById("courseContainer");
-
 const courseSearch = document.getElementById("courseSearch");
-
 const searchCourseBtn = document.getElementById("searchCourseBtn");
 
 const courseCategoryFilter = document.getElementById("courseCategoryFilter");
-
 const courseLevelFilter = document.getElementById("courseLevelFilter");
 
 const learningCourseList = document.getElementById("learningCourseList");
-
 const lessonContent = document.getElementById("lessonContent");
 
 const homeCourseCount = document.getElementById("homeCourseCount");
-
 const homeStudentCount = document.getElementById("homeStudentCount");
 
 
-// ==========================================
-// 2. GET DATA FROM LOCAL STORAGE
-// ==========================================
+// 3. GET DATA FROM LOCAL STORAGE
+function getStoredData(key) {
+    try {
+        const data = JSON.parse(localStorage.getItem(key));
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error("Error reading:", key, error);
+        return [];
+    }
+}
 
-let courses = JSON.parse(
-    localStorage.getItem("learnsphereCourses")
-) || [];
+let courses = getStoredData("learnsphereCourses");
+let lessons = getStoredData("learnsphereLessons");
+let students = getStoredData("learnsphereStudents");
 
-let lessons = JSON.parse(
-    localStorage.getItem("learnsphereLessons")
-) || [];
+let currentStudent = null;
 
-let students = JSON.parse(
-    localStorage.getItem("learnsphereStudents")
-) || [];
-
-let currentStudent = JSON.parse(
-    localStorage.getItem("learnsphereCurrentStudent")
-);
+try {
+    currentStudent = JSON.parse(
+        localStorage.getItem("learnsphereCurrentStudent")
+    );
+} catch (error) {
+    console.error("Error reading current student:", error);
+}
 
 
-// ==========================================
-// 3. ESCAPE HTML
-// ==========================================
-
+// 4. ESCAPE HTML
 function escapeHTML(value) {
-
     return String(value ?? "").replace(/[&<>"']/g, function (character) {
-
         const characters = {
-
             "&": "&amp;",
             "<": "&lt;",
             ">": "&gt;",
             '"': "&quot;",
             "'": "&#039;"
-
         };
 
         return characters[character];
-
     });
-
 }
 
 
-// ==========================================
-// 4. CHECK SAFE LINKS
-// ==========================================
-
-function safeLink(value) {
+// 5. CHECK LINKS BEFORE DISPLAYING
+function safeLink(url) {
+    if (!url) return "";
 
     try {
+        const link = new URL(url, window.location.origin);
 
-        const url = new URL(value);
-
-        if (url.protocol === "https:" || url.protocol === "http:") {
-
-            return escapeHTML(url.href);
-
+        if (link.protocol === "http:" || link.protocol === "https:") {
+            return escapeHTML(link.href);
         }
 
-    } catch (error) {
-
         return "";
-
+    } catch (error) {
+        return "";
     }
-
-    return "";
-
 }
 
 
-// ==========================================
-// 5. UPDATE HOMEPAGE STATISTICS
-// ==========================================
-
+// 6. UPDATE HOMEPAGE STATISTICS
 function updateHomepageStatistics() {
-
     if (homeCourseCount) {
-
         homeCourseCount.textContent = courses.length;
-
     }
 
     if (homeStudentCount) {
-
         homeStudentCount.textContent = students.length;
-
     }
-
 }
 
 
-// ==========================================
-// 6. DISPLAY COURSES
-// ==========================================
-
-function displayCourses(courseList) {
-
-    if (!courseContainer) {
-
-        return;
-
-    }
-
+// 7. DISPLAY COURSES
+function displayCourses(courseList = courses) {
+    if (!courseContainer) return;
 
     if (courseList.length === 0) {
-
         courseContainer.innerHTML = `
-
-            <p class="empty-message">
-
-                No courses found. Try another search.
-
-            </p>
-
+            <p class="empty-message">No courses available yet.</p>
         `;
-
         return;
-
     }
 
-
-    courseContainer.innerHTML = "";
-
-
-    courseList.forEach(function (course) {
-
-        const courseCard = document.createElement("div");
-
-        courseCard.className = "course-card";
-
-
-        const imageLink = safeLink(course.image);
-
-
-        courseCard.innerHTML = `
-
-            ${imageLink ? `
+    courseContainer.innerHTML = courseList.map(function (course) {
+        return `
+            <div class="course-card">
 
                 <img
-                    src="${imageLink}"
-                    alt="${escapeHTML(course.title)}"
-                    class="course-image"
+                    src="${safeLink(course.image) || 'https://placehold.co/600x400?text=Course'}"
+                    alt="${escapeHTML(course.title || 'Course image')}"
                 >
 
-            ` : ""}
+                <div class="course-card-content">
 
+                    <h3>${escapeHTML(course.title || "Untitled Course")}</h3>
 
-            <div class="course-card-content">
+                    <p>${escapeHTML(course.description || "No description available.")}</p>
 
-                <span class="course-category">
+                    <p>
+                        ${escapeHTML(course.department || "General")}
+                    </p>
 
-                    ${escapeHTML(course.category)}
+                    <p>
+                        ${escapeHTML(course.level || "All Levels")}
+                    </p>
 
-                </span>
-
-
-                <h3>
-
-                    ${escapeHTML(course.title)}
-
-                </h3>
-
-
-                <p>
-
-                    ${escapeHTML(course.description)}
-
-                </p>
-
-
-                <div class="course-details">
-
-                    <span>
-
-                        ${escapeHTML(course.department)}
-
-                    </span>
-
-
-                    <span>
-
-                        ${escapeHTML(course.level)} Level
-
-                    </span>
+                    <button
+                        class="course-button"
+                        data-course-id="${escapeHTML(course.id)}"
+                    >
+                        View Lessons
+                    </button>
 
                 </div>
 
-
-                <button
-                    type="button"
-                    class="course-button"
-                    data-course-id="${course.id}"
-                >
-
-                    View Lessons
-
-                </button>
-
             </div>
-
         `;
+    }).join("");
 
-
-        courseContainer.appendChild(courseCard);
-
-    });
-
-
-    // VIEW LESSON BUTTON EVENTS
-
-    const lessonButtons = courseContainer.querySelectorAll(".course-button");
-
-
-    lessonButtons.forEach(function (button) {
-
+    // Add button events
+    courseContainer.querySelectorAll(".course-button").forEach(function (button) {
         button.addEventListener("click", function () {
-
-            const courseId = Number(button.dataset.courseId);
-
-            displayCourseLessons(courseId);
-
+            displayCourseLessons(button.dataset.courseId);
         });
-
     });
-
 }
 
 
-// ==========================================
-// 7. SEARCH AND FILTER COURSES
-// ==========================================
-
+// 8. FILTER COURSES
 function filterCourses() {
-
-    const searchValue = courseSearch
-        ? courseSearch.value.trim().toLowerCase()
+    const searchText = courseSearch
+        ? courseSearch.value.toLowerCase().trim()
         : "";
 
-    const categoryValue = courseCategoryFilter
+    const selectedCategory = courseCategoryFilter
         ? courseCategoryFilter.value
         : "";
 
-    const levelValue = courseLevelFilter
+    const selectedLevel = courseLevelFilter
         ? courseLevelFilter.value
         : "";
 
-
     const filteredCourses = courses.filter(function (course) {
+        const title = String(course.title || "").toLowerCase();
+        const department = String(course.department || "").toLowerCase();
+        const description = String(course.description || "").toLowerCase();
 
         const matchesSearch =
-
-            course.title.toLowerCase().includes(searchValue) ||
-
-            course.department.toLowerCase().includes(searchValue) ||
-
-            course.description.toLowerCase().includes(searchValue);
-
+            title.includes(searchText) ||
+            department.includes(searchText) ||
+            description.includes(searchText);
 
         const matchesCategory =
-
-            categoryValue === "" || course.category === categoryValue;
-
+            !selectedCategory || course.category === selectedCategory;
 
         const matchesLevel =
-
-            levelValue === "" || course.level === levelValue;
-
+            !selectedLevel || course.level === selectedLevel;
 
         return matchesSearch && matchesCategory && matchesLevel;
-
     });
-
 
     displayCourses(filteredCourses);
-
 }
 
 
-// ==========================================
-// 8. SEARCH BUTTON
-// ==========================================
-
-if (searchCourseBtn) {
-
-    searchCourseBtn.addEventListener("click", function () {
-
-        filterCourses();
-
-    });
-
-}
-
-
-// ==========================================
-// 9. SEARCH WHILE TYPING
-// ==========================================
-
-if (courseSearch) {
-
-    courseSearch.addEventListener("input", function () {
-
-        filterCourses();
-
-    });
-
-}
-
-
-// ==========================================
-// 10. CATEGORY FILTER
-// ==========================================
-
-if (courseCategoryFilter) {
-
-    courseCategoryFilter.addEventListener("change", function () {
-
-        filterCourses();
-
-    });
-
-}
-
-
-// ==========================================
-// 11. LEVEL FILTER
-// ==========================================
-
-if (courseLevelFilter) {
-
-    courseLevelFilter.addEventListener("change", function () {
-
-        filterCourses();
-
-    });
-
-}
-
-
-// ==========================================
-// 12. DISPLAY AVAILABLE COURSES
-// IN THE LEARNING CENTRE
-// ==========================================
-
+// 9. DISPLAY STUDENT'S LEARNING COURSES
 function displayLearningCourses() {
+    if (!learningCourseList) return;
 
-    if (!learningCourseList) {
+    const studentId = currentStudent?.id;
 
-        return;
-
-    }
-
-
-    if (courses.length === 0) {
-
+    if (!studentId) {
         learningCourseList.innerHTML = `
-
-            <p class="empty-message">
-
-                No courses are available yet.
-
-            </p>
-
+            <p>Please log in to view your learning courses.</p>
         `;
-
         return;
-
     }
 
-
-    learningCourseList.innerHTML = "";
-
-
-    courses.forEach(function (course) {
-
-        const courseItem = document.createElement("button");
-
-        courseItem.type = "button";
-
-        courseItem.className = "learning-course-button";
-
-        courseItem.textContent = course.title;
-
-
-        courseItem.addEventListener("click", function () {
-
-            displayCourseLessons(course.id);
-
-        });
-
-
-        learningCourseList.appendChild(courseItem);
-
+    const enrolledCourses = courses.filter(function (course) {
+        return Array.isArray(course.enrolledStudents) &&
+            course.enrolledStudents.includes(studentId);
     });
 
+    if (enrolledCourses.length === 0) {
+        learningCourseList.innerHTML = `
+            <p>You have not enrolled in any course yet.</p>
+        `;
+        return;
+    }
+
+    learningCourseList.innerHTML = enrolledCourses.map(function (course) {
+        return `
+            <button
+                class="learning-course-button"
+                data-course-id="${escapeHTML(course.id)}"
+            >
+                ${escapeHTML(course.title || "Untitled Course")}
+            </button>
+        `;
+    }).join("");
+
+    learningCourseList.querySelectorAll(".learning-course-button").forEach(
+        function (button) {
+            button.addEventListener("click", function () {
+                displayCourseLessons(button.dataset.courseId);
+            });
+        }
+    );
 }
 
 
-// ==========================================
-// 13. DISPLAY LESSONS FOR A COURSE
-// ==========================================
-
+// 10. DISPLAY COURSE LESSONS
 function displayCourseLessons(courseId) {
+    if (!lessonContent) return;
 
-    const selectedCourse = courses.find(function (course) {
-
-        return course.id === courseId;
-
+    const course = courses.find(function (item) {
+        return String(item.id) === String(courseId);
     });
-
-
-    if (!selectedCourse || !lessonContent) {
-
-        return;
-
-    }
-
 
     const courseLessons = lessons.filter(function (lesson) {
-
-        return lesson.courseId === courseId;
-
+        return String(lesson.courseId) === String(courseId);
     });
 
-
-    lessonContent.innerHTML = "";
-
-
-    const heading = document.createElement("div");
-
-    heading.innerHTML = `
-
-        <h3>${escapeHTML(selectedCourse.title)}</h3>
-
-        <p>${escapeHTML(selectedCourse.description)}</p>
-
-    `;
-
-
-    lessonContent.appendChild(heading);
-
+    if (!course) {
+        lessonContent.innerHTML = "<p>Course not found.</p>";
+        return;
+    }
 
     if (courseLessons.length === 0) {
-
-        const emptyMessage = document.createElement("p");
-
-        emptyMessage.textContent = "No lessons have been added to this course yet.";
-
-        lessonContent.appendChild(emptyMessage);
-
-        return;
-
-    }
-
-
-    courseLessons.forEach(function (lesson, index) {
-
-        const lessonItem = document.createElement("div");
-
-        lessonItem.className = "learning-lesson";
-
-
-        const pdfLink = safeLink(lesson.pdf);
-
-        const videoLink = safeLink(lesson.video);
-
-
-        lessonItem.innerHTML = `
-
-            <h4>
-
-                ${index + 1}. ${escapeHTML(lesson.title)}
-
-            </h4>
-
-
-            <p>
-
-                ${escapeHTML(lesson.description)}
-
-            </p>
-
-
-            <div class="lesson-notes">
-
-                ${escapeHTML(lesson.content).replace(/\n/g, "<br>")}
-
-            </div>
-
-
-            ${pdfLink ? `
-
-                <a
-                    href="${pdfLink}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-
-                    Open PDF Resource
-
-                </a>
-
-            ` : ""}
-
-
-            ${videoLink ? `
-
-                <a
-                    href="${videoLink}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-
-                    Watch Video Lesson
-
-                </a>
-
-            ` : ""}
-
+        lessonContent.innerHTML = `
+            <h3>${escapeHTML(course.title)}</h3>
+            <p>No lessons are available for this course yet.</p>
         `;
-
-
-        lessonContent.appendChild(lessonItem);
-
-    });
-
-
-    // MOVE TO LEARNING CENTRE
-
-    const learningSection = document.getElementById("learning");
-
-    if (learningSection) {
-
-        learningSection.scrollIntoView({
-
-            behavior: "smooth"
-
-        });
-
-    }
-
-}
-
-
-// ==========================================
-// 14. DISPLAY LOGGED-IN STUDENT NAME
-// ==========================================
-
-function displayStudentWelcome() {
-
-    if (!currentStudent) {
-
         return;
-
     }
 
+    lessonContent.innerHTML = `
+        <h2>${escapeHTML(course.title)}</h2>
 
-    const welcomeMessage = document.getElementById("studentWelcome");
+        ${courseLessons.map(function (lesson) {
+            const pdfLink = safeLink(lesson.pdfLink);
+            const videoLink = safeLink(lesson.youtubeLink);
 
+            return `
+                <div class="lesson-card">
 
-    if (welcomeMessage) {
+                    <h3>${escapeHTML(lesson.title || "Untitled Lesson")}</h3>
 
-        welcomeMessage.textContent =
+                    <p>${escapeHTML(lesson.description || "")}</p>
 
-            "Welcome, " + currentStudent.fullName;
+                    <div>
+                        ${escapeHTML(lesson.content || "").replace(/\n/g, "<br>")}
+                    </div>
 
-    }
+                    ${pdfLink ? `
+                        <a href="${pdfLink}" target="_blank" rel="noopener noreferrer">
+                            View PDF
+                        </a>
+                    ` : ""}
 
+                    ${videoLink ? `
+                        <a href="${videoLink}" target="_blank" rel="noopener noreferrer">
+                            Watch Video
+                        </a>
+                    ` : ""}
+
+                </div>
+            `;
+        }).join("")}
+    `;
+
+    lessonContent.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
 }
 
 
-// ==========================================
-// 15. INITIALIZE HOMEPAGE
-// ==========================================
+// 11. DISPLAY STUDENT WELCOME MESSAGE
+function displayStudentWelcome() {
+    const welcomeMessage = document.getElementById("welcomeMessage");
 
+    if (!welcomeMessage) return;
+
+    if (currentStudent && currentStudent.fullName) {
+        welcomeMessage.textContent =
+            "Welcome back, " + currentStudent.fullName + "!";
+    } else {
+        welcomeMessage.textContent = "Welcome to LearnSphere!";
+    }
+}
+
+
+// 12. INITIALIZE HOMEPAGE
 function initializeHomepage() {
-
     updateHomepageStatistics();
 
-    displayCourses(courses);
+    displayCourses();
 
     displayLearningCourses();
 
     displayStudentWelcome();
-
 }
 
 
-// ==========================================
-// 16. RUN HOMEPAGE
-// ==========================================
+// 13. SEARCH BUTTON
+if (searchCourseBtn) {
+    searchCourseBtn.addEventListener("click", filterCourses);
+}
 
+
+// 14. SEARCH WHILE TYPING
+if (courseSearch) {
+    courseSearch.addEventListener("input", filterCourses);
+}
+
+
+// 15. CATEGORY FILTER
+if (courseCategoryFilter) {
+    courseCategoryFilter.addEventListener("change", filterCourses);
+}
+
+
+// 16. LEVEL FILTER
+if (courseLevelFilter) {
+    courseLevelFilter.addEventListener("change", filterCourses);
+}
+
+
+// 17. START HOMEPAGE
 initializeHomepage();
