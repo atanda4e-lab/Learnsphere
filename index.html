@@ -13,7 +13,11 @@
 
     <meta name="robots" content="index, follow">
     <meta name="author" content="LearnSphere">
+
+    <!-- PWA SETTINGS -->
     <meta name="theme-color" content="#3157d5">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/images/icon-192.png">
 
     <link rel="canonical" href="https://learnsphere-ng.vercel.app/">
 
@@ -155,23 +159,17 @@
                 </span>
 
                 <h1>
-
                     Your Education.
-
                     <span>Your Future.</span>
-
                     Your Success.
-
                 </h1>
 
                 <p>
-
                     Discover courses, study materials, interactive lessons
                     and quizzes all in one place.
 
                     Learn at your own pace, improve your knowledge
                     and take control of your academic journey.
-
                 </p>
 
                 <div class="hero-buttons">
@@ -185,9 +183,7 @@
                     </a>
 
                     <a href="auth.html?mode=register" class="secondary-btn">
-
                         Create Free Account
-
                     </a>
 
                 </div>
@@ -383,7 +379,6 @@
             </h2>
 
             <p>
-
                 LearnSphere is an online learning platform
                 designed to help students access educational
                 courses, study materials, lessons, assessments
@@ -393,7 +388,6 @@
                 or strengthen your existing knowledge,
                 LearnSphere provides the tools to support
                 your learning journey.
-
             </p>
 
         </div>
@@ -428,23 +422,19 @@
                 </h2>
 
                 <p>
-
                     We believe that learning should be accessible,
                     organised and engaging.
 
                     LearnSphere brings different educational
                     resources together to make studying easier
                     for students.
-
                 </p>
 
                 <p>
-
                     From exploring courses to completing lessons,
                     attempting quizzes and monitoring progress,
                     students can manage their learning journey
                     from one platform.
-
                 </p>
 
                 <a href="courses.html" class="primary-btn">
@@ -486,7 +476,6 @@
 
 
             <div class="features-grid">
-
 
                 <div class="feature-card">
 
@@ -583,7 +572,6 @@
 
                 </div>
 
-
             </div>
 
         </div>
@@ -614,7 +602,6 @@
 
 
             <div class="steps-grid">
-
 
                 <div class="step-card">
 
@@ -678,7 +665,6 @@
                     </p>
 
                 </div>
-
 
             </div>
 
@@ -760,7 +746,6 @@
 
         <div class="container footer-content">
 
-
             <div class="footer-about">
 
                 <a href="index.html" class="logo">
@@ -825,7 +810,6 @@
 
             </div>
 
-
         </div>
 
 
@@ -843,6 +827,41 @@
     <!-- JAVASCRIPT -->
 
     <script src="script.js"></script>
+
+
+    <!-- PWA SERVICE WORKER -->
+
+    <script>
+
+        if ("serviceWorker" in navigator) {
+
+            window.addEventListener("load", function () {
+
+                navigator.serviceWorker.register("/service-worker.js")
+
+                    .then(function (registration) {
+
+                        console.log(
+                            "LearnSphere service worker registered:",
+                            registration.scope
+                        );
+
+                    })
+
+                    .catch(function (error) {
+
+                        console.log(
+                            "Service Worker Error:",
+                            error
+                        );
+
+                    });
+
+            });
+
+        }
+
+    </script>
 
 </body>
 
