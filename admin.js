@@ -1,7 +1,7 @@
 // =====================================================
 // LEARNSPHERE ADMIN DASHBOARD
 // FIREBASE ADMIN SYSTEM
-// WITH ANNOUNCEMENT MANAGEMENT
+// MCQ + THEORY QUESTION SUPPORT
 // =====================================================
 
 
@@ -707,6 +707,11 @@ function setupEventListeners() {
     getElement("editorQuizType")?.addEventListener(
         "change",
         updateQuizTypeDisplay
+    );
+
+    getElement("editorQuestionType")?.addEventListener(
+        "change",
+        updateQuestionTypeDisplay
     );
 
 
@@ -1509,7 +1514,63 @@ function updateQuizTypeDisplay() {
 
 
 // =====================================================
-// 32. SAVE QUIZ SETTINGS
+// 32. QUESTION TYPE DISPLAY
+// =====================================================
+
+function updateQuestionTypeDisplay() {
+
+    const questionType =
+        getElement("editorQuestionType")?.value || "mcq";
+
+    const mcqFields = getElement("mcqQuestionFields");
+
+    if (!mcqFields) return;
+
+    const optionFields = [
+
+        "editorOptionA",
+        "editorOptionB",
+        "editorOptionC",
+        "editorOptionD",
+        "editorCorrectAnswer"
+
+    ];
+
+    if (questionType === "theory") {
+
+        mcqFields.style.display = "none";
+
+        optionFields.forEach(id => {
+
+            const field = getElement(id);
+
+            if (field) {
+                field.required = false;
+            }
+
+        });
+
+    } else {
+
+        mcqFields.style.display = "block";
+
+        optionFields.forEach(id => {
+
+            const field = getElement(id);
+
+            if (field) {
+                field.required = true;
+            }
+
+        });
+
+    }
+
+}
+
+
+// =====================================================
+// 33. SAVE QUIZ SETTINGS
 // =====================================================
 
 async function saveQuizSettings(event) {
@@ -1723,7 +1784,7 @@ function updateQuizSettingsStatus() {
 
 
 // =====================================================
-// 33. DISPLAY EDITOR LESSONS
+// 34. DISPLAY EDITOR LESSONS
 // =====================================================
 
 function displayEditorLessons() {
@@ -1783,7 +1844,7 @@ function displayEditorLessons() {
 
 
 // =====================================================
-// 34. RESET LESSON FORM
+// 35. RESET LESSON FORM
 // =====================================================
 
 function resetLessonForm() {
@@ -1807,7 +1868,7 @@ function resetLessonForm() {
 
 
 // =====================================================
-// 35. SAVE LESSON
+// 36. SAVE LESSON
 // =====================================================
 
 async function saveLesson(event) {
@@ -1907,7 +1968,7 @@ async function saveLesson(event) {
 
 
 // =====================================================
-// 36. EDIT LESSON
+// 37. EDIT LESSON
 // =====================================================
 
 window.editLesson = function(lessonId) {
@@ -1947,7 +2008,7 @@ window.editLesson = function(lessonId) {
 
 
 // =====================================================
-// 37. DELETE LESSON
+// 38. DELETE LESSON
 // =====================================================
 
 window.deleteLesson = async function(lessonId) {
@@ -1978,7 +2039,7 @@ window.deleteLesson = async function(lessonId) {
 
 
 // =====================================================
-// 38. DISPLAY EDITOR QUIZZES
+// 39. DISPLAY EDITOR QUIZZES
 // =====================================================
 
 function displayEditorQuizzes() {
@@ -1996,6 +2057,7 @@ function displayEditorQuizzes() {
         container.innerHTML = "<p>No quiz questions added yet.</p>";
 
         updateQuizSummary([]);
+
         return;
 
     }
@@ -2006,15 +2068,33 @@ function displayEditorQuizzes() {
             item => item.id === quiz.quizId
         );
 
+        const questionType = quiz.type === "theory"
+            ? "Theory"
+            : "MCQ";
+
         return `
 
             <div class="admin-item">
 
-                <h4>${index + 1}. ${escapeHTML(quiz.question || quiz.questionText)}</h4>
+                <h4>
+                    ${index + 1}.
+                    ${escapeHTML(quiz.question || quiz.questionText)}
+                </h4>
 
-                <p>Quiz: ${escapeHTML(settings?.title || "Legacy / General Quiz")}</p>
+                <p>
+                    Quiz:
+                    ${escapeHTML(settings?.title || "Legacy / General Quiz")}
+                </p>
 
-                <p>Marks: ${escapeHTML(quiz.marks ?? 1)}</p>
+                <p>
+                    Question Type:
+                    <strong>${questionType}</strong>
+                </p>
+
+                <p>
+                    Marks:
+                    ${escapeHTML(quiz.marks ?? 1)}
+                </p>
 
                 <button
                     type="button"
@@ -2042,7 +2122,7 @@ function displayEditorQuizzes() {
 
 
 // =====================================================
-// 39. QUIZ MARK SUMMARY
+// 40. QUIZ MARK SUMMARY
 // =====================================================
 
 function updateQuizSummary(questionList) {
@@ -2069,7 +2149,7 @@ function updateQuizSummary(questionList) {
 
 
 // =====================================================
-// 40. RESET QUIZ QUESTION FORM
+// 41. RESET QUIZ QUESTION FORM
 // =====================================================
 
 function resetQuizQuestionForm() {
@@ -2083,15 +2163,21 @@ function resetQuizQuestionForm() {
     delete form.dataset.editingId;
 
     setValue("editorQuizCourseId", currentCourseId);
+
     setValue("editorQuizId", activeQuizId);
 
     setValue("editorQuestionMark", "1");
+
+    setValue("editorQuestionType", "mcq");
+
+    updateQuestionTypeDisplay();
 
 }
 
 
 // =====================================================
-// 41. SAVE QUIZ QUESTION
+// 42. SAVE QUIZ QUESTION
+// SUPPORTS MCQ AND THEORY
 // =====================================================
 
 async function saveQuiz(event) {
@@ -2109,54 +2195,84 @@ async function saveQuiz(event) {
 
     const question = getValue("editorQuestionText");
 
-    const options = [
-
-        getValue("editorOptionA"),
-        getValue("editorOptionB"),
-        getValue("editorOptionC"),
-        getValue("editorOptionD")
-
-    ];
-
-    const correctAnswer = Number(
-        getValue("editorCorrectAnswer")
-    );
+    const questionType =
+        getValue("editorQuestionType") || "mcq";
 
     const marks = Number(
         getValue("editorQuestionMark") || 1
     );
 
-    if (!question || options.some(option => !option)) {
+    if (!question) {
 
-        notify("Complete the question and all four options.");
+        notify("Enter the question.");
         return;
 
     }
 
-    if (![0, 1, 2, 3].includes(correctAnswer)) {
-
-        notify("Select the correct answer.");
-        return;
-
-    }
-
-    if (!Number.isFinite(marks) || marks <= 0) {
+    if (
+        !Number.isFinite(marks) ||
+        marks <= 0
+    ) {
 
         notify("Enter valid marks for this question.");
         return;
 
     }
 
+    let options = [];
+    let correctAnswer = null;
+
+
+    // MCQ VALIDATION
+
+    if (questionType === "mcq") {
+
+        options = [
+
+            getValue("editorOptionA"),
+            getValue("editorOptionB"),
+            getValue("editorOptionC"),
+            getValue("editorOptionD")
+
+        ];
+
+        correctAnswer = Number(
+            getValue("editorCorrectAnswer")
+        );
+
+        if (options.some(option => !option)) {
+
+            notify("Complete all four MCQ options.");
+            return;
+
+        }
+
+        if (![0, 1, 2, 3].includes(correctAnswer)) {
+
+            notify("Select the correct answer.");
+            return;
+
+        }
+
+    }
+
+
+    // GET EDITING INFORMATION
+
     const form = getElement("editorQuizForm");
 
     const questionDocumentId =
         form?.dataset.editingId || "";
 
-    const selectedQuizId = getValue("editorQuizId") || activeQuizId || null;
+    const selectedQuizId =
+        getValue("editorQuizId") || activeQuizId || null;
 
     const settings = quizSettings.find(
         item => item.id === selectedQuizId
     );
+
+
+    // QUESTION DOCUMENT
 
     const quizData = {
 
@@ -2165,6 +2281,8 @@ async function saveQuiz(event) {
         quizId: selectedQuizId,
 
         lessonId: settings?.lessonId || null,
+
+        type: questionType,
 
         question,
 
@@ -2180,6 +2298,7 @@ async function saveQuiz(event) {
 
     };
 
+
     try {
 
         if (questionDocumentId) {
@@ -2189,7 +2308,11 @@ async function saveQuiz(event) {
                 quizData
             );
 
-            notify("Quiz question updated successfully.");
+            notify(
+                questionType === "theory"
+                    ? "Theory question updated successfully."
+                    : "MCQ question updated successfully."
+            );
 
         } else {
 
@@ -2200,7 +2323,11 @@ async function saveQuiz(event) {
                 quizData
             );
 
-            notify("Quiz question added successfully.");
+            notify(
+                questionType === "theory"
+                    ? "Theory question added successfully."
+                    : "MCQ question added successfully."
+            );
 
         }
 
@@ -2216,7 +2343,10 @@ async function saveQuiz(event) {
 
         console.error("Quiz save error:", error);
 
-        notify("Unable to save quiz: " + error.message);
+        notify(
+            "Unable to save quiz question: " +
+            error.message
+        );
 
     }
 
@@ -2224,7 +2354,7 @@ async function saveQuiz(event) {
 
 
 // =====================================================
-// 42. EDIT QUIZ QUESTION
+// 43. EDIT QUIZ QUESTION
 // =====================================================
 
 window.editQuiz = function(quizId) {
@@ -2248,28 +2378,54 @@ window.editQuiz = function(quizId) {
         ? quiz.options
         : [];
 
+    const questionType = quiz.type === "theory"
+        ? "theory"
+        : "mcq";
+
     setValue("editorQuizCourseId", quiz.courseId);
+
     setValue("editorQuizId", quiz.quizId || "");
 
-    setValue("editorQuestionText", quiz.question || quiz.questionText);
+    setValue("editorQuestionType", questionType);
 
-    setValue("editorOptionA", options[0]);
-    setValue("editorOptionB", options[1]);
-    setValue("editorOptionC", options[2]);
-    setValue("editorOptionD", options[3]);
+    setValue(
+        "editorQuestionText",
+        quiz.question || quiz.questionText
+    );
 
-    setValue("editorCorrectAnswer", quiz.correctAnswer);
-    setValue("editorQuestionMark", quiz.marks ?? 1);
+    setValue("editorOptionA", options[0] || "");
+
+    setValue("editorOptionB", options[1] || "");
+
+    setValue("editorOptionC", options[2] || "");
+
+    setValue("editorOptionD", options[3] || "");
+
+    setValue(
+        "editorCorrectAnswer",
+        quiz.correctAnswer ?? ""
+    );
+
+    setValue(
+        "editorQuestionMark",
+        quiz.marks ?? 1
+    );
 
     activeQuizId = quiz.quizId || null;
 
-    notify("Edit the question and click Save Quiz Question.");
+    updateQuestionTypeDisplay();
+
+    notify(
+        questionType === "theory"
+            ? "Edit the theory question and click Save Quiz Question."
+            : "Edit the MCQ question and click Save Quiz Question."
+    );
 
 };
 
 
 // =====================================================
-// 43. DELETE QUIZ QUESTION
+// 44. DELETE QUIZ QUESTION
 // =====================================================
 
 window.deleteQuiz = async function(quizId) {
@@ -2300,7 +2456,7 @@ window.deleteQuiz = async function(quizId) {
 
 
 // =====================================================
-// 44. COURSE PREVIEW
+// 45. COURSE PREVIEW
 // =====================================================
 
 function previewCourse() {
@@ -2343,7 +2499,7 @@ function previewCourse() {
 
 
 // =====================================================
-// 45. DISPLAY ALL LESSONS
+// 46. DISPLAY ALL LESSONS
 // =====================================================
 
 function displayAllLessons() {
@@ -2404,7 +2560,7 @@ function displayAllLessons() {
 
 
 // =====================================================
-// 46. DISPLAY ALL QUIZZES
+// 47. DISPLAY ALL QUIZZES
 // =====================================================
 
 function displayAllQuizzes() {
@@ -2430,23 +2586,61 @@ function displayAllQuizzes() {
             item => item.id === quiz.quizId
         );
 
-        return `
+        const questionType = quiz.type === "theory"
+            ? "Theory"
+            : "MCQ";
 
-            <div class="admin-item">
+        let optionsHTML = "";
 
-                <h3>${escapeHTML(quiz.question || quiz.questionText)}</h3>
+        if (questionType === "MCQ") {
 
-                <p>Course: ${escapeHTML(course?.title || "Unknown Course")}</p>
-
-                <p>Quiz: ${escapeHTML(settings?.title || "Legacy / General Quiz")}</p>
-
-                <p>Marks: ${escapeHTML(quiz.marks ?? 1)}</p>
+            optionsHTML = `
 
                 <ol>
                     ${(quiz.options || []).map(option => `
                         <li>${escapeHTML(option)}</li>
                     `).join("")}
                 </ol>
+
+            `;
+
+        } else {
+
+            optionsHTML = `
+                <p>Students will type their answers.</p>
+            `;
+
+        }
+
+        return `
+
+            <div class="admin-item">
+
+                <h3>
+                    ${escapeHTML(quiz.question || quiz.questionText)}
+                </h3>
+
+                <p>
+                    Course:
+                    ${escapeHTML(course?.title || "Unknown Course")}
+                </p>
+
+                <p>
+                    Quiz:
+                    ${escapeHTML(settings?.title || "Legacy / General Quiz")}
+                </p>
+
+                <p>
+                    Question Type:
+                    <strong>${questionType}</strong>
+                </p>
+
+                <p>
+                    Marks:
+                    ${escapeHTML(quiz.marks ?? 1)}
+                </p>
+
+                ${optionsHTML}
 
                 <button
                     type="button"
@@ -2459,7 +2653,7 @@ function displayAllQuizzes() {
                     type="button"
                     onclick="deleteQuiz('${escapeHTML(quiz.id)}')"
                 >
-                    Delete Quiz
+                    Delete Question
                 </button>
 
             </div>
@@ -2472,7 +2666,7 @@ function displayAllQuizzes() {
 
 
 // =====================================================
-// 47. DISPLAY STUDENTS
+// 48. DISPLAY STUDENTS
 // =====================================================
 
 function displayStudents() {
@@ -2527,8 +2721,8 @@ function displayStudents() {
 }
 
 
-// =====================================================
-// 48. DISPLAY RESULTS
+/// =====================================================
+// 49. DISPLAY RESULTS
 // =====================================================
 
 function displayResults() {
@@ -2578,25 +2772,58 @@ function displayResults() {
             item => item.id === result.courseId
         );
 
+        const isPending = result.gradingStatus === "pending";
+
         return `
 
             <div class="admin-item">
 
-                <h3>${escapeHTML(student?.fullName || result.studentName || "Unknown Student")}</h3>
+                <h3>
+                    ${escapeHTML(student?.fullName || result.studentName || "Unknown Student")}
+                </h3>
 
-                <p>Course: ${escapeHTML(course?.title || result.courseTitle || "Unknown Course")}</p>
+                <p>
+                    Course:
+                    ${escapeHTML(course?.title || result.courseTitle || "Unknown Course")}
+                </p>
 
-                <p>Score: ${escapeHTML(result.score ?? "Not available")}</p>
+                <p>
+                    Quiz:
+                    ${escapeHTML(result.quizTitle || "Course Quiz")}
+                </p>
 
-                <p>Percentage: ${escapeHTML(result.percentage ?? "Not available")}%</p>
+                ${
+                    isPending
+                    ? `
+                        <p style="color: orange;">
+                            <strong>Grading: Pending</strong>
+                        </p>
 
-                <p>Status: ${result.passed ? "Passed" : "Not passed"}</p>
+                        <p>
+                            Total Marks:
+                            ${escapeHTML(result.totalMarks || 0)}
+                        </p>
+                    `
+                    : `
+                        <p>Score: ${escapeHTML(result.score ?? 0)}</p>
+
+                        <p>
+                            Percentage:
+                            ${escapeHTML(result.percentage ?? 0)}%
+                        </p>
+
+                        <p>
+                            Status:
+                            ${result.passed ? "Passed" : "Not passed"}
+                        </p>
+                    `
+                }
 
                 <button
                     type="button"
                     onclick="editResult('${escapeHTML(result.id)}')"
                 >
-                    Edit Marks
+                    ${isPending ? "Mark Theory Answers" : "Edit Marks"}
                 </button>
 
             </div>
@@ -2609,7 +2836,7 @@ function displayResults() {
 
 
 // =====================================================
-// 49. EDIT STUDENT MARKS
+// 50. EDIT STUDENT MARKS AND GRADE THEORY
 // =====================================================
 
 window.editResult = async function(resultId) {
@@ -2623,82 +2850,496 @@ window.editResult = async function(resultId) {
 
     }
 
-    const totalMarks = Number(
-        result.totalMarks ||
-        result.totalQuestions ||
-        0
+    const answers = Array.isArray(result.answers)
+        ? result.answers
+        : [];
+
+    const theoryAnswers = answers.filter(
+        answer => answer.type === "theory"
     );
 
-    if (!totalMarks || totalMarks <= 0) {
+    // =========================================
+    // NORMAL MCQ RESULT
+    // =========================================
 
-        notify(
-            "This result does not contain a valid totalMarks or totalQuestions value."
+    if (!theoryAnswers.length) {
+
+        const totalMarks = Number(
+            result.totalMarks ||
+            result.totalQuestions ||
+            0
         );
 
+        if (!totalMarks || totalMarks <= 0) {
+
+            notify("This result has no valid total marks.");
+            return;
+
+        }
+
+        const newScore = prompt(
+            `Enter the new score for ${result.studentName || "this student"}.\nMaximum: ${totalMarks}`,
+            result.score ?? 0
+        );
+
+        if (newScore === null) return;
+
+        const score = Number(newScore);
+
+        if (
+            !Number.isFinite(score) ||
+            score < 0 ||
+            score > totalMarks
+        ) {
+
+            notify("Enter a valid score between 0 and " + totalMarks);
+            return;
+
+        }
+
+        const percentage = Math.round(
+            (score / totalMarks) * 100
+        );
+
+        const passed = percentage >= 70;
+
+        try {
+
+            await updateDoc(
+                doc(db, "results", resultId),
+                {
+                    score,
+                    percentage,
+                    passed,
+                    gradingStatus: "graded",
+                    gradedAt: serverTimestamp(),
+                    gradedBy: currentAdmin.uid,
+                    updatedAt: serverTimestamp()
+                }
+            );
+
+            await loadResults();
+
+            displayResults();
+
+            notify("Student result updated successfully.");
+
+        } catch (error) {
+
+            console.error(error);
+
+            notify("Unable to update result: " + error.message);
+
+        }
+
         return;
 
     }
 
-    const newScore = prompt(
-        `Enter the new score for ${result.studentName || "this student"}.\nMaximum: ${totalMarks}`,
-        result.score ?? 0
+
+    // =========================================
+    // THEORY MARKING INTERFACE
+    // =========================================
+
+    const oldModal = getElement("theoryGradingModal");
+
+    if (oldModal) {
+        oldModal.remove();
+    }
+
+    const modal = document.createElement("div");
+
+    modal.id = "theoryGradingModal";
+
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.75);
+        z-index: 99999;
+        overflow-y: auto;
+        padding: 25px 15px;
+    `;
+
+    let questionHTML = "";
+
+    answers.forEach((answer, index) => {
+
+        const maximumMarks = Number(answer.marks || 1);
+
+        if (answer.type === "theory") {
+
+            questionHTML += `
+
+                <div style="
+                    background: white;
+                    padding: 20px;
+                    border-radius: 10px;
+                    margin-bottom: 20px;
+                    color: #172033;
+                ">
+
+                    <h3>Question ${index + 1}</h3>
+
+                    <p style="margin: 12px 0;">
+                        <strong>
+                            ${escapeHTML(answer.question || "Question not available")}
+                        </strong>
+                    </p>
+
+                    <div style="
+                        background: #f1f5f9;
+                        padding: 15px;
+                        border-radius: 8px;
+                        margin-bottom: 15px;
+                        white-space: pre-wrap;
+                    ">
+                        <strong>Student's Answer:</strong>
+
+                        <p style="margin-top: 8px;">
+                            ${escapeHTML(answer.answer || "No answer submitted")}
+                        </p>
+                    </div>
+
+                    <label>
+                        Award Marks (Maximum ${maximumMarks})
+                    </label>
+
+                    <input
+                        type="number"
+                        class="theory-mark-input"
+                        data-index="${index}"
+                        min="0"
+                        max="${maximumMarks}"
+                        step="0.5"
+                        value="${answer.awardedMarks ?? 0}"
+                        style="
+                            display: block;
+                            width: 100%;
+                            padding: 12px;
+                            margin: 8px 0 15px;
+                        "
+                        required
+                    >
+
+                    <label>Feedback (Optional)</label>
+
+                    <textarea
+                        class="theory-feedback-input"
+                        data-index="${index}"
+                        rows="3"
+                        placeholder="Write feedback for this answer..."
+                        style="
+                            display: block;
+                            width: 100%;
+                            padding: 12px;
+                            margin-top: 8px;
+                        "
+                    >${escapeHTML(answer.feedback || "")}</textarea>
+
+                </div>
+
+            `;
+
+        } else {
+
+            questionHTML += `
+
+                <div style="
+                    background: #f1f5f9;
+                    padding: 15px;
+                    border-radius: 10px;
+                    margin-bottom: 15px;
+                    color: #172033;
+                ">
+
+                    <strong>MCQ Question ${index + 1}</strong>
+
+                    <p>
+                        ${escapeHTML(answer.question || "MCQ answer")}
+                    </p>
+
+                    <p>
+                        Student's Answer:
+                        ${escapeHTML(answer.answer || "Not available")}
+                    </p>
+
+                    <p>
+                        ${answer.isCorrect ? "Correct" : "Incorrect"}
+                    </p>
+
+                </div>
+
+            `;
+
+        }
+
+    });
+
+
+    modal.innerHTML = `
+
+        <div style="
+            background: white;
+            max-width: 750px;
+            margin: auto;
+            padding: 25px;
+            border-radius: 12px;
+            color: #172033;
+        ">
+
+            <h2>Grade Theory Submission</h2>
+
+            <p>
+                <strong>Student:</strong>
+                ${escapeHTML(result.studentName || "Unknown")}
+            </p>
+
+            <p>
+                <strong>Course:</strong>
+                ${escapeHTML(result.courseTitle || "Unknown Course")}
+            </p>
+
+            <p>
+                <strong>Quiz:</strong>
+                ${escapeHTML(result.quizTitle || "Course Quiz")}
+            </p>
+
+            <hr style="margin: 20px 0;">
+
+            ${questionHTML}
+
+            <div style="
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            ">
+
+                <button
+                    type="button"
+                    id="submitTheoryMarksBtn"
+                    style="
+                        background: #16a34a;
+                        color: white;
+                        border: none;
+                        padding: 13px 20px;
+                        border-radius: 7px;
+                        cursor: pointer;
+                    "
+                >
+                    Submit Marks
+                </button>
+
+                <button
+                    type="button"
+                    id="cancelTheoryMarksBtn"
+                    style="
+                        background: #64748b;
+                        color: white;
+                        border: none;
+                        padding: 13px 20px;
+                        border-radius: 7px;
+                        cursor: pointer;
+                    "
+                >
+                    Cancel
+                </button>
+
+            </div>
+
+        </div>
+
+    `;
+
+    document.body.appendChild(modal);
+
+
+    // =========================================
+    // CANCEL MARKING
+    // =========================================
+
+    getElement("cancelTheoryMarksBtn").addEventListener(
+        "click",
+        () => modal.remove()
     );
 
-    if (newScore === null) return;
 
-    const score = Number(newScore);
+    // =========================================
+    // SAVE THEORY MARKS
+    // =========================================
 
-    if (
-        !Number.isFinite(score) ||
-        score < 0 ||
-        score > totalMarks
-    ) {
+    getElement("submitTheoryMarksBtn").addEventListener(
+        "click",
+        async () => {
 
-        notify("Enter a valid score between 0 and " + totalMarks);
-        return;
+            const markInputs = modal.querySelectorAll(
+                ".theory-mark-input"
+            );
 
-    }
+            const feedbackInputs = modal.querySelectorAll(
+                ".theory-feedback-input"
+            );
 
-    const percentage = Math.round((score / totalMarks) * 100);
-    const passed = percentage >= 70;
+            const updatedAnswers = answers.map(answer => ({
+                ...answer
+            }));
 
-    try {
+            let theoryScore = 0;
 
-        await updateDoc(
-            doc(db, "results", resultId),
-            {
-                score,
-                percentage,
-                passed,
-                updatedAt: serverTimestamp(),
-                updatedBy: currentAdmin.uid
+            let mcqScore = 0;
+
+            let allMarksValid = true;
+
+
+            // Check MCQ marks
+
+            updatedAnswers.forEach(answer => {
+
+                if (answer.type !== "theory") {
+
+                    if (answer.isCorrect === true) {
+
+                        mcqScore += Number(answer.marks || 1);
+
+                    }
+
+                }
+
+            });
+
+
+            // Check Theory marks
+
+            markInputs.forEach(input => {
+
+                const index = Number(input.dataset.index);
+
+                const awardedMarks = Number(input.value);
+
+                const maximumMarks = Number(
+                    updatedAnswers[index].marks || 1
+                );
+
+                if (
+                    input.value === "" ||
+                    !Number.isFinite(awardedMarks) ||
+                    awardedMarks < 0 ||
+                    awardedMarks > maximumMarks
+                ) {
+
+                    allMarksValid = false;
+
+                    input.style.border = "2px solid red";
+
+                    return;
+
+                }
+
+                const feedbackInput = Array.from(feedbackInputs).find(
+                    item => Number(item.dataset.index) === index
+                );
+
+                updatedAnswers[index].awardedMarks = awardedMarks;
+
+                updatedAnswers[index].feedback =
+                    feedbackInput?.value.trim() || "";
+
+                theoryScore += awardedMarks;
+
+            });
+
+
+            if (!allMarksValid) {
+
+                notify("Please enter valid marks for every Theory question.");
+
+                return;
+
             }
-        );
 
-        await loadResults();
 
-        displayResults();
+            // Calculate final result
 
-        notify(
-            "Student marks updated successfully.\n\n" +
-            "Score: " + score + "/" + totalMarks + "\n" +
-            "Percentage: " + percentage + "%\n" +
-            "Status: " + (passed ? "Passed" : "Not passed")
-        );
+            const score = mcqScore + theoryScore;
 
-    } catch (error) {
+            const totalMarks = Number(result.totalMarks || 0);
 
-        console.error("Edit result error:", error);
+            if (totalMarks <= 0 || score > totalMarks) {
 
-        notify("Unable to update marks: " + error.message);
+                notify("The final score is invalid. Please check the total marks.");
 
-    }
+                return;
+
+            }
+
+            const percentage = Math.round(
+                (score / totalMarks) * 100
+            );
+
+            const passed = percentage >= 70;
+
+
+            // Save to Firestore
+
+            try {
+
+                getElement("submitTheoryMarksBtn").disabled = true;
+
+                getElement("submitTheoryMarksBtn").textContent =
+                    "Saving Marks...";
+
+                await updateDoc(
+                    doc(db, "results", resultId),
+                    {
+                        answers: updatedAnswers,
+                        score,
+                        totalMarks,
+                        percentage,
+                        passed,
+                        gradingStatus: "graded",
+                        gradedAt: serverTimestamp(),
+                        gradedBy: currentAdmin.uid,
+                        updatedAt: serverTimestamp()
+                    }
+                );
+
+                modal.remove();
+
+                await loadResults();
+
+                displayResults();
+
+                notify(
+                    "Theory marking completed successfully!\n\n" +
+                    "Score: " + score + "/" + totalMarks + "\n" +
+                    "Percentage: " + percentage + "%\n" +
+                    "Status: " + (passed ? "Passed" : "Not passed")
+                );
+
+            } catch (error) {
+
+                console.error("Theory grading error:", error);
+
+                getElement("submitTheoryMarksBtn").disabled = false;
+
+                getElement("submitTheoryMarksBtn").textContent =
+                    "Submit Marks";
+
+                notify(
+                    "Unable to save marks: " + error.message
+                );
+
+            }
+
+        }
+    );
 
 };
 
-
 // =====================================================
-// 50. DISPLAY CERTIFICATES
+// 51. DISPLAY CERTIFICATES
 // =====================================================
 
 function displayCertificates() {
@@ -2786,7 +3427,7 @@ function displayCertificates() {
 
 
 // =====================================================
-// 51. EDIT CERTIFICATE
+// 52. EDIT CERTIFICATE
 // =====================================================
 
 window.editCertificate = async function(certificateId) {
@@ -2853,7 +3494,7 @@ window.editCertificate = async function(certificateId) {
 
 
 // =====================================================
-// 52. REVOKE / RESTORE CERTIFICATE
+// 53. REVOKE / RESTORE CERTIFICATE
 // =====================================================
 
 window.toggleCertificate = async function(certificateId) {
@@ -2905,7 +3546,7 @@ window.toggleCertificate = async function(certificateId) {
 
 
 // =====================================================
-// 53. INSTRUCTOR MANAGEMENT
+// 54. INSTRUCTOR MANAGEMENT
 // =====================================================
 
 function displayInstructors() {
@@ -3047,8 +3688,10 @@ function displayInstructors() {
     updateInstructorStatistics();
 
 }
+
+
 // =====================================================
-// 54. UPDATE INSTRUCTOR STATISTICS
+// 55. UPDATE INSTRUCTOR STATISTICS
 // =====================================================
 
 function updateInstructorStatistics() {
@@ -3090,7 +3733,7 @@ function updateInstructorStatistics() {
 
 
 // =====================================================
-// 55. APPROVE INSTRUCTOR
+// 56. APPROVE INSTRUCTOR
 // =====================================================
 
 window.approveInstructor = async function(instructorId) {
@@ -3141,7 +3784,7 @@ window.approveInstructor = async function(instructorId) {
 
 
 // =====================================================
-// 56. REJECT INSTRUCTOR
+// 57. REJECT INSTRUCTOR
 // =====================================================
 
 window.rejectInstructor = async function(instructorId) {
@@ -3190,11 +3833,8 @@ window.rejectInstructor = async function(instructorId) {
 
 
 // =====================================================
-// 57. ANNOUNCEMENT MANAGEMENT
+// 58. ANNOUNCEMENT MANAGEMENT
 // =====================================================
-
-
-// PUBLISH ANNOUNCEMENT
 
 async function publishAnnouncement(event) {
 
@@ -3291,8 +3931,6 @@ async function publishAnnouncement(event) {
 }
 
 
-// DISPLAY ANNOUNCEMENTS
-
 function displayAnnouncements() {
 
     const container = getElement("adminAnnouncementList");
@@ -3362,8 +4000,6 @@ function displayAnnouncements() {
 }
 
 
-// DELETE ANNOUNCEMENT
-
 window.deleteAnnouncement = async function(announcementId) {
 
     const announcement = announcements.find(
@@ -3408,7 +4044,7 @@ window.deleteAnnouncement = async function(announcementId) {
 
 
 // =====================================================
-// 58. DASHBOARD STATISTICS
+// 59. DASHBOARD STATISTICS
 // =====================================================
 
 function updateStatistics() {
@@ -3441,5 +4077,5 @@ function updateStatistics() {
 
 
 // =====================================================
-// 59. END OF LEARNSPHERE ADMIN DASHBOARD
+// 60. END OF LEARNSPHERE ADMIN DASHBOARD
 // =====================================================

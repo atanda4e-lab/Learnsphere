@@ -1,8 +1,6 @@
-
 // ========================================
 // LEARNSPHERE COURSE LEARNING SYSTEM
-// COMPLETE FIREBASE VERSION
-// PUBLIC COURSE SEO + PROTECTED LEARNING
+// MCQ + THEORY QUESTION SUPPORT
 // ========================================
 
 
@@ -240,6 +238,24 @@ function formatDateTime(value) {
 }
 
 
+function getQuestionType(question) {
+
+    return String(question.type || "mcq").toLowerCase() === "theory"
+        ? "theory"
+        : "mcq";
+
+}
+
+
+function getQuestionMarks(question) {
+
+    const marks = Number(question.marks);
+
+    return Number.isFinite(marks) && marks > 0 ? marks : 1;
+
+}
+
+
 // ========================================
 // 6. DYNAMIC COURSE SEO
 // ========================================
@@ -293,19 +309,13 @@ function updateCourseSEO(course) {
         ". Learn online with LearnSphere Nigeria."
     ).slice(0, 300);
 
-    // PAGE TITLE
-
     document.title = seoTitle;
-
-    // BASIC SEO
 
     setMetaTag("name", "description", seoDescription);
 
     setMetaTag("name", "robots", "index, follow");
 
     setMetaTag("name", "author", "LearnSphere Nigeria");
-
-    // OPEN GRAPH
 
     setMetaTag("property", "og:type", "website");
 
@@ -317,15 +327,11 @@ function updateCourseSEO(course) {
 
     setMetaTag("property", "og:url", canonicalURL);
 
-    // TWITTER
-
     setMetaTag("name", "twitter:card", "summary");
 
     setMetaTag("name", "twitter:title", seoTitle);
 
     setMetaTag("name", "twitter:description", seoDescription);
-
-    // CANONICAL URL
 
     let canonical = document.querySelector(
         'link[rel="canonical"]'
@@ -342,8 +348,6 @@ function updateCourseSEO(course) {
     }
 
     canonical.href = canonicalURL;
-
-    // COURSE STRUCTURED DATA
 
     let structuredData = document.getElementById(
         "courseStructuredData"
@@ -402,8 +406,7 @@ async function loadPublicCourseInformation() {
 
         courseTitle.textContent = "Course Not Found";
 
-        courseDescription.textContent =
-            "No course was selected.";
+        courseDescription.textContent = "No course was selected.";
 
         return false;
 
@@ -521,27 +524,17 @@ function showPublicCourseAccessMessage() {
 
     }
 
-    if (lessonArea) {
+    if (lessonArea) lessonArea.classList.add("hidden");
 
-        lessonArea.classList.add("hidden");
-
-    }
-
-    if (quizArea) {
-
-        quizArea.classList.add("hidden");
-
-    }
+    if (quizArea) quizArea.classList.add("hidden");
 
     if (lessonList) {
 
         lessonList.innerHTML = `
-
             <p>
                 Sign in and enrol in this course
                 to access the lessons.
             </p>
-
         `;
 
     }
@@ -551,11 +544,8 @@ function showPublicCourseAccessMessage() {
         openQuizBtn.disabled = true;
 
         openQuizBtn.innerHTML = `
-
             <i class="fa-solid fa-lock"></i>
-
             Student Login Required
-
         `;
 
     }
@@ -673,8 +663,6 @@ function checkQuizSchedule(settings) {
 // 11. AUTHENTICATION
 // ========================================
 
-// Load public course information before checking login.
-
 const publicCourseReady = loadPublicCourseInformation();
 
 
@@ -684,13 +672,7 @@ onAuthStateChanged(auth, async function (user) {
 
         const courseAvailable = await publicCourseReady;
 
-        if (!courseAvailable) {
-
-            return;
-
-        }
-
-        // VISITOR WITHOUT LOGIN
+        if (!courseAvailable) return;
 
         if (!user) {
 
@@ -701,8 +683,6 @@ onAuthStateChanged(auth, async function (user) {
             return;
 
         }
-
-        // VERIFY STUDENT PROFILE
 
         const studentReference = doc(db, "students", user.uid);
 
@@ -804,8 +784,6 @@ async function loadCourse() {
 
         }
 
-        // CHECK COURSE DATES
-
         const schedule = checkCourseSchedule();
 
         if (!schedule.allowed) {
@@ -818,8 +796,6 @@ async function loadCourse() {
 
         }
 
-        // CHECK ENROLMENT
-
         const enrolled = await isStudentEnrolled();
 
         if (!enrolled) {
@@ -831,8 +807,6 @@ async function loadCourse() {
             return;
 
         }
-
-        // LOAD LESSONS
 
         const lessonsQuery = query(
 
@@ -847,16 +821,11 @@ async function loadCourse() {
         courseLessons = lessonsSnapshot.docs.map(function (item) {
 
             return {
-
                 ...item.data(),
-
                 id: item.id
-
             };
 
         });
-
-        // LOAD COURSE QUESTIONS
 
         const quizzesQuery = query(
 
@@ -871,20 +840,13 @@ async function loadCourse() {
         courseQuizzes = quizzesSnapshot.docs.map(function (item) {
 
             return {
-
                 ...item.data(),
-
                 id: item.id
-
             };
 
         });
 
-        // LOAD INSTRUCTOR QUIZ SETTINGS
-
         await loadQuizSettings();
-
-        // DISPLAY CONTENT
 
         await displayLessons();
 
@@ -949,11 +911,8 @@ async function loadQuizSettings() {
     const allSettings = snapshot.docs.map(function (item) {
 
         return {
-
             ...item.data(),
-
             id: item.id
-
         };
 
     });
@@ -1039,22 +998,29 @@ async function loadQuestionsForQuiz(settings) {
     const allQuestions = snapshot.docs.map(function (item) {
 
         return {
-
             ...item.data(),
-
             id: item.id
-
         };
 
     });
+    console.log("SELECTED QUIZ ID:", settings.id);
+
+console.log("COURSE ID:", courseId);
+
+console.log("ALL QUESTION IDs:", allQuestions.map(function (question) {
+    return {
+        id: question.id,
+        quizId: question.quizId,
+        courseId: question.courseId,
+        type: question.type
+    };
+}));
 
     let matchingQuestions = allQuestions.filter(function (question) {
 
         return String(question.quizId || "") === String(settings.id);
 
     });
-
-    // LEGACY QUESTION SUPPORT
 
     if (matchingQuestions.length === 0) {
 
@@ -1174,15 +1140,9 @@ function prepareQuizQuestions(questions, settings) {
 
         });
 
-        if (settings.shuffleOptions === true) {
-
-            question.optionOrder = shuffleArray(optionOrder);
-
-        } else {
-
-            question.optionOrder = optionOrder;
-
-        }
+        question.optionOrder = settings.shuffleOptions === true
+            ? shuffleArray(optionOrder)
+            : optionOrder;
 
         question.displayOptions = options;
 
@@ -1216,11 +1176,8 @@ async function getCompletedLessons() {
     return snapshot.docs.map(function (item) {
 
         return {
-
             ...item.data(),
-
             id: item.id
-
         };
 
     });
@@ -1256,16 +1213,10 @@ async function displayLessons() {
 
             button.className = "lesson-item";
 
-            if (isCompleted) {
-
-                button.classList.add("completed");
-
-            }
+            if (isCompleted) button.classList.add("completed");
 
             if (index === currentLessonIndex) {
-
                 button.classList.add("active");
-
             }
 
             button.innerHTML = `
@@ -1321,11 +1272,8 @@ function createLessonQuizButton() {
     lessonQuizButton.className = "quiz-navigation-btn";
 
     lessonQuizButton.innerHTML = `
-
         <i class="fa-solid fa-clipboard-question"></i>
-
         Take Lesson Quiz
-
     `;
 
     lessonQuizButton.style.marginTop = "15px";
@@ -1375,11 +1323,7 @@ function getLessonQuizSettings(lessonId) {
 
     });
 
-    if (matchingSettings.length === 0) {
-
-        return null;
-
-    }
+    if (matchingSettings.length === 0) return null;
 
     matchingSettings.sort(function (a, b) {
 
@@ -1433,8 +1377,6 @@ async function showLesson(index) {
     lessonContent.textContent =
         lesson.content || "No lesson content available.";
 
-    // VIDEO
-
     if (lesson.video) {
 
         videoArea.classList.remove("hidden");
@@ -1446,8 +1388,6 @@ async function showLesson(index) {
         videoArea.classList.add("hidden");
 
     }
-
-    // PDF
 
     const pdf = lesson.pdf || lesson.pdfData;
 
@@ -1465,13 +1405,9 @@ async function showLesson(index) {
 
     }
 
-    // NAVIGATION
-
     previousLessonBtn.disabled = index === 0;
 
     nextLessonBtn.disabled = index === courseLessons.length - 1;
-
-    // LESSON QUIZ
 
     createLessonQuizButton();
 
@@ -1484,11 +1420,8 @@ async function showLesson(index) {
         lessonQuizButton.disabled = false;
 
         lessonQuizButton.innerHTML = `
-
             <i class="fa-solid fa-clipboard-question"></i>
-
             Take Quiz: ${escapeHTML(lessonQuiz.title || "Lesson Quiz")}
-
         `;
 
     } else {
@@ -1510,9 +1443,7 @@ async function showLesson(index) {
         completeLessonBtn.disabled = isCompleted;
 
         completeLessonBtn.textContent = isCompleted
-
             ? "Completed ✓"
-
             : "Mark as Completed";
 
         await displayLessons();
@@ -1530,7 +1461,7 @@ async function showLesson(index) {
 }
 
 
-/// ========================================
+// ========================================
 // 24. COMPLETE LESSON
 // ========================================
 
@@ -1566,12 +1497,12 @@ async function completeLesson() {
 
     const studentId = currentStudent.uid;
 
-    const courseId = currentCourse.id;
+    const selectedCourseId = currentCourse.id;
 
     const lessonId = lesson.id;
 
     const completionId =
-        studentId + "_" + courseId + "_" + lessonId;
+        studentId + "_" + selectedCourseId + "_" + lessonId;
 
     const completionReference = doc(
         db,
@@ -1585,16 +1516,13 @@ async function completeLesson() {
 
     try {
 
-        // Save completion directly to Firestore.
-        // No preliminary getDoc() request is needed.
-
         await setDoc(completionReference, {
 
             studentId: studentId,
 
             studentName: currentStudent.fullName,
 
-            courseId: courseId,
+            courseId: selectedCourseId,
 
             lessonId: lessonId,
 
@@ -1608,24 +1536,13 @@ async function completeLesson() {
 
         });
 
-        console.log(
-            "Lesson completion saved successfully:",
-            completionId
-        );
-
         completeLessonBtn.textContent = "Completed ✓";
 
         completeLessonBtn.disabled = true;
 
-        // Refresh lesson list
-
         await displayLessons();
 
-        // Refresh course progress
-
         await updateProgress();
-
-        // Check certificate eligibility
 
         await checkCourseCompletionAndIssueCertificate();
 
@@ -1635,23 +1552,13 @@ async function completeLesson() {
 
     catch (error) {
 
-        console.error(
-            "Lesson completion error:",
-            error
-        );
-
-        console.error(
-            "Error code:",
-            error.code
-        );
+        console.error("Lesson completion error:", error);
 
         completeLessonBtn.disabled = false;
 
         completeLessonBtn.textContent = "Mark as Completed";
 
-        showError(
-            "Unable to save lesson: " + error.message
-        );
+        showError("Unable to save lesson: " + error.message);
 
     }
 
@@ -1675,9 +1582,7 @@ async function updateProgress() {
         const count = completed.length;
 
         const percentage = total > 0
-
             ? Math.round((count / total) * 100)
-
             : 0;
 
         progressPercentage.textContent = percentage + "%";
@@ -1727,11 +1632,8 @@ function updateCourseQuizButton() {
         openQuizBtn.disabled = true;
 
         openQuizBtn.innerHTML = `
-
             <i class="fa-solid fa-lock"></i>
-
             No Published Course Quiz
-
         `;
 
         return;
@@ -1741,11 +1643,8 @@ function updateCourseQuizButton() {
     openQuizBtn.disabled = false;
 
     openQuizBtn.innerHTML = `
-
         <i class="fa-solid fa-clipboard-question"></i>
-
         Take Course Quiz
-
     `;
 
 }
@@ -1755,31 +1654,35 @@ function updateCourseQuizButton() {
 // 28. COURSE QUIZ BUTTON EVENT
 // ========================================
 
-openQuizBtn.addEventListener("click", async function () {
+if (openQuizBtn) {
 
-    if (courseQuizSettings.length === 0) {
+    openQuizBtn.addEventListener("click", async function () {
 
-        alert("There is no published course quiz.");
+        if (courseQuizSettings.length === 0) {
 
-        return;
+            alert("There is no published course quiz.");
 
-    }
+            return;
 
-    const matchingSettings = [...courseQuizSettings];
+        }
 
-    matchingSettings.sort(function (a, b) {
+        const matchingSettings = [...courseQuizSettings];
 
-        const dateA = getDateValue(a.updatedAt)?.getTime() || 0;
+        matchingSettings.sort(function (a, b) {
 
-        const dateB = getDateValue(b.updatedAt)?.getTime() || 0;
+            const dateA = getDateValue(a.updatedAt)?.getTime() || 0;
 
-        return dateB - dateA;
+            const dateB = getDateValue(b.updatedAt)?.getTime() || 0;
+
+            return dateB - dateA;
+
+        });
+
+        await openConfiguredQuiz(matchingSettings[0]);
 
     });
 
-    await openConfiguredQuiz(matchingSettings[0]);
-
-});
+}
 
 
 // ========================================
@@ -1802,7 +1705,7 @@ async function openConfiguredQuiz(settings) {
 
     try {
 
-        openQuizBtn.disabled = true;
+        if (openQuizBtn) openQuizBtn.disabled = true;
 
         const freshSettings = await refreshQuizSettings(settings.id);
 
@@ -1903,7 +1806,11 @@ async function openConfiguredQuiz(settings) {
 
     finally {
 
-        openQuizBtn.disabled = courseQuizSettings.length === 0;
+        if (openQuizBtn) {
+
+            openQuizBtn.disabled = courseQuizSettings.length === 0;
+
+        }
 
     }
 
@@ -1916,88 +1823,69 @@ async function openConfiguredQuiz(settings) {
 
 async function checkQuizAttempts(settings) {
 
-    try {
+    const resultsQuery = query(
 
-        const resultsQuery = query(
+        collection(db, "results"),
 
-            collection(db, "results"),
+        where("studentId", "==", currentStudent.uid),
 
-            where("studentId", "==", currentStudent.uid),
+        where("courseId", "==", currentCourse.id)
 
-            where("courseId", "==", currentCourse.id)
+    );
 
-        );
+    const snapshot = await getDocs(resultsQuery);
 
-        const snapshot = await getDocs(resultsQuery);
+    const allResults = snapshot.docs.map(function (item) {
 
-        const allResults = snapshot.docs.map(function (item) {
+        return {
+            ...item.data(),
+            id: item.id
+        };
 
-            return {
+    });
 
-                ...item.data(),
+    const quizResults = allResults.filter(function (result) {
 
-                id: item.id
+        if (result.quizId) {
 
-            };
-
-        });
-
-        const quizResults = allResults.filter(function (result) {
-
-            if (result.quizId) {
-
-                return String(result.quizId) === String(settings.id);
-
-            }
-
-            return settings.type !== "lesson";
-
-        });
-
-        const usedAttempts = quizResults.length;
-
-        let maxAttempts = Number(settings.maxAttempts);
-
-        if (!Number.isInteger(maxAttempts) || maxAttempts < 1) {
-
-            maxAttempts = Number(currentCourse.maxAttempts);
+            return String(result.quizId) === String(settings.id);
 
         }
 
-        if (!Number.isInteger(maxAttempts) || maxAttempts < 1) {
+        return settings.type !== "lesson";
 
-            maxAttempts = DEFAULT_MAX_ATTEMPTS;
+    });
 
-        }
+    const usedAttempts = quizResults.length;
 
-        const remainingAttempts = Math.max(
-            0,
-            maxAttempts - usedAttempts
-        );
+    let maxAttempts = Number(settings.maxAttempts);
 
-        if (remainingAttempts <= 0) {
+    if (!Number.isInteger(maxAttempts) || maxAttempts < 1) {
 
-            return {
+        maxAttempts = Number(currentCourse.maxAttempts);
 
-                allowed: false,
+    }
 
-                message: "You have used all " +
-                    maxAttempts +
-                    " attempts for this quiz.",
+    if (!Number.isInteger(maxAttempts) || maxAttempts < 1) {
 
-                usedAttempts: usedAttempts,
+        maxAttempts = DEFAULT_MAX_ATTEMPTS;
 
-                maxAttempts: maxAttempts
+    }
 
-            };
+    const remainingAttempts = Math.max(
+        0,
+        maxAttempts - usedAttempts
+    );
 
-        }
+    if (remainingAttempts <= 0) {
 
         return {
 
-            allowed: true,
+            allowed: false,
 
-            message: "",
+            message: "You have used all " +
+                maxAttempts +
+                " attempts for this quiz.",
 
             usedAttempts: usedAttempts,
 
@@ -2007,15 +1895,17 @@ async function checkQuizAttempts(settings) {
 
     }
 
-    catch (error) {
+    return {
 
-        console.error("Quiz attempt checking error:", error);
+        allowed: true,
 
-        throw new Error(
-            "Unable to check your quiz attempts: " + error.message
-        );
+        message: "",
 
-    }
+        usedAttempts: usedAttempts,
+
+        maxAttempts: maxAttempts
+
+    };
 
 }
 
@@ -2186,46 +2076,101 @@ function displayQuiz() {
 
     if (!quiz) return;
 
-    const letters = ["A", "B", "C", "D"];
+    const questionText = quiz.question || quiz.questionText || "";
 
-    let optionsHTML = "";
+    const questionType = getQuestionType(quiz);
 
-    quiz.optionOrder.forEach(function (originalIndex, displayIndex) {
+    const questionMark = getQuestionMarks(quiz);
 
-        const option = quiz.displayOptions[originalIndex];
+    let questionHTML = "";
 
-        if (option === undefined || option === null || option === "") {
+    // THEORY QUESTION
 
-            return;
+    if (questionType === "theory") {
 
-        }
+        const savedAnswer = studentAnswers[quiz.id] || "";
 
-        const selected =
-            studentAnswers[quiz.id] === String(originalIndex);
+        questionHTML = `
 
-        optionsHTML += `
+            <div class="theory-question">
 
-            <label class="quiz-option">
+                <label for="theoryAnswer">
 
-                <input type="radio"
+                    Your Answer:
 
-                    name="question-${escapeHTML(quiz.id)}"
+                </label>
 
-                    value="${originalIndex}"
+                <textarea
+                    id="theoryAnswer"
+                    rows="8"
+                    placeholder="Type your answer here..."
+                    style="
+                        width: 100%;
+                        padding: 12px;
+                        margin-top: 10px;
+                        border: 1px solid #ccc;
+                        border-radius: 8px;
+                        resize: vertical;
+                        font-family: inherit;
+                        font-size: 15px;
+                    "
+                >${escapeHTML(savedAnswer)}</textarea>
 
-                    ${selected ? "checked" : ""}>
-
-                <span>
-                    ${letters[displayIndex]}. ${escapeHTML(option)}
-                </span>
-
-            </label>
+            </div>
 
         `;
 
-    });
+    }
 
-    const questionText = quiz.question || quiz.questionText || "";
+    // MCQ QUESTION
+
+    else {
+
+        const letters = ["A", "B", "C", "D"];
+
+        let optionsHTML = "";
+
+        quiz.optionOrder.forEach(function (originalIndex, displayIndex) {
+
+            const option = quiz.displayOptions[originalIndex];
+
+            if (
+                option === undefined ||
+                option === null ||
+                option === ""
+            ) {
+
+                return;
+
+            }
+
+            const selected =
+                studentAnswers[quiz.id] === String(originalIndex);
+
+            optionsHTML += `
+
+                <label class="quiz-option">
+
+                    <input
+                        type="radio"
+                        name="question-${escapeHTML(quiz.id)}"
+                        value="${originalIndex}"
+                        ${selected ? "checked" : ""}
+                    >
+
+                    <span>
+                        ${letters[displayIndex]}. ${escapeHTML(option)}
+                    </span>
+
+                </label>
+
+            `;
+
+        });
+
+        questionHTML = optionsHTML;
+
+    }
 
     quizQuestions.innerHTML = `
 
@@ -2238,11 +2183,17 @@ function displayQuiz() {
 
             <p>${escapeHTML(questionText)}</p>
 
-            ${optionsHTML}
+            <p>
+                <strong>Marks: ${questionMark}</strong>
+            </p>
+
+            ${questionHTML}
 
         </div>
 
     `;
+
+    // SAVE MCQ ANSWERS
 
     quizQuestions.querySelectorAll('input[type="radio"]').forEach(
         function (radio) {
@@ -2255,6 +2206,20 @@ function displayQuiz() {
 
         }
     );
+
+    // SAVE THEORY ANSWERS
+
+    const theoryAnswer = document.getElementById("theoryAnswer");
+
+    if (theoryAnswer) {
+
+        theoryAnswer.addEventListener("input", function () {
+
+            studentAnswers[quiz.id] = theoryAnswer.value;
+
+        });
+
+    }
 
     createQuizNavigation();
 
@@ -2362,9 +2327,15 @@ function nextQuestion() {
 
     if (!quiz) return;
 
-    if (studentAnswers[quiz.id] === undefined) {
+    const answer = studentAnswers[quiz.id];
 
-        alert("Please select an answer.");
+    if (
+        answer === undefined ||
+        answer === null ||
+        String(answer).trim() === ""
+    ) {
+
+        alert("Please answer this question before continuing.");
 
         return;
 
@@ -2388,6 +2359,12 @@ function nextQuestion() {
 function isCorrectAnswer(quiz, answer) {
 
     if (answer === undefined || answer === null) {
+
+        return false;
+
+    }
+
+    if (getQuestionType(quiz) === "theory") {
 
         return false;
 
@@ -2434,13 +2411,15 @@ async function saveQuizResult(
 
     score,
 
-    totalQuestions,
+    totalMarks,
 
     percentage,
 
     answers,
 
-    timeExpired
+    timeExpired,
+
+    hasTheoryQuestions
 
 ) {
 
@@ -2479,17 +2458,31 @@ async function saveQuizResult(
         timeLimitMinutes:
             Number(currentQuizSettings.timeLimitMinutes) || null,
 
+        // Automatically awarded MCQ marks
+
         score: score,
 
-        totalQuestions: totalQuestions,
+        // Maximum possible marks for all questions
 
-        percentage: percentage,
+        totalMarks: totalMarks,
+
+        // Keep percentage empty until theory marking is complete
+
+        percentage: hasTheoryQuestions ? null : percentage,
 
         answers: answers,
 
         timeExpired: timeExpired,
 
-        passed: percentage >= CERTIFICATE_PASS_MARK,
+        // Theory quizzes must be manually marked.
+
+        gradingStatus: hasTheoryQuestions ? "pending" : "completed",
+
+        hasTheoryQuestions: hasTheoryQuestions,
+
+        passed: hasTheoryQuestions
+            ? null
+            : percentage >= CERTIFICATE_PASS_MARK,
 
         submittedAt: serverTimestamp()
 
@@ -2558,7 +2551,17 @@ async function checkCourseCompletionAndIssueCertificate() {
 
                     !result.quizType || result.quizType === "course";
 
+                // A pending theory result cannot qualify.
+
+                const isFullyGraded =
+                    !result.gradingStatus ||
+                    result.gradingStatus === "completed";
+
                 return isCourseQuiz &&
+
+                    isFullyGraded &&
+
+                    result.passed === true &&
 
                     Number(result.percentage) >= CERTIFICATE_PASS_MARK;
 
@@ -2612,7 +2615,9 @@ async function checkCourseCompletionAndIssueCertificate() {
 
                 score: bestResult.score,
 
-                totalQuestions: bestResult.totalQuestions,
+                totalMarks: bestResult.totalMarks,
+
+                totalQuestions: bestResult.totalQuestions || null,
 
                 percentage: bestResult.percentage,
 
@@ -2693,15 +2698,26 @@ async function submitQuiz(timeExpired = false) {
 
     }
 
+    // CHECK UNANSWERED QUESTIONS
+
     const unanswered = activeQuizQuestions.filter(function (quiz) {
 
-        return studentAnswers[quiz.id] === undefined;
+        const answer = studentAnswers[quiz.id];
+
+        return (
+            answer === undefined ||
+            answer === null ||
+            String(answer).trim() === ""
+        );
 
     });
 
     if (!timeExpired && unanswered.length > 0) {
 
-        alert("Please answer all questions before submitting.");
+        alert(
+            "Please answer all questions before submitting. " +
+            unanswered.length + " question(s) remain unanswered."
+        );
 
         return;
 
@@ -2717,39 +2733,89 @@ async function submitQuiz(timeExpired = false) {
 
     let score = 0;
 
+    let totalMarks = 0;
+
+    let hasTheoryQuestions = false;
+
     const answers = [];
+
+    // PROCESS EVERY QUESTION
 
     activeQuizQuestions.forEach(function (quiz) {
 
-        const answer = studentAnswers[quiz.id] ?? null;
+        const answer = studentAnswers[quiz.id] ?? "";
 
-        const correct = isCorrectAnswer(quiz, answer);
+        const questionType = getQuestionType(quiz);
 
-        if (correct) {
+        const questionMarks = getQuestionMarks(quiz);
 
-            score++;
+        totalMarks += questionMarks;
+
+        // THEORY ANSWERS
+
+        if (questionType === "theory") {
+
+            hasTheoryQuestions = true;
+
+            answers.push({
+
+                questionId: quiz.id,
+
+                question: quiz.question || quiz.questionText || "",
+
+                type: "theory",
+
+                answer: answer,
+
+                marks: questionMarks,
+
+                awardedMarks: null,
+
+                isCorrect: null
+
+            });
 
         }
 
-        answers.push({
+        // MCQ ANSWERS
 
-            questionId: quiz.id,
+        else {
 
-            answer: answer,
+            const correct = isCorrectAnswer(quiz, answer);
 
-            correctAnswer: quiz.correctAnswer,
+            const awardedMarks = correct ? questionMarks : 0;
 
-            isCorrect: correct
+            if (correct) {
 
-        });
+                score += questionMarks;
+
+            }
+
+            answers.push({
+
+                questionId: quiz.id,
+
+                question: quiz.question || quiz.questionText || "",
+
+                type: "mcq",
+
+                answer: answer,
+
+                marks: questionMarks,
+
+                awardedMarks: awardedMarks,
+
+                isCorrect: correct
+
+            });
+
+        }
 
     });
 
-    const totalQuestions = activeQuizQuestions.length;
+    const percentage = totalMarks > 0
 
-    const percentage = totalQuestions > 0
-
-        ? Math.round((score / totalQuestions) * 100)
+        ? Math.round((score / totalMarks) * 100)
 
         : 0;
 
@@ -2759,13 +2825,15 @@ async function submitQuiz(timeExpired = false) {
 
             score,
 
-            totalQuestions,
+            totalMarks,
 
             percentage,
 
             answers,
 
-            timeExpired
+            timeExpired,
+
+            hasTheoryQuestions
 
         );
 
@@ -2778,34 +2846,47 @@ async function submitQuiz(timeExpired = false) {
             currentQuizSettings.type === "course"
         ) {
 
+            // This function will ignore pending results.
+
             await checkCourseCompletionAndIssueCertificate();
 
         }
 
         quizResult.classList.remove("hidden");
 
-        quizScore.textContent =
+        if (hasTheoryQuestions) {
 
-            "You scored " + score +
-
-            " out of " + totalQuestions +
-
-            " (" + percentage + "%)";
-
-        if (timeExpired) {
+            quizScore.textContent =
+                "MCQ marks: " + score + " out of " + totalMarks;
 
             quizFeedback.textContent =
-                "Time is up! Your quiz was submitted automatically.";
-
-        } else if (percentage >= CERTIFICATE_PASS_MARK) {
-
-            quizFeedback.textContent =
-                "Excellent work! You passed the quiz.";
+                "Your answers have been submitted successfully. " +
+                "Your Theory answers are waiting for instructor marking. " +
+                "Your final score will be available after marking.";
 
         } else {
 
-            quizFeedback.textContent =
-                "Keep learning. You can try again.";
+            quizScore.textContent =
+                "You scored " + score +
+                " out of " + totalMarks +
+                " (" + percentage + "%)";
+
+            if (timeExpired) {
+
+                quizFeedback.textContent =
+                    "Time is up! Your quiz was submitted automatically.";
+
+            } else if (percentage >= CERTIFICATE_PASS_MARK) {
+
+                quizFeedback.textContent =
+                    "Excellent work! You passed the quiz.";
+
+            } else {
+
+                quizFeedback.textContent =
+                    "Keep learning. You can try again.";
+
+            }
 
         }
 
@@ -2817,23 +2898,39 @@ async function submitQuiz(timeExpired = false) {
 
         }
 
-        alert(
+        if (hasTheoryQuestions) {
 
-            "Quiz submitted successfully!\n\n" +
+            alert(
 
-            "Quiz: " + currentQuizSettings.title +
+                "Quiz submitted successfully!\n\n" +
 
-            "\nYour score: " + score + "/" + totalQuestions +
+                "Your MCQ marks: " + score + "/" + totalMarks +
 
-            "\nPercentage: " + percentage + "%" +
+                "\n\nYour Theory answers are pending instructor marking." +
 
-            "\nAttempts used: " + usedQuizAttempts +
+                "\nYour final result will be available after marking."
 
-            " of " + maxQuizAttempts +
+            );
 
-            "\n\nReturning to your dashboard..."
+        } else {
 
-        );
+            alert(
+
+                "Quiz submitted successfully!\n\n" +
+
+                "Quiz: " + currentQuizSettings.title +
+
+                "\nYour score: " + score + "/" + totalMarks +
+
+                "\nPercentage: " + percentage + "%" +
+
+                "\nAttempts used: " + usedQuizAttempts +
+
+                " of " + maxQuizAttempts
+
+            );
+
+        }
 
         window.location.href = "student-dashboard.html";
 
@@ -2864,13 +2961,17 @@ async function submitQuiz(timeExpired = false) {
 // 41. QUIZ FORM SUBMISSION
 // ========================================
 
-quizForm.addEventListener("submit", function (event) {
+if (quizForm) {
 
-    event.preventDefault();
+    quizForm.addEventListener("submit", function (event) {
 
-    submitQuiz(false);
+        event.preventDefault();
 
-});
+        submitQuiz(false);
+
+    });
+
+}
 
 
 // ========================================
