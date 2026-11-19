@@ -1330,17 +1330,18 @@ document.addEventListener("click", function(event) {
     }
 });
 
-
 // ==========================================
 // QUIZ RESULTS
 // ==========================================
 
 function displayStudentResults() {
+
     const list = getElement("studentResultList");
 
     if (!list) return;
 
     if (studentResults.length === 0) {
+
         list.innerHTML = displayEmptyState(
             "You have not completed any quizzes yet.",
             "fa-solid fa-chart-column"
@@ -1352,45 +1353,161 @@ function displayStudentResults() {
     const results = [...studentResults].reverse();
 
     list.innerHTML = results.map(result => {
+
         const course = getCourseById(result.courseId);
 
         const title = result.courseTitle ||
             course?.title ||
             "Course";
 
+        const isPending = result.gradingStatus === "pending";
+
+        const answers = Array.isArray(result.answers)
+            ? result.answers
+            : [];
+
+        const theoryAnswers = answers.filter(
+            answer => answer.type === "theory"
+        );
+
         const percentage = Number(result.percentage) || 0;
 
+        let theoryHTML = "";
+
+        if (theoryAnswers.length > 0 && !isPending) {
+
+            theoryHTML = `
+                <details class="theory-result-details">
+
+                    <summary>
+                        View Theory Marks and Feedback
+                    </summary>
+
+                    <div class="theory-result-list">
+
+                        ${theoryAnswers.map((answer, index) => {
+
+                            const awardedMarks = Number(
+                                answer.awardedMarks || 0
+                            );
+
+                            const maximumMarks = Number(
+                                answer.marks || 1
+                            );
+
+                            return `
+
+                                <div class="theory-result-item">
+
+                                    <h4>Question ${index + 1}</h4>
+
+                                    <p>
+                                        <strong>Question:</strong>
+                                        ${escapeHTML(answer.question || "")}
+                                    </p>
+
+                                    <div>
+                                        <strong>Your Answer:</strong>
+
+                                        <p>
+                                            ${escapeHTML(answer.answer || "No answer")}
+                                        </p>
+                                    </div>
+
+                                    <p>
+                                        <strong>Marks Awarded:</strong>
+                                        ${awardedMarks}/${maximumMarks}
+                                    </p>
+
+                                    ${
+                                        answer.feedback
+                                        ? `
+                                            <div class="theory-feedback">
+                                                <strong>Instructor Feedback:</strong>
+
+                                                <p>
+                                                    ${escapeHTML(answer.feedback)}
+                                                </p>
+                                            </div>
+                                        `
+                                        : ""
+                                    }
+
+                                </div>
+
+                            `;
+
+                        }).join("")}
+
+                    </div>
+
+                </details>
+            `;
+
+        }
+
         return `
+
             <div class="result-card">
 
                 <h3>${escapeHTML(title)}</h3>
 
-                <div class="result-details">
+                <p>
+                    <strong>Quiz:</strong>
+                    ${escapeHTML(result.quizTitle || "Course Quiz")}
+                </p>
 
-                    <span>
-                        Score:
-                        ${escapeHTML(result.score ?? 0)}
-                        /
-                        ${escapeHTML(result.totalQuestions ?? 0)}
-                    </span>
+                ${
+                    isPending
+                    ? `
+                        <div class="result-pending">
 
-                    <span class="result-score">
-                        ${percentage}%
-                    </span>
+                            <strong>Result Pending</strong>
 
-                    <span>
-                        Date:
-                        ${formatDate(result.submittedAt || result.date)}
-                    </span>
+                            <p>
+                                Your Theory answers have been submitted
+                                and are waiting for marking.
+                            </p>
 
-                </div>
+                        </div>
+                    `
+                    : `
+                        <div class="result-details">
+
+                            <span>
+                                Score:
+                                ${escapeHTML(result.score ?? 0)}
+                                /
+                                ${escapeHTML(result.totalMarks ?? result.totalQuestions ?? 0)}
+                            </span>
+
+                            <span class="result-score">
+                                ${percentage}%
+                            </span>
+
+                            <span>
+                                Status:
+                                ${result.passed ? "Passed" : "Not passed"}
+                            </span>
+
+                        </div>
+
+                        ${theoryHTML}
+                    `
+                }
+
+                <p>
+                    Date:
+                    ${formatDate(result.submittedAt || result.date)}
+                </p>
 
             </div>
+
         `;
+
     }).join("");
+
 }
-
-
 // ==========================================
 // CERTIFICATES
 // ==========================================
