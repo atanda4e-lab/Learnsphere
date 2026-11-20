@@ -2,7 +2,7 @@ import { db } from "./firebase.js";
 
 import {
     doc,
-    getDoc
+    getDocFromServer
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 
@@ -139,11 +139,9 @@ async function verifyCertificate(certificateId) {
     "certificateVerifications",
     certificateId
 );
-
-        const certificateDocument = await getDoc(
-            certificateReference
-        );
-
+const certificateDocument = await getDocFromServer(
+    certificateReference
+);
 
         if (!certificateDocument.exists()) {
 
