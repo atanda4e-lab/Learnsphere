@@ -2582,6 +2582,11 @@ async function checkCourseCompletionAndIssueCertificate() {
             certificateId
 
         );
+        const verificationReference = doc(
+    db,
+    "certificateVerifications",
+    certificateId
+);
 
         let newlyIssued = false;
 
@@ -2628,6 +2633,14 @@ async function checkCourseCompletionAndIssueCertificate() {
                 createdAt: serverTimestamp()
 
             });
+            transaction.set(verificationReference, {
+    certificateId: certificateId,
+    studentName: currentStudent.fullName,
+    courseTitle: currentCourse.title,
+    percentage: bestResult.percentage,
+    founderName: CERTIFICATE_FOUNDER_NAME,
+    issuedAt: serverTimestamp()
+});
 
             newlyIssued = true;
 

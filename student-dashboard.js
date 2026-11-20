@@ -745,37 +745,51 @@ document.addEventListener("click", function(event) {
 // ==========================================
 
 async function loadCourses() {
-    const snapshot = await getDocs(
+
+    // Load courses published with the published field
+
+    const publishedCourses = await getDocs(
         query(
             collection(db, "courses"),
             where("published", "==", true)
         )
     );
 
-    studentCourses = snapshot.docs.map(document => ({
+    studentCourses = publishedCourses.docs.map(document => ({
         ...document.data(),
         id: document.id
     }));
 
-    // Also include courses published with the alternative flag.
-    const allCourses = await getDocs(collection(db, "courses"));
 
-    allCourses.docs.forEach(document => {
-        const exists = studentCourses.some(course =>
+    // Also load courses published with isPublished
+
+    const alternativeCourses = await getDocs(
+        query(
+            collection(db, "courses"),
+            where("isPublished", "==", true)
+        )
+    );
+
+
+    // Add courses that are not already in the list
+
+    alternativeCourses.docs.forEach(document => {
+
+        const alreadyExists = studentCourses.some(course =>
             course.id === document.id
         );
 
-        if (!exists) {
-            const data = document.data();
+        if (!alreadyExists) {
 
-            if (data.isPublished === true) {
-                studentCourses.push({
-                    ...data,
-                    id: document.id
-                });
-            }
+            studentCourses.push({
+                ...document.data(),
+                id: document.id
+            });
+
         }
+
     });
+
 }
 
 async function loadStudentEnrollments() {
@@ -1717,6 +1731,43 @@ function downloadCertificate(certificateId) {
     pdf.text("Founder, LearnSphere", 234.5, 190, {
         align: "center"
     });
+    // GENERATE CERTIFICATE VERIFICATION QR CODE
+
+const verificationURL =
+    "https://learnsphere-ng.vercel.app/verify-certificate.html?id=" +
+    encodeURIComponent(certificateNumber);
+
+const qrContainer = document.createElement("div");
+
+new QRCode(qrContainer, {
+    text: verificationURL,
+    width: 150,
+    height: 150,
+    correctLevel: QRCode.CorrectLevel.M
+});
+
+const qrCanvas = qrContainer.querySelector("canvas");
+
+if (qrCanvas) {
+    const qrImage = qrCanvas.toDataURL("image/png");
+
+    pdf.addImage(
+        qrImage,
+        "PNG",
+        20,
+        22,
+        25,
+        25
+    );
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(71, 85, 105);
+
+    pdf.text("Scan to verify", 32.5, 51, {
+        align: "center"
+    });
+}
 
     const safeName = studentName.replace(/[^a-z0-9]/gi, "_");
 
@@ -1800,7 +1851,287 @@ if (logoutButton) {
         }
     });
 }
+// ==========================================
+// MY STUDY NOTES - FIREBASE
+// ==========================================
 
+let studentNotes = [];
+let editingNoteId = null;
+
+const addNoteBtn = getElement("addNoteBtn");
+const noteForm = getElement("noteForm");
+const noteTitle = getElement("noteTitle");
+const noteContent = getElement("noteContent");
+const saveNoteBtn = getElement("saveNoteBtn");
+const cancelNoteBtn = getElement("cancelNoteBtn");
+const notesContainer = getElement("notesContainer");
+const searchNotes = getElement("searchNotes");
+
+
+// LOAD STUDENT NOTES
+
+async function loadStudentNotes() {
+
+    if (!currentStudent) return;
+
+    try {
+
+        const notesQuery = query(
+            collection(db, "studentNotes"),
+            where("studentId", "==", getStudentId())
+        );
+
+        const snapshot = await getDocs(notesQuery);
+
+        studentNotes = snapshot.docs.map(note => ({
+            id: note.id,
+            ...note.data()
+        }));
+
+        studentNotes.sort((a, b) => {
+            const dateA = a.createdAt?.toMillis?.() || 0;
+            const dateB = b.createdAt?.toMillis?.() || 0;
+
+            return dateB - dateA;
+        });
+
+        displayStudentNotes();
+
+    } catch (error) {
+
+        console.error("Notes loading error:", error);
+
+        notesContainer.innerHTML =
+            displayEmptyState("Unable to load your notes.");
+
+    }
+}
+
+
+// DISPLAY NOTES
+
+function displayStudentNotes(searchTerm = "") {
+
+    if (!notesContainer) return;
+
+    const filteredNotes = studentNotes.filter(note =>
+        (note.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (note.content || "").toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (filteredNotes.length === 0) {
+
+        notesContainer.innerHTML =
+            displayEmptyState("No study notes found.", "fas fa-sticky-note");
+
+        return;
+    }
+
+    notesContainer.innerHTML = filteredNotes.map(note => `
+
+        <div class="note-card">
+
+            <h3>${escapeHTML(note.title)}</h3>
+
+            <p>${escapeHTML(note.content).replace(/\n/g, "<br>")}</p>
+
+            <small>Created: ${formatDate(note.createdAt)}</small>
+
+            <div class="note-actions">
+
+                <button onclick="editStudentNote('${note.id}')">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+
+                <button onclick="deleteStudentNote('${note.id}')">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+
+            </div>
+
+        </div>
+
+    `).join("");
+
+}
+
+
+// OPEN NOTE FORM
+
+if (addNoteBtn) {
+
+    addNoteBtn.addEventListener("click", function() {
+
+        editingNoteId = null;
+
+        noteTitle.value = "";
+        noteContent.value = "";
+
+        saveNoteBtn.textContent = "Save Note";
+
+        noteForm.style.display = "block";
+
+        noteTitle.focus();
+
+    });
+
+}
+
+
+// CANCEL NOTE FORM
+
+if (cancelNoteBtn) {
+
+    cancelNoteBtn.addEventListener("click", function() {
+
+        noteForm.style.display = "none";
+
+        noteTitle.value = "";
+        noteContent.value = "";
+
+        editingNoteId = null;
+
+    });
+
+}
+
+
+// SAVE OR UPDATE NOTE
+
+if (saveNoteBtn) {
+
+    saveNoteBtn.addEventListener("click", async function() {
+
+        const title = noteTitle.value.trim();
+        const content = noteContent.value.trim();
+
+        if (!title || !content) {
+
+            alert("Please enter both a note title and content.");
+
+            return;
+        }
+
+        saveNoteBtn.disabled = true;
+
+        try {
+
+            if (editingNoteId) {
+
+                await updateDoc(
+                    doc(db, "studentNotes", editingNoteId),
+                    {
+                        title: title,
+                        content: content,
+                        updatedAt: serverTimestamp()
+                    }
+                );
+
+                alert("Note updated successfully!");
+
+            } else {
+
+                await addDoc(
+                    collection(db, "studentNotes"),
+                    {
+                        studentId: getStudentId(),
+                        title: title,
+                        content: content,
+                        createdAt: serverTimestamp(),
+                        updatedAt: serverTimestamp()
+                    }
+                );
+
+                alert("Note saved successfully!");
+
+            }
+
+            noteForm.style.display = "none";
+
+            noteTitle.value = "";
+            noteContent.value = "";
+
+            editingNoteId = null;
+
+            await loadStudentNotes();
+
+        } catch (error) {
+
+            console.error("Note saving error:", error);
+
+            alert("Unable to save note: " + error.message);
+
+        } finally {
+
+            saveNoteBtn.disabled = false;
+
+        }
+
+    });
+
+}
+
+
+// EDIT NOTE
+
+window.editStudentNote = function(noteId) {
+
+    const note = studentNotes.find(item => item.id === noteId);
+
+    if (!note) return;
+
+    editingNoteId = noteId;
+
+    noteTitle.value = note.title;
+    noteContent.value = note.content;
+
+    saveNoteBtn.textContent = "Update Note";
+
+    noteForm.style.display = "block";
+
+    noteTitle.focus();
+
+};
+
+
+// DELETE NOTE
+
+window.deleteStudentNote = async function(noteId) {
+
+    const confirmed = confirm("Are you sure you want to delete this note?");
+
+    if (!confirmed) return;
+
+    try {
+
+        await deleteDoc(doc(db, "studentNotes", noteId));
+
+        alert("Note deleted successfully!");
+
+        await loadStudentNotes();
+
+    } catch (error) {
+
+        console.error("Note deletion error:", error);
+
+        alert("Unable to delete note: " + error.message);
+
+    }
+
+};
+
+
+// SEARCH NOTES
+
+if (searchNotes) {
+
+    searchNotes.addEventListener("input", function() {
+
+        displayStudentNotes(this.value.trim());
+
+    });
+
+}
 
 // ==========================================
 // LOAD DASHBOARD
@@ -1891,6 +2222,7 @@ onAuthStateChanged(auth, async function(user) {
         await loadAllStudentData();
 
         await loadStudentNotifications();
+        await loadStudentNotes();
 
         await checkForNewStudentActivity();
 

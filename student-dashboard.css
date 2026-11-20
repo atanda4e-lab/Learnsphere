@@ -3426,3 +3426,56 @@ select:focus-visible {
     }
 
 }
+/* MY STUDY NOTES */
+
+.notes-container {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    margin-top: 20px;
+}
+
+#addNoteBtn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    background: #6c4ce4;
+    color: white;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+#searchNotes,
+#noteTitle,
+#noteContent {
+    width: 100%;
+    padding: 13px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+#noteContent {
+    resize: vertical;
+}
+
+#saveNoteBtn,
+#cancelNoteBtn {
+    padding: 11px 20px;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    margin-right: 8px;
+}
+
+#saveNoteBtn {
+    background: #6c4ce4;
+    color: white;
+}
+
+#cancelNoteBtn {
+    background: #eeeeee;
+    color: #333;
+}

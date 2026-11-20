@@ -134,11 +134,11 @@ async function verifyCertificate(certificateId) {
     try {
 
         // Search the original certificates collection
-        const certificateReference = doc(
-            db,
-            "certificates",
-            certificateId
-        );
+       const certificateReference = doc(
+    db,
+    "certificateVerifications",
+    certificateId
+);
 
         const certificateDocument = await getDoc(
             certificateReference
