@@ -142,7 +142,10 @@ async function verifyCertificate(certificateId) {
 const certificateDocument = await getDocFromServer(
     certificateReference
 );
-
+console.log("Certificate ID:", certificateId);
+console.log("Firestore path:", certificateReference.path);
+console.log("Document exists:", certificateDocument.exists());
+console.log("Document data:", certificateDocument.data());
         if (!certificateDocument.exists()) {
 
             showMessage(

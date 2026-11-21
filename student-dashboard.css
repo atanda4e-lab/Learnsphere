@@ -3479,3 +3479,168 @@ select:focus-visible {
     background: #eeeeee;
     color: #333;
 }
+/* =====================================
+   LIGHT AND DARK THEME
+===================================== */
+
+:root {
+    color-scheme: light;
+
+    --bg-color: #f5f7fc;
+    --card-color: #ffffff;
+    --text-color: #26324b;
+    --muted-color: #7b8498;
+    --border-color: #e8ebf2;
+    --sidebar-color: #ffffff;
+    --input-color: #ffffff;
+    --hover-color: #f0f2f8;
+}
+
+/* DARK THEME */
+
+body.dark-theme {
+    color-scheme: dark;
+
+    --bg-color: #111827;
+    --card-color: #1f2937;
+    --text-color: #f3f4f6;
+    --muted-color: #a1aab9;
+    --border-color: #374151;
+    --sidebar-color: #182233;
+    --input-color: #273449;
+    --hover-color: #303e53;
+}
+
+/* GENERAL BACKGROUND */
+
+body {
+    background: var(--bg-color);
+    color: var(--text-color);
+}
+
+/* SIDEBAR */
+
+.sidebar {
+    background: var(--sidebar-color);
+    color: var(--text-color);
+}
+
+/* MAIN CONTENT */
+
+.main-content {
+    background: var(--bg-color);
+}
+
+/* HEADER */
+
+.top-header {
+    background: var(--card-color);
+    color: var(--text-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* CARDS */
+
+.stat-card,
+.content-card,
+.profile-panel,
+.notification-stat,
+.course-search-panel,
+.notification-dropdown {
+    background: var(--card-color);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+/* TEXT */
+
+body.dark-theme p,
+body.dark-theme .nav-label,
+body.dark-theme .stat-label {
+    color: var(--muted-color);
+}
+
+/* INPUTS */
+
+body.dark-theme input,
+body.dark-theme textarea,
+body.dark-theme select {
+    background: var(--input-color);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-theme input::placeholder,
+body.dark-theme textarea::placeholder {
+    color: var(--muted-color);
+}
+
+/* SIDEBAR LINKS */
+
+body.dark-theme .sidebar-link {
+    color: var(--muted-color);
+}
+
+body.dark-theme .sidebar-link:hover,
+body.dark-theme .sidebar-link.active {
+    background: var(--hover-color);
+    color: #a78bfa;
+}
+
+/* THEME BUTTON */
+
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--card-color);
+    color: var(--text-color);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    transition: 0.3s ease;
+}
+
+.theme-toggle:hover {
+    background: var(--hover-color);
+}
+
+.theme-toggle i {
+    font-size: 16px;
+}
+
+/* FOOTER */
+
+.dashboard-footer {
+    background: var(--bg-color);
+    color: var(--muted-color);
+}
+
+/* SMOOTH TRANSITION */
+
+body,
+.sidebar,
+.top-header,
+.stat-card,
+.content-card,
+.profile-panel,
+.notification-dropdown,
+.theme-toggle {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+    .theme-toggle span {
+        display: none;
+    }
+
+    .theme-toggle {
+        padding: 10px 12px;
+    }
+}

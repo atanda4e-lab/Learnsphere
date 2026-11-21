@@ -2251,3 +2251,37 @@ setText("currentYear", new Date().getFullYear());
 // ==========================================
 // END OF STUDENT DASHBOARD
 // ==========================================
+// =====================================
+// LIGHT AND DARK THEME SYSTEM
+// =====================================
+
+const themeToggle = document.getElementById("themeToggle");
+const themeIcon = document.getElementById("themeIcon");
+const themeText = document.getElementById("themeText");
+
+// UPDATE THEME BUTTON
+function updateThemeButton() {
+
+    const isDark = document.body.classList.contains("dark-theme");
+
+    if (isDark) {
+        themeIcon.className = "fas fa-sun";
+        themeText.textContent = "Light Mode";
+    } else {
+        themeIcon.className = "fas fa-moon";
+        themeText.textContent = "Dark Mode";
+    }
+
+}
+
+// SWITCH THEME
+themeToggle.addEventListener("click", function () {
+
+    document.body.classList.toggle("dark-theme");
+
+    updateThemeButton();
+
+});
+
+// INITIAL BUTTON STATE
+updateThemeButton();

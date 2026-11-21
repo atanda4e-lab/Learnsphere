@@ -4,69 +4,50 @@
 <head>
 
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- SEO TITLE -->
     <title>Explore Online Courses | LearnSphere Nigeria</title>
 
-    <!-- SEO DESCRIPTION -->
     <meta name="description"
         content="Explore LearnSphere courses for Nigerian university students. Discover courses across different departments and academic levels, study online and improve your academic knowledge.">
 
-    <!-- SEARCH ENGINE SETTINGS -->
     <meta name="robots" content="index, follow">
-
     <meta name="author" content="LearnSphere">
-
     <meta name="theme-color" content="#3157d5">
 
-    <!-- CANONICAL URL -->
     <link rel="canonical"
         href="https://learnsphere-ng.vercel.app/courses.html">
 
-    <!-- OPEN GRAPH / SOCIAL SHARING -->
     <meta property="og:type" content="website">
-
     <meta property="og:title"
         content="Explore Online Courses | LearnSphere">
-
     <meta property="og:description"
         content="Discover courses, learn new skills and improve your academic knowledge with LearnSphere.">
-
     <meta property="og:url"
         content="https://learnsphere-ng.vercel.app/courses.html">
-
     <meta property="og:site_name" content="LearnSphere">
-
     <meta property="og:image"
         content="https://learnsphere-ng.vercel.app/images/learnsphere-preview.png">
 
-    <!-- TWITTER SHARING -->
     <meta name="twitter:card" content="summary_large_image">
-
     <meta name="twitter:title"
         content="Explore Online Courses | LearnSphere">
-
     <meta name="twitter:description"
         content="Explore university courses and learning resources on LearnSphere.">
-
     <meta name="twitter:image"
         content="https://learnsphere-ng.vercel.app/images/learnsphere-preview.png">
 
-    <!-- FAVICON -->
     <link rel="icon" href="favicon.ico">
-
-    <!-- STYLESHEET -->
-    <link rel="stylesheet" href="courses.css">
 
     <!-- FONT AWESOME -->
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-    <!-- LEARNSPHERE STRUCTURED DATA -->
-    <script type="application/ld+json">
+    <!-- STYLESHEET -->
+    <link rel="stylesheet" href="courses.css">
 
+    <!-- STRUCTURED DATA -->
+    <script type="application/ld+json">
     {
         "@context": "https://schema.org",
         "@type": "EducationalOrganization",
@@ -75,11 +56,9 @@
         "description": "LearnSphere is an online learning platform offering educational courses and learning resources for students.",
         "educationalCredentialAwarded": "Online Learning Certificates"
     }
-
     </script>
 
 </head>
-
 
 <body>
 
@@ -87,34 +66,41 @@
     <header class="courses-header">
 
         <a href="index.html" class="logo">
-
             <i class="fa-solid fa-graduation-cap"></i>
-
             <span>LearnSphere</span>
-
         </a>
-
 
         <nav aria-label="Main navigation">
 
             <a href="index.html">Home</a>
-
             <a href="courses.html" class="active">Courses</a>
-
             <a href="student-dashboard.html">Dashboard</a>
-
             <a href="admin.html">Admin</a>
 
         </nav>
 
+        <div class="courses-header-actions">
 
-        <a href="auth.html?mode=login" class="login-link">
+            <!-- DARK / LIGHT THEME BUTTON -->
+            <button
+                class="theme-toggle"
+                id="themeToggle"
+                type="button"
+                aria-label="Switch to dark mode"
+                title="Switch theme">
 
-            <i class="fa-solid fa-right-to-bracket"></i>
+                <i class="fa-solid fa-moon"></i>
 
-            Login
+            </button>
 
-        </a>
+            <a href="auth.html?mode=login" class="login-link">
+
+                <i class="fa-solid fa-right-to-bracket"></i>
+                Login
+
+            </a>
+
+        </div>
 
     </header>
 
@@ -141,7 +127,6 @@
             <a href="#available-courses" class="hero-button">
 
                 Explore Courses
-
                 <i class="fa-solid fa-arrow-down"></i>
 
             </a>
@@ -153,7 +138,6 @@
 
     <!-- MAIN CONTENT -->
     <main class="courses-container" id="available-courses">
-
 
         <!-- COURSE HEADING -->
         <section class="courses-heading">
@@ -172,7 +156,6 @@
 
             </div>
 
-
             <span id="courseCount">
                 0 Courses
             </span>
@@ -181,8 +164,8 @@
 
 
         <!-- SEARCH AND FILTER -->
-        <section class="course-filters" aria-label="Course search and filters">
-
+        <section class="course-filters"
+            aria-label="Course search and filters">
 
             <div class="search-box">
 
@@ -192,41 +175,35 @@
                     type="search"
                     id="courseSearch"
                     placeholder="Search courses, departments or topics..."
-                    aria-label="Search courses"
-                >
+                    aria-label="Search courses">
 
             </div>
 
-
-            <select id="departmentFilter" aria-label="Filter by department">
+            <select id="departmentFilter"
+                aria-label="Filter by department">
 
                 <option value="">All Departments</option>
 
             </select>
 
-
-            <select id="levelFilter" aria-label="Filter by academic level">
+            <select id="levelFilter"
+                aria-label="Filter by academic level">
 
                 <option value="">All Levels</option>
-
                 <option value="100">100 Level</option>
-
                 <option value="200">200 Level</option>
-
                 <option value="300">300 Level</option>
-
                 <option value="400">400 Level</option>
-
                 <option value="500">500 Level</option>
 
             </select>
-
 
         </section>
 
 
         <!-- COURSE GRID -->
-        <section id="courseGrid" class="course-grid"
+        <section id="courseGrid"
+            class="course-grid"
             aria-label="Available courses">
 
             <!-- Courses are displayed here using JavaScript -->
@@ -235,7 +212,8 @@
 
 
         <!-- EMPTY MESSAGE -->
-        <section id="emptyMessage" class="empty-message hidden">
+        <section id="emptyMessage"
+            class="empty-message hidden">
 
             <i class="fa-solid fa-book-open"></i>
 
@@ -248,7 +226,6 @@
 
         </section>
 
-
     </main>
 
 
@@ -258,7 +235,6 @@
         <div class="footer-logo">
 
             <i class="fa-solid fa-graduation-cap"></i>
-
             LearnSphere
 
         </div>
@@ -268,16 +244,16 @@
         </p>
 
         <p class="copyright">
-
             &copy; 2026 LearnSphere. All rights reserved.
-
         </p>
 
     </footer>
 
 
-    <!-- JAVASCRIPT -->
-   <script type="module" src="courses.js"></script>
+    <!-- THEME JAVASCRIPT -->
+    <script type="module" src="theme.js"></script>
+    <!-- COURSES JAVASCRIPT -->
+    <script type="module" src="courses.js"></script>
 
 </body>
 

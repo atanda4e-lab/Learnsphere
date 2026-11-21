@@ -1037,3 +1037,156 @@ section {
     }
 
 }
+/* ============================= */
+/* DARK / LIGHT THEME BUTTON */
+/* ============================= */
+
+.theme-toggle {
+    width: 42px;
+    height: 42px;
+    border: 1px solid #dbe2f0;
+    border-radius: 50%;
+    background: #f1f5ff;
+    color: #3157d5;
+    font-size: 17px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.3s ease;
+}
+
+.theme-toggle:hover {
+    background: #3157d5;
+    color: #ffffff;
+    transform: rotate(15deg);
+}
+
+.header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* MOBILE RESPONSIVENESS */
+
+@media (max-width: 768px) {
+
+    .header-buttons {
+        gap: 8px;
+    }
+
+    .theme-toggle {
+        width: 36px;
+        height: 36px;
+        font-size: 15px;
+    }
+
+}
+/* ============================= */
+/* LEARNSPHERE DARK MODE */
+/* ============================= */
+
+body.dark-mode {
+    background: #111827;
+    color: #f1f5f9;
+}
+
+/* HEADER */
+
+body.dark-mode .header {
+    background: #1e293b;
+    border-bottom: 1px solid #334155;
+}
+
+body.dark-mode .navbar-links a,
+body.dark-mode .login-btn {
+    color: #f1f5f9;
+}
+
+/* HERO */
+
+body.dark-mode .hero {
+    background: #111827;
+}
+
+body.dark-mode .hero h1,
+body.dark-mode .hero h2,
+body.dark-mode .hero h3,
+body.dark-mode .hero p {
+    color: #f1f5f9;
+}
+
+/* SECTIONS */
+
+body.dark-mode .quick-access,
+body.dark-mode .introduction,
+body.dark-mode .about-section,
+body.dark-mode .features-section,
+body.dark-mode .how-section {
+    background: #111827;
+}
+
+body.dark-mode .section-heading h2,
+body.dark-mode .introduction h2,
+body.dark-mode .about-text h2,
+body.dark-mode .feature-card h3,
+body.dark-mode .step-card h3 {
+    color: #f1f5f9;
+}
+
+body.dark-mode .section-heading p,
+body.dark-mode .introduction p,
+body.dark-mode .about-text p,
+body.dark-mode .feature-card p,
+body.dark-mode .step-card p {
+    color: #cbd5e1;
+}
+
+/* CARDS */
+
+body.dark-mode .quick-card,
+body.dark-mode .feature-card,
+body.dark-mode .step-card,
+body.dark-mode .floating-card {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+body.dark-mode .quick-card h3,
+body.dark-mode .quick-card p,
+body.dark-mode .floating-card h4,
+body.dark-mode .floating-card p {
+    color: #f1f5f9;
+}
+
+/* INSTRUCTOR */
+
+body.dark-mode .instructor-section {
+    background: #1e293b;
+}
+
+body.dark-mode .instructor-section h2,
+body.dark-mode .instructor-section p {
+    color: #f1f5f9;
+}
+
+/* FOOTER */
+
+body.dark-mode .footer {
+    background: #0f172a;
+}
+
+body.dark-mode .footer h3,
+body.dark-mode .footer p,
+body.dark-mode .footer a {
+    color: #cbd5e1;
+}
+
+/* THEME BUTTON */
+
+body.dark-mode .theme-toggle {
+    background: #334155;
+    color: #facc15;
+    border-color: #475569;
+}
