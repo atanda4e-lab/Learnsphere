@@ -1691,6 +1691,8 @@ if (openQuizBtn) {
 
 async function openConfiguredQuiz(settings) {
 
+    if (quizSubmissionInProgress) return;
+
     const courseSchedule = checkCourseSchedule();
 
     if (!courseSchedule.allowed) {
@@ -1702,6 +1704,8 @@ async function openConfiguredQuiz(settings) {
     }
 
     try {
+
+        if (openQuizBtn) openQuizBtn.disabled = true;
 
         const freshSettings = await refreshQuizSettings(settings.id);
 
@@ -1715,11 +1719,80 @@ async function openConfiguredQuiz(settings) {
 
         }
 
-        const quizUrl =
-            `quiz.html?id=${encodeURIComponent(currentCourse.id)}` +
-            `&quizId=${encodeURIComponent(freshSettings.id)}`;
+        const questions = await loadQuestionsForQuiz(freshSettings);
 
-        window.location.href = quizUrl;
+        const preparedQuestions = prepareQuizQuestions(
+            questions,
+            freshSettings
+        );
+
+        if (preparedQuestions.length === 0) {
+
+            alert("No questions are available for this quiz.");
+
+            return;
+
+        }
+
+        const attemptStatus = await checkQuizAttempts(freshSettings);
+
+        if (!attemptStatus.allowed) {
+
+            alert(attemptStatus.message);
+
+            return;
+
+        }
+
+        currentQuizSettings = freshSettings;
+
+        activeQuizQuestions = preparedQuestions;
+
+        maxQuizAttempts = attemptStatus.maxAttempts;
+
+        usedQuizAttempts = attemptStatus.usedAttempts;
+
+        currentQuestionIndex = 0;
+
+        studentAnswers = {};
+
+        quizSubmitted = false;
+
+        quizSubmissionInProgress = false;
+
+        quizResult.classList.add("hidden");
+
+        submitQuizBtn.disabled = false;
+
+        submitQuizBtn.textContent = "Submit Answers";
+
+        const heading = quizArea.querySelector(".quiz-heading h2");
+
+        const description = quizArea.querySelector(".quiz-heading p");
+
+        if (heading) {
+
+            heading.textContent = freshSettings.title || "Course Quiz";
+
+        }
+
+        if (description) {
+
+            description.textContent =
+                freshSettings.instructions ||
+                "Answer the questions below.";
+
+        }
+
+        lessonArea.classList.add("hidden");
+
+        welcomeMessage.classList.add("hidden");
+
+        quizArea.classList.remove("hidden");
+
+        startQuizTimer();
+
+        displayQuiz();
 
     }
 
@@ -1727,11 +1800,23 @@ async function openConfiguredQuiz(settings) {
 
         console.error("Open quiz error:", error);
 
-        alert(error.message || "Unable to open this quiz.");
+        showError(error.message || "Unable to open this quiz.");
+
+    }
+
+    finally {
+
+        if (openQuizBtn) {
+
+            openQuizBtn.disabled = courseQuizSettings.length === 0;
+
+        }
 
     }
 
 }
+
+
 // ========================================
 // 30. CHECK QUIZ ATTEMPTS
 // ========================================
