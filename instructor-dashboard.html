@@ -45,6 +45,9 @@
                 <a href="#" class="nav-link" data-section="quizzes">
                     <span>📝</span> Quiz Management
                 </a>
+                <a href="#" class="nav-link" data-section="battle-questions">
+    <span>⚔️</span> Battle Arena Questions
+</a>
 
                 <a href="#" class="nav-link" data-section="students">
                     <span>👨‍🎓</span> Students
@@ -651,6 +654,119 @@
                 </div>
 
             </section>
+
+            <!-- BATTLE ARENA QUESTIONS SECTION -->
+<section class="dashboard-section" id="battle-questions">
+
+    <div class="page-heading">
+
+        <div>
+            <h1>Battle Arena Questions</h1>
+            <p>Create and publish questions for student battles.</p>
+        </div>
+
+    </div>
+
+    <div class="content-card">
+
+        <h3>Create Battle Question</h3>
+
+        <form id="battleQuestionForm">
+
+            <div class="form-group">
+
+                <label>Question</label>
+
+                <textarea
+                    id="battleQuestion"
+                    rows="4"
+                    placeholder="Enter your battle question"
+                    required
+                ></textarea>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Option A</label>
+
+                <input
+                    type="text"
+                    id="battleOptionA"
+                    required
+                >
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Option B</label>
+
+                <input
+                    type="text"
+                    id="battleOptionB"
+                    required
+                >
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Option C</label>
+
+                <input
+                    type="text"
+                    id="battleOptionC"
+                    required
+                >
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Option D</label>
+
+                <input
+                    type="text"
+                    id="battleOptionD"
+                    required
+                >
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Correct Answer</label>
+
+                <select id="battleCorrectAnswer" required>
+
+                    <option value="">Select correct answer</option>
+                    <option value="A">Option A</option>
+                    <option value="B">Option B</option>
+                    <option value="C">Option C</option>
+                    <option value="D">Option D</option>
+
+                </select>
+
+            </div>
+
+            <button type="submit" class="primary-btn" id="saveBattleQuestionBtn">
+                Save Battle Question
+            </button>
+
+        </form>
+
+        <hr>
+
+        <h3>Existing Battle Questions</h3>
+
+        <div id="battleQuestionsList">
+            <p>Loading battle questions...</p>
+        </div>
+
+    </div>
+
+</section>
 
 
             <!-- STUDENTS SECTION -->

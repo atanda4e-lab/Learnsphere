@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Battle Arena | LearnSphere</title>
+
+    <meta name="description" content="Challenge other students and compete in LearnSphere Battle Arena.">
+
+    <link rel="stylesheet" href="battle-arena.css">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+    <header class="arena-header">
+
+        <a href="student-dashboard.html" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+            Dashboard
+        </a>
+
+        <h2><i class="fas fa-fire"></i> LearnSphere Arena</h2>
+
+        <div class="player-profile">
+            <span id="playerName">Loading...</span>
+        </div>
+
+    </header>
+
+    <main class="arena-container">
+
+        <section class="arena-hero">
+
+            <span class="hero-tag">THE ULTIMATE STUDENT SHOWDOWN</span>
+
+            <h1>ENTER THE <span>BATTLE ARENA</span></h1>
+
+            <p>Challenge students, test your knowledge and become an academic champion.</p>
+
+            <div class="hero-stats">
+
+                <div>
+                    <h3 id="totalBattles">0</h3>
+                    <p>Total Battles</p>
+                </div>
+
+                <div>
+                    <h3 id="totalWins">0</h3>
+                    <p>Victories</p>
+                </div>
+
+                <div>
+                    <h3 id="totalXP">0</h3>
+                    <p>XP Points</p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section class="battle-options">
+
+            <div class="battle-card">
+
+                <div class="card-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+
+                <h2>Random Match</h2>
+
+                <p>Find another student and compete in a knowledge battle.</p>
+
+                <button id="randomMatchBtn">
+                    Find Opponent
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+
+            </div>
+
+
+            <div class="battle-card">
+
+                <div class="card-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+
+                <h2>Challenge Student</h2>
+
+                <p>Choose another student and challenge them directly.</p>
+
+                <button id="challengeStudentBtn">
+                    Challenge Now
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+
+            </div>
+
+
+            <div class="battle-card">
+
+                <div class="card-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+
+                <h2>Leaderboard</h2>
+
+                <p>Discover the top competitors in LearnSphere.</p>
+
+                <button id="leaderboardBtn">
+                    View Rankings
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <section class="battle-status">
+
+            <h2><i class="fas fa-bolt"></i> Battle Status</h2>
+
+            <div id="battleMessage">
+                You are not currently in a battle.
+            </div>
+
+        </section>
+
+
+        <section class="battle-history">
+
+            <h2><i class="fas fa-history"></i> Recent Battles</h2>
+
+            <div id="battleHistoryList">
+                <p>Your battle history will appear here.</p>
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script type="module" src="battle-arena.js"></script>
+
+</body>
+
+</html>

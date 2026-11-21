@@ -1,13 +1,12 @@
-// =====================================================
+// ======================================================
 // LEARNSPHERE ADMIN DASHBOARD
-// FIREBASE ADMIN SYSTEM
-// MCQ + THEORY QUESTION SUPPORT
-// =====================================================
+// COMPLETE FIREBASE ADMIN SYSTEM
+// ======================================================
 
 
-// =====================================================
+// ======================================================
 // 1. FIREBASE IMPORTS
-// =====================================================
+// ======================================================
 
 import { auth, db } from "./firebase.js";
 
@@ -22,1040 +21,606 @@ import {
     getDoc,
     getDocs,
     addDoc,
+    setDoc,
     updateDoc,
     deleteDoc,
-    writeBatch,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 
-// =====================================================
+// ======================================================
 // 2. GLOBAL VARIABLES
-// =====================================================
+// ======================================================
 
-let courses = [];
-let students = [];
-let lessons = [];
-let quizzes = [];
-let results = [];
-let certificates = [];
-let instructors = [];
-let quizSettings = [];
-let announcements = [];
-
-let currentCourseId = null;
 let currentAdmin = null;
 
-let activeQuizId = null;
+let courses = [];
+let lessons = [];
+let quizSettings = [];
+let quizzes = [];
 
-let dashboardInitialized = false;
+let students = [];
+let instructors = [];
+let results = [];
+let certificates = [];
+let announcements = [];
+
+let battleQuizzes = [];
+let battleQuestions = [];
+let battleMatches = [];
+
+let activeCourseId = "";
+let activeQuizId = "";
+let activeBattleQuizId = "";
 
 
-// =====================================================
-// 3. ELEMENT HELPERS
-// =====================================================
+// ======================================================
+// 3. HELPER FUNCTIONS
+// ======================================================
 
-function getElement(id) {
+function $(id) {
     return document.getElementById(id);
 }
 
+function value(id) {
+    return $(id)?.value?.trim() || "";
+}
 
-function getInput(id) {
+function checked(id) {
+    return Boolean($(id)?.checked);
+}
 
-    if (id === "editCourseTitle") {
-        return document.querySelector(
-            "#editCourseForm input#editCourseTitle"
-        );
+function text(id, content) {
+    if ($(id)) {
+        $(id).textContent = content ?? "";
     }
-
-    return getElement(id);
 }
 
-
-function getValue(id) {
-
-    const element = getInput(id);
-
-    return element?.value?.trim() || "";
-
-}
-
-
-function setValue(id, value) {
-
-    const element = getInput(id);
-
-    if (element) {
-        element.value = value ?? "";
+function html(id, content) {
+    if ($(id)) {
+        $(id).innerHTML = content ?? "";
     }
-
 }
 
-
-function notify(message) {
-    alert(message);
+function setValue(id, content) {
+    if ($(id)) {
+        $(id).value = content ?? "";
+    }
 }
 
+function setChecked(id, content) {
+    if ($(id)) {
+        $(id).checked = Boolean(content);
+    }
+}
 
-function escapeHTML(value) {
-
-    return String(value ?? "").replace(/[&<>"']/g, character => {
-
-        return {
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#039;"
-        }[character];
-
+function setAllText(id, content) {
+    document.querySelectorAll(`[id="${id}"]`).forEach(element => {
+        element.textContent = content ?? "";
     });
-
 }
 
-
-function getDateValue(value) {
-
-    if (!value) return "";
-
-    if (typeof value === "string") {
-        return value.slice(0, 16);
-    }
-
-    if (value.toDate) {
-
-        const date = value.toDate();
-        const offset = date.getTimezoneOffset();
-
-        return new Date(date.getTime() - offset * 60000)
-            .toISOString()
-            .slice(0, 16);
-
-    }
-
-    return "";
-
+function escapeHTML(input) {
+    return String(input ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }
 
+function message(id, content, type = "success") {
+    const element = $(id);
 
-function formatDate(value) {
+    if (!element) return;
 
-    if (!value) return "Not available";
+    element.textContent = content;
+    element.className = "form-message " + type;
+}
 
-    let date;
+function formatDate(date) {
+    if (!date) return "Not available";
 
-    if (value.toDate) {
-        date = value.toDate();
-    } else {
-        date = new Date(value);
-    }
+    try {
+        if (date.toDate) date = date.toDate();
 
-    if (Number.isNaN(date.getTime())) {
+        return new Date(date).toLocaleString();
+    } catch {
         return "Not available";
     }
+}
 
-    return date.toLocaleString();
+function showLoading() {
+    $("adminLoading")?.classList.remove("hidden");
+    $("adminArea")?.classList.add("hidden");
+}
 
+function hideLoading() {
+    $("adminLoading")?.classList.add("hidden");
+}
+
+function sortNewest(items) {
+    return [...items].sort((a, b) => {
+        const first = a.createdAt?.seconds || 0;
+        const second = b.createdAt?.seconds || 0;
+        return second - first;
+    });
+}
+
+function findCourse(id) {
+    return courses.find(course => course.id === id);
+}
+
+function findLesson(id) {
+    return lessons.find(lesson => lesson.id === id);
+}
+
+function findQuiz(id) {
+    return quizzes.find(quiz => quiz.id === id);
+}
+
+function findBattle(id) {
+    return battleQuizzes.find(battle => battle.id === id);
+}
+
+function showError(error) {
+    console.error(error);
+    alert(error.message || "Something went wrong. Please try again.");
 }
 
 
-// =====================================================
-// 4. ADMIN AUTHENTICATION
-// =====================================================
+// ======================================================
+// 4. FIRESTORE HELPERS
+// ======================================================
+
+async function getCollectionData(name) {
+    try {
+        const snapshot = await getDocs(collection(db, name));
+
+        return snapshot.docs.map(item => ({
+            id: item.id,
+            ...item.data()
+        }));
+
+    } catch (error) {
+        console.error("Could not load " + name, error);
+        return [];
+    }
+}
+
+async function refreshData() {
+    const data = await Promise.all([
+        getCollectionData("courses"),
+        getCollectionData("lessons"),
+        getCollectionData("quizSettings"),
+        getCollectionData("quizzes"),
+        getCollectionData("students"),
+        getCollectionData("instructors"),
+        getCollectionData("results"),
+        getCollectionData("certificates"),
+        getCollectionData("announcements"),
+        getCollectionData("battleQuizzes"),
+        getCollectionData("battleQuestions"),
+        getCollectionData("battles")
+    ]);
+
+    courses = data[0];
+    lessons = data[1];
+    quizSettings = data[2];
+    quizzes = data[3];
+
+    students = data[4];
+    instructors = data[5];
+    results = data[6];
+    certificates = data[7];
+    announcements = data[8];
+
+    battleQuizzes = data[9];
+    battleQuestions = data[10];
+    battleMatches = data[11];
+
+    refreshDashboard();
+}
+
+
+// ======================================================
+// 5. ADMIN AUTHENTICATION
+// ======================================================
 
 onAuthStateChanged(auth, async user => {
+    showLoading();
 
     if (!user) {
-
         window.location.href = "auth.html";
         return;
-
     }
 
     try {
+        const adminSnapshot = await getDoc(
+            doc(db, "admins", user.uid)
+        );
 
-        const adminRef = doc(db, "admins", user.uid);
-        const adminSnapshot = await getDoc(adminRef);
+        if (!adminSnapshot.exists() ||
+            adminSnapshot.data().role !== "admin") {
 
-        if (
-            !adminSnapshot.exists() ||
-            adminSnapshot.data().role !== "admin"
-        ) {
-
-            notify("You do not have administrator access.");
+            alert("You do not have administrator access.");
 
             await signOut(auth);
-
             window.location.href = "auth.html";
-
             return;
-
         }
 
         currentAdmin = user;
 
-        getElement("adminArea")?.classList.remove("hidden");
+        const adminData = adminSnapshot.data();
 
-        if (!dashboardInitialized) {
+        text("adminName", adminData.fullName || "Administrator");
+        text("adminEmail", user.email || "Admin Account");
 
-            dashboardInitialized = true;
+        setupEventListeners();
 
-            await initializeDashboard();
+        await refreshData();
 
-        }
+        $("adminArea")?.classList.remove("hidden");
+
+        hideLoading();
+
+        showPage("overview");
 
     } catch (error) {
-
         console.error("Admin authentication error:", error);
 
-        notify(
-            "Unable to verify administrator access: " +
-            error.message
-        );
+        hideLoading();
 
+        alert("Unable to load the admin dashboard. Check your connection and Firebase permissions.");
     }
-
 });
 
 
-// =====================================================
-// 5. INITIALIZE DASHBOARD
-// =====================================================
+// ======================================================
+// 6. EVENT LISTENERS
+// ======================================================
 
-async function initializeDashboard() {
+function setupEventListeners() {
 
-    setupNavigation();
+    document.querySelectorAll(".nav-link").forEach(button => {
+        button.addEventListener("click", () => {
+            showPage(button.dataset.page);
+        });
+    });
 
-    setupEventListeners();
+    $("mobileMenuBtn")?.addEventListener("click", () => {
+        $("sidebar")?.classList.toggle("sidebar-open");
+    });
 
-    prepareCourseEditorLayout();
+    $("adminLogoutBtn")?.addEventListener("click", logoutAdmin);
 
-    createImportButton();
+    $("addNewCourseBtn")?.addEventListener("click", openNewCourse);
 
-    await loadAllData();
+    $("backToCoursesBtn")?.addEventListener("click", closeCourseEditor);
 
-    showPage("overview");
+    $("editCourseForm")?.addEventListener("submit", saveCourse);
 
-    console.log("LearnSphere Admin Dashboard Ready.");
+    $("courseScheduleForm")?.addEventListener("submit", saveCourseSchedule);
 
+    $("editorLessonForm")?.addEventListener("submit", saveLesson);
+
+    $("editorQuizSettingsForm")?.addEventListener("submit", saveQuizSettings);
+
+    $("editorQuizForm")?.addEventListener("submit", saveQuizQuestion);
+
+    $("battleQuizForm")?.addEventListener("submit", createBattleQuiz);
+
+    $("battleQuestionForm")?.addEventListener("submit", saveBattleQuestion);
+
+    $("announcementForm")?.addEventListener("submit", publishAnnouncement);
+
+    $("publishEditorCourseBtn")?.addEventListener("click", publishCourse);
+
+    $("unpublishCourseBtn")?.addEventListener("click", unpublishCourse);
+
+    $("previewCourseBtn")?.addEventListener("click", previewCourse);
+
+    $("closePreviewBtn")?.addEventListener("click", closePreview);
+
+    $("cancelLessonEditBtn")?.addEventListener("click", clearLessonForm);
+
+    $("cancelQuizEditBtn")?.addEventListener("click", clearQuestionForm);
+
+    $("editorQuestionType")?.addEventListener("change", toggleQuestionType);
+
+    $("editorQuizType")?.addEventListener("change", toggleLessonQuizSelector);
+
+    $("editorQuizLessonId")?.addEventListener("change", () => {
+        setValue("editorQuizCourseId", activeCourseId);
+    });
+
+    $("refreshInstructorsBtn")?.addEventListener("click", async () => {
+        instructors = await getCollectionData("instructors");
+        renderInstructors();
+    });
+
+    $("adminCourseSearch")?.addEventListener("input", renderCourses);
+    $("adminCourseFilter")?.addEventListener("change", renderCourses);
+
+    $("adminLessonSearch")?.addEventListener("input", renderLessons);
+    $("adminQuizSearch")?.addEventListener("input", renderQuizzes);
+
+    $("adminStudentSearch")?.addEventListener("input", renderStudents);
+
+    $("adminInstructorSearch")?.addEventListener("input", renderInstructors);
+    $("adminInstructorFilter")?.addEventListener("change", renderInstructors);
+
+    $("adminResultSearch")?.addEventListener("input", renderResults);
+    $("adminCertificateSearch")?.addEventListener("input", renderCertificates);
+
+    // Buttons created dynamically inside dashboard cards.
+
+    document.addEventListener("click", handleDynamicButtons);
+
+    toggleQuestionType();
+    toggleLessonQuizSelector();
 }
 
 
-// =====================================================
-// 6. LOAD ALL DATA
-// =====================================================
+// ======================================================
+// 7. LOGOUT
+// ======================================================
 
-async function loadAllData() {
+async function logoutAdmin() {
+    if (!confirm("Are you sure you want to logout?")) return;
 
-    const tasks = [
-
-        ["Courses", loadCourses],
-        ["Students", loadStudents],
-        ["Lessons", loadLessons],
-        ["Quizzes", loadQuizzes],
-        ["Results", loadResults],
-        ["Certificates", loadCertificates],
-        ["Instructors", loadInstructors],
-        ["Quiz Settings", loadQuizSettings],
-        ["Announcements", loadAnnouncements]
-
-    ];
-
-    const failed = [];
-
-    for (const [name, task] of tasks) {
-
-        try {
-
-            await task();
-
-            console.log(name + " loaded.");
-
-        } catch (error) {
-
-            console.error(name + " loading error:", error);
-
-            failed.push(name);
-
-        }
-
+    try {
+        await signOut(auth);
+        window.location.href = "auth.html";
+    } catch (error) {
+        showError(error);
     }
-
-    refreshDashboard();
-
-    if (failed.length) {
-
-        notify(
-            "Some information could not load: " +
-            failed.join(", ") +
-            ". Check your Firestore permissions."
-        );
-
-    }
-
 }
 
 
-// =====================================================
-// 7. LOAD COURSES
-// =====================================================
+// ======================================================
+// 8. PAGE NAVIGATION
+// ======================================================
 
-async function loadCourses() {
-
-    const snapshot = await getDocs(collection(db, "courses"));
-
-    courses = snapshot.docs.map(item => {
-
-        const data = item.data();
-
-        let published = false;
-
-        if (typeof data.published === "boolean") {
-            published = data.published;
-        } else if (typeof data.isPublished === "boolean") {
-            published = data.isPublished;
-        }
-
-        return {
-            id: item.id,
-            ...data,
-            published
-        };
-
+function showPage(page) {
+    document.querySelectorAll(".admin-page").forEach(section => {
+        section.classList.add("hidden");
     });
 
-}
+    $(page + "Page")?.classList.remove("hidden");
 
-
-// =====================================================
-// 8. LOAD STUDENTS
-// =====================================================
-
-async function loadStudents() {
-
-    const snapshot = await getDocs(collection(db, "students"));
-
-    const uniqueStudents = new Map();
-
-    snapshot.docs.forEach(item => {
-
-        const student = {
-            id: item.id,
-            ...item.data()
-        };
-
-        const key =
-            student.uid ||
-            student.userId ||
-            student.id;
-
-        uniqueStudents.set(key, student);
-
+    document.querySelectorAll(".nav-link").forEach(button => {
+        button.classList.toggle("active", button.dataset.page === page);
     });
 
-    students = Array.from(uniqueStudents.values());
+    const headings = {
+        overview: "Overview",
+        courses: "Courses",
+        lessons: "Lessons",
+        quizzes: "Quizzes",
+        battles: "Battle Arena",
+        students: "Students",
+        instructors: "Instructors",
+        results: "Results",
+        certificates: "Certificates",
+        announcements: "Announcements"
+    };
 
+    text("pageHeading", headings[page] || "Dashboard");
+
+    $("sidebar")?.classList.remove("sidebar-open");
 }
 
 
-// =====================================================
-// 9. LOAD LESSONS
-// =====================================================
-
-async function loadLessons() {
-
-    const snapshot = await getDocs(collection(db, "lessons"));
-
-    lessons = snapshot.docs.map(item => ({
-        id: item.id,
-        ...item.data()
-    }));
-
-}
-
-
-// =====================================================
-// 10. LOAD QUIZZES
-// =====================================================
-
-async function loadQuizzes() {
-
-    const snapshot = await getDocs(collection(db, "quizzes"));
-
-    quizzes = snapshot.docs.map(item => ({
-        id: item.id,
-        ...item.data()
-    }));
-
-}
-
-
-// =====================================================
-// 11. LOAD RESULTS
-// =====================================================
-
-async function loadResults() {
-
-    const snapshot = await getDocs(collection(db, "results"));
-
-    results = snapshot.docs.map(item => ({
-        id: item.id,
-        ...item.data()
-    }));
-
-}
-
-
-// =====================================================
-// 12. LOAD CERTIFICATES
-// =====================================================
-
-async function loadCertificates() {
-
-    const snapshot = await getDocs(collection(db, "certificates"));
-
-    certificates = snapshot.docs.map(item => ({
-        id: item.id,
-        ...item.data()
-    }));
-
-}
-
-
-// =====================================================
-// 13. LOAD INSTRUCTORS
-// =====================================================
-
-async function loadInstructors() {
-
-    const snapshot = await getDocs(collection(db, "instructors"));
-
-    instructors = snapshot.docs.map(item => ({
-        id: item.id,
-        ...item.data()
-    }));
-
-}
-
-
-// =====================================================
-// 14. LOAD QUIZ SETTINGS
-// =====================================================
-
-async function loadQuizSettings() {
-
-    const snapshot = await getDocs(collection(db, "quizSettings"));
-
-    quizSettings = snapshot.docs.map(item => ({
-        id: item.id,
-        ...item.data()
-    }));
-
-}
-
-
-// =====================================================
-// 15. LOAD ANNOUNCEMENTS
-// =====================================================
-
-async function loadAnnouncements() {
-
-    const snapshot = await getDocs(
-        collection(db, "announcements")
-    );
-
-    announcements = snapshot.docs.map(item => ({
-        id: item.id,
-        ...item.data()
-    }));
-
-    announcements.sort((a, b) => {
-
-        const dateA = a.createdAt?.toDate
-            ? a.createdAt.toDate().getTime()
-            : 0;
-
-        const dateB = b.createdAt?.toDate
-            ? b.createdAt.toDate().getTime()
-            : 0;
-
-        return dateB - dateA;
-
-    });
-
-    displayAnnouncements();
-
-}
-
-
-// =====================================================
-// 16. REFRESH DASHBOARD
-// =====================================================
+// ======================================================
+// 9. REFRESH DASHBOARD
+// ======================================================
 
 function refreshDashboard() {
-
-    displayCourses();
-
-    displayAllLessons();
-
-    displayAllQuizzes();
-
-    displayStudents();
-
-    displayResults();
-
-    displayCertificates();
-
-    displayInstructors();
-
-    displayAnnouncements();
-
-    updateStatistics();
-
-    updateCoursePublicationStatus();
-
+    renderOverview();
+    renderCourses();
+    renderLessons();
+    renderQuizzes();
+    renderBattleQuizzes();
+    renderBattleQuestions();
+    renderBattleMatches();
+    renderStudents();
+    renderInstructors();
+    renderResults();
+    renderCertificates();
+    renderAnnouncements();
+    updateCourseSelects();
 }
 
 
-// =====================================================
-// 17. NAVIGATION
-// =====================================================
+// ======================================================
+// 10. OVERVIEW
+// ======================================================
 
-function setupNavigation() {
+function renderOverview() {
+    const pending = instructors.filter(item =>
+        String(item.status || "pending").toLowerCase() === "pending"
+    ).length;
 
-    document.querySelectorAll(".admin-nav-btn").forEach(button => {
+    const approved = instructors.filter(item =>
+        String(item.status || "").toLowerCase() === "approved"
+    ).length;
 
-        button.addEventListener("click", () => {
+    const rejected = instructors.filter(item =>
+        String(item.status || "").toLowerCase() === "rejected"
+    ).length;
 
-            showPage(button.dataset.page);
+    const publishedBattles = battleQuizzes.filter(item =>
+        item.published === true
+    ).length;
 
-        });
+    const completedMatches = battleMatches.filter(item =>
+        ["completed", "finished"].includes(
+            String(item.status || "").toLowerCase()
+        )
+    ).length;
 
-    });
+    text("totalCourses", courses.length);
+    text("totalStudents", students.length);
+    text("totalLessons", lessons.length);
+    text("totalQuizzes", quizzes.length);
+    text("totalInstructors", instructors.length);
+    text("totalPendingInstructors", pending);
 
+    text("pendingInstructorBadge", pending);
+
+    setAllText("pendingInstructorCount", pending);
+    setAllText("approvedInstructorCount", approved);
+    setAllText("rejectedInstructorCount", rejected);
+
+    setAllText("totalBattlesCreated", battleQuizzes.length);
+    setAllText("publishedBattlesCount", publishedBattles);
+    setAllText("completedBattlesCount", completedMatches);
 }
 
 
-// =====================================================
-// 18. SHOW DASHBOARD PAGE
-// =====================================================
+// ======================================================
+// 11. COURSE MANAGEMENT
+// ======================================================
 
-function showPage(pageName) {
+function renderCourses() {
+    const container = $("adminCourseList");
+    if (!container) return;
 
-    const pages = [
+    const search = value("adminCourseSearch").toLowerCase();
+    const filter = value("adminCourseFilter") || "all";
 
-        "overview",
-        "manageInstructors",
-        "manageCourses",
-        "manageLessons",
-        "manageQuizzes",
-        "manageStudents",
-        "manageResults",
-        "manageCertificates",
-        "manageAnnouncements"
+    const filtered = courses.filter(course => {
+        const matchesSearch =
+            (course.title || "").toLowerCase().includes(search) ||
+            (course.department || "").toLowerCase().includes(search);
 
-    ];
+        const matchesFilter =
+            filter === "all" || course.category === filter;
 
-    pages.forEach(page => {
-
-        const section = getElement(page);
-
-        if (section) {
-
-            section.classList.remove("active");
-            section.classList.add("hidden");
-
-        }
-
+        return matchesSearch && matchesFilter;
     });
 
-    getElement("coursePreview")?.classList.add("hidden");
-
-    const selectedPage = getElement(pageName);
-
-    if (!selectedPage) return;
-
-    selectedPage.classList.remove("hidden");
-    selectedPage.classList.add("active");
-
-    if (pageName !== "manageCourses") {
-        closeCourseEditor();
+    if (!filtered.length) {
+        container.innerHTML = "<p>No courses found.</p>";
+        return;
     }
 
-    document.querySelectorAll(".admin-nav-btn").forEach(button => {
+    container.innerHTML = filtered.map(course => `
+        <div class="admin-card">
+            <h3>${escapeHTML(course.title)}</h3>
+            <p>${escapeHTML(course.department)}</p>
+            <p>${escapeHTML(course.level)} Level</p>
+            <p>${escapeHTML(course.category)}</p>
+            <p>Status: ${course.published && course.isPublished ? "Published" : "Unpublished"}</p>
 
-        button.classList.toggle(
-            "active",
-            button.dataset.page === pageName
-        );
+            <button type="button" class="primary-btn"
+                data-action="edit-course" data-id="${course.id}">
+                Manage Course
+            </button>
 
-    });
-
+            <button type="button" class="secondary-btn"
+                data-action="toggle-course" data-id="${course.id}">
+                ${course.published && course.isPublished ? "Unpublish" : "Publish"}
+            </button>
+        </div>
+    `).join("");
 }
 
 
-// =====================================================
-// 19. COURSE EDITOR LAYOUT
-// =====================================================
+function openNewCourse() {
+    activeCourseId = "";
 
-function prepareCourseEditorLayout() {
+    $("courseEditor")?.classList.remove("hidden");
 
-    const manageCourses = getElement("manageCourses");
-    const courseEditor = getElement("courseEditor");
+    $("adminCourseList")?.classList.add("hidden");
 
-    if (!manageCourses || !courseEditor) return;
+    $("editCourseForm")?.reset();
 
-    if (courseEditor.parentElement !== manageCourses) {
-        manageCourses.appendChild(courseEditor);
-    }
+    setValue("editCourseId", "");
 
+    text("editorCourseHeading", "Add New Course");
+
+    setValue("scheduleCourseId", "");
+
+    clearLessonForm();
+    clearQuestionForm();
+
+    html("editorLessonList", "");
+    html("editorQuizList", "");
+
+    text("editorQuizQuestionCount", "0");
+    text("editorQuizTotalMarks", "0");
+
+    updateCourseSelects();
 }
 
 
 function closeCourseEditor() {
+    $("courseEditor")?.classList.add("hidden");
+    $("adminCourseList")?.classList.remove("hidden");
 
-    const editor = getElement("courseEditor");
-    const courseList = getElement("adminCourseList");
-
-    const toolbar = getElement("manageCourses")
-        ?.querySelector(".course-toolbar");
-
-    editor?.classList.add("hidden");
-    courseList?.classList.remove("hidden");
-    toolbar?.classList.remove("hidden");
-
+    activeCourseId = "";
 }
 
 
-// =====================================================
-// 20. EVENT LISTENERS
-// =====================================================
+function editCourse(id) {
+    const course = findCourse(id);
+    if (!course) return;
 
-function setupEventListeners() {
+    activeCourseId = id;
 
-    // LOGOUT
+    $("courseEditor")?.classList.remove("hidden");
+    $("adminCourseList")?.classList.add("hidden");
 
-    getElement("adminLogoutBtn")?.addEventListener("click", async () => {
+    text("editorCourseHeading", "Edit Course");
 
-        try {
+    setValue("editCourseId", id);
+    setValue("editCourseTitle", course.title);
+    setValue("editCourseCategory", course.category);
+    setValue("editCourseDepartment", course.department);
+    setValue("editCourseLevel", course.level);
+    setValue("editCourseDescription", course.description);
+    setValue("editCourseImage", course.image);
 
-            await signOut(auth);
+    setValue("scheduleCourseId", id);
+    setValue("editCourseOpeningDate", course.openingDateTime);
+    setValue("editCourseClosingDate", course.closingDateTime);
 
-            window.location.href = "auth.html";
-
-        } catch (error) {
-
-            notify("Unable to log out: " + error.message);
-
-        }
-
-    });
-
-
-    // COURSE MANAGEMENT
-
-    getElement("addNewCourseBtn")?.addEventListener("click", () => {
-        openCourseEditor();
-    });
-
-    getElement("backToCoursesBtn")?.addEventListener(
-        "click",
-        closeCourseEditor
-    );
-
-    getElement("editCourseForm")?.addEventListener(
-        "submit",
-        saveCourse
-    );
-
-    getElement("courseScheduleForm")?.addEventListener(
-        "submit",
-        saveCourseSchedule
-    );
-
-
-    // LESSON MANAGEMENT
-
-    getElement("editorLessonForm")?.addEventListener(
-        "submit",
-        saveLesson
-    );
-
-    getElement("cancelLessonEditBtn")?.addEventListener(
-        "click",
-        resetLessonForm
-    );
-
-
-    // QUIZ MANAGEMENT
-
-    getElement("editorQuizForm")?.addEventListener(
-        "submit",
-        saveQuiz
-    );
-
-    getElement("editorQuizSettingsForm")?.addEventListener(
-        "submit",
-        saveQuizSettings
-    );
-
-    getElement("cancelQuizEditBtn")?.addEventListener(
-        "click",
-        resetQuizQuestionForm
-    );
-
-    getElement("editorQuizType")?.addEventListener(
-        "change",
-        updateQuizTypeDisplay
-    );
-
-    getElement("editorQuestionType")?.addEventListener(
-        "change",
-        updateQuestionTypeDisplay
-    );
-
-
-    // ANNOUNCEMENT MANAGEMENT
-
-    getElement("announcementForm")?.addEventListener(
-        "submit",
-        publishAnnouncement
-    );
-
-
-    // SEARCH
-
-    getElement("adminCourseSearch")?.addEventListener(
-        "input",
-        displayCourses
-    );
-
-    getElement("adminCourseFilter")?.addEventListener(
-        "change",
-        displayCourses
-    );
-
-    getElement("adminStudentSearch")?.addEventListener(
-        "input",
-        displayStudents
-    );
-
-    getElement("adminResultSearch")?.addEventListener(
-        "input",
-        displayResults
-    );
-
-    getElement("adminCertificateSearch")?.addEventListener(
-        "input",
-        displayCertificates
-    );
-
-    getElement("adminInstructorSearch")?.addEventListener(
-        "input",
-        displayInstructors
-    );
-
-    getElement("adminInstructorFilter")?.addEventListener(
-        "change",
-        displayInstructors
-    );
-
-
-    // REFRESH INSTRUCTORS
-
-    getElement("refreshInstructorsBtn")?.addEventListener(
-        "click",
-        async () => {
-
-            try {
-
-                await loadInstructors();
-
-                displayInstructors();
-
-                notify("Instructor applications refreshed.");
-
-            } catch (error) {
-
-                notify(
-                    "Unable to refresh instructors: " +
-                    error.message
-                );
-
-            }
-
-        }
-    );
-
-
-    // COURSE PUBLICATION
-
-    getElement("publishEditorCourseBtn")?.addEventListener(
-        "click",
-        () => changeCourseStatus(true)
-    );
-
-    getElement("unpublishCourseBtn")?.addEventListener(
-        "click",
-        () => changeCourseStatus(false)
-    );
-
-    getElement("previewCourseBtn")?.addEventListener(
-        "click",
-        previewCourse
-    );
-
-    getElement("closePreviewBtn")?.addEventListener("click", () => {
-        getElement("coursePreview")?.classList.add("hidden");
-    });
-
+    loadCourseEditor(id);
+    updateCourseSelects();
 }
 
-
-// =====================================================
-// 21. DISPLAY COURSES
-// =====================================================
-
-function displayCourses() {
-
-    const container = getElement("adminCourseList");
-
-    if (!container) return;
-
-    const search = getValue("adminCourseSearch").toLowerCase();
-
-    const filter = getElement("adminCourseFilter")?.value || "all";
-
-    const filteredCourses = courses.filter(course => {
-
-        const title = String(course.title || "").toLowerCase();
-
-        const department = String(course.department || "").toLowerCase();
-
-        const matchesSearch =
-            title.includes(search) ||
-            department.includes(search);
-
-        const matchesFilter =
-            filter === "all" ||
-            (filter === "published" && course.published) ||
-            (filter === "unpublished" && !course.published);
-
-        return matchesSearch && matchesFilter;
-
-    });
-
-    if (!filteredCourses.length) {
-
-        container.innerHTML = `
-            <div class="empty-message">
-                <h3>No Courses Found</h3>
-                <p>No courses match your search.</p>
-            </div>
-        `;
-
-        return;
-
-    }
-
-    container.innerHTML = filteredCourses.map(course => {
-
-        const lessonCount = lessons.filter(
-            lesson => lesson.courseId === course.id
-        ).length;
-
-        const quizCount = quizzes.filter(
-            quiz => quiz.courseId === course.id
-        ).length;
-
-        return `
-
-            <div class="admin-course-card">
-
-                ${course.image ? `
-                    <img
-                        src="${escapeHTML(course.image)}"
-                        alt="${escapeHTML(course.title)}"
-                    >
-                ` : ""}
-
-                <h3>${escapeHTML(course.title)}</h3>
-
-                <p>Department: ${escapeHTML(course.department || "Not specified")}</p>
-
-                <p>Category: ${escapeHTML(course.category || "Not specified")}</p>
-
-                <p>Level: ${escapeHTML(course.level || "Not specified")}</p>
-
-                <p>Lessons: ${lessonCount}</p>
-
-                <p>Quiz Questions: ${quizCount}</p>
-
-                <p>
-                    Status:
-                    <strong>
-                        ${course.published ? "Published" : "Unpublished"}
-                    </strong>
-                </p>
-
-                <button
-                    type="button"
-                    onclick="editCourse('${escapeHTML(course.id)}')"
-                >
-                    Edit Course
-                </button>
-
-                <button
-                    type="button"
-                    onclick="removeCourse('${escapeHTML(course.id)}')"
-                >
-                    Delete Course
-                </button>
-
-            </div>
-
-        `;
-
-    }).join("");
-
-}
-
-
-// =====================================================
-// 22. OPEN COURSE EDITOR
-// =====================================================
-
-function openCourseEditor(course = null) {
-
-    prepareCourseEditorLayout();
-
-    currentCourseId = course?.id || null;
-    activeQuizId = null;
-
-    showPage("manageCourses");
-
-    const editor = getElement("courseEditor");
-    const courseList = getElement("adminCourseList");
-
-    const toolbar = getElement("manageCourses")
-        ?.querySelector(".course-toolbar");
-
-    courseList?.classList.add("hidden");
-    toolbar?.classList.add("hidden");
-    editor?.classList.remove("hidden");
-
-    getElement("editCourseForm")?.reset();
-    getElement("editorLessonForm")?.reset();
-    getElement("editorQuizForm")?.reset();
-    getElement("editorQuizSettingsForm")?.reset();
-
-    if (getElement("editorLessonPublished")) {
-        getElement("editorLessonPublished").checked = true;
-    }
-
-    if (getElement("editorQuizPublished")) {
-        getElement("editorQuizPublished").checked = false;
-    }
-
-    setValue("editCourseId", course?.id);
-    setValue("editCourseTitle", course?.title);
-    setValue("editCourseCategory", course?.category);
-    setValue("editCourseDepartment", course?.department);
-    setValue("editCourseLevel", course?.level);
-    setValue("editCourseDescription", course?.description);
-    setValue("editCourseImage", course?.image);
-
-    const title = getElement("editorCourseTitle");
-
-    if (title) {
-        title.textContent = course
-            ? "Edit Course: " + course.title
-            : "Create New Course";
-    }
-
-    setValue("editorLessonCourseId", course?.id);
-    setValue("editorQuizCourseId", course?.id);
-    setValue("editorSettingsCourseId", course?.id);
-
-    setValue("editCourseOpeningDate", course?.openingDateTime);
-    setValue("editCourseClosingDate", course?.closingDateTime);
-
-    resetLessonForm();
-    resetQuizQuestionForm();
-
-    updateCoursePublicationStatus();
-
-    displayEditorLessons();
-    displayEditorQuizzes();
-
-    populateLessonSelector();
-
-    updateQuizTypeDisplay();
-
-    updateScheduleStatus();
-
-}
-
-
-// =====================================================
-// 23. EDIT COURSE
-// =====================================================
-
-window.editCourse = function(courseId) {
-
-    const course = courses.find(item => item.id === courseId);
-
-    if (!course) {
-        notify("Course not found.");
-        return;
-    }
-
-    openCourseEditor(course);
-
-};
-
-
-// =====================================================
-// 24. SAVE COURSE
-// =====================================================
 
 async function saveCourse(event) {
-
     event.preventDefault();
 
-    const courseId = getValue("editCourseId");
-    const title = getValue("editCourseTitle");
+    if (!currentAdmin) return;
 
-    if (!title) {
-        notify("Please enter a course title.");
+    const id = value("editCourseId");
+
+    const courseData = {
+        title: value("editCourseTitle"),
+        category: value("editCourseCategory"),
+        department: value("editCourseDepartment"),
+        level: value("editCourseLevel"),
+        description: value("editCourseDescription"),
+        image: value("editCourseImage"),
+        updatedAt: serverTimestamp()
+    };
+
+    if (!courseData.title || !courseData.category ||
+        !courseData.department || !courseData.level ||
+        !courseData.description) {
+        alert("Please complete all required course fields.");
         return;
     }
 
-    const courseData = {
-
-        title,
-        category: getValue("editCourseCategory"),
-        department: getValue("editCourseDepartment"),
-        level: getValue("editCourseLevel"),
-        description: getValue("editCourseDescription"),
-        image: getValue("editCourseImage"),
-        updatedAt: serverTimestamp()
-
-    };
-
     try {
-
-        if (courseId) {
-
-            await updateDoc(
-                doc(db, "courses", courseId),
-                courseData
-            );
-
-            notify("Course updated successfully.");
-
+        if (id) {
+            await updateDoc(doc(db, "courses", id), courseData);
         } else {
-
             courseData.published = false;
             courseData.isPublished = false;
             courseData.createdAt = serverTimestamp();
@@ -1065,3017 +630,1390 @@ async function saveCourse(event) {
                 courseData
             );
 
-            currentCourseId = newCourse.id;
+            activeCourseId = newCourse.id;
 
             setValue("editCourseId", newCourse.id);
-            setValue("editorLessonCourseId", newCourse.id);
-            setValue("editorQuizCourseId", newCourse.id);
-            setValue("editorSettingsCourseId", newCourse.id);
-
-            notify("Course created successfully. It is unpublished.");
-
+            setValue("scheduleCourseId", newCourse.id);
         }
 
-        await loadCourses();
+        alert("Course saved successfully.");
 
-        refreshDashboard();
+        await refreshData();
 
-        const editorTitle = getElement("editorCourseTitle");
-
-        if (editorTitle) {
-            editorTitle.textContent = title;
+        if (activeCourseId) {
+            editCourse(activeCourseId);
         }
 
     } catch (error) {
-
-        console.error("Save course error:", error);
-
-        notify("Unable to save course: " + error.message);
-
+        showError(error);
     }
-
 }
 
-
-// =====================================================
-// 25. DELETE COURSE
-// =====================================================
-
-window.removeCourse = async function(courseId) {
-
-    const course = courses.find(item => item.id === courseId);
-
-    if (!course) return;
-
-    if (!confirm(
-        `Delete "${course.title}" and all its lessons and quizzes?`
-    )) return;
-
-    try {
-
-        const relatedLessons = lessons.filter(
-            item => item.courseId === courseId
-        );
-
-        const relatedQuizzes = quizzes.filter(
-            item => item.courseId === courseId
-        );
-
-        const relatedSettings = quizSettings.filter(
-            item => item.courseId === courseId
-        );
-
-        const references = [
-
-            doc(db, "courses", courseId),
-
-            ...relatedLessons.map(item =>
-                doc(db, "lessons", item.id)
-            ),
-
-            ...relatedQuizzes.map(item =>
-                doc(db, "quizzes", item.id)
-            ),
-
-            ...relatedSettings.map(item =>
-                doc(db, "quizSettings", item.id)
-            )
-
-        ];
-
-        for (let i = 0; i < references.length; i += 450) {
-
-            const batch = writeBatch(db);
-
-            references.slice(i, i + 450).forEach(reference => {
-                batch.delete(reference);
-            });
-
-            await batch.commit();
-
-        }
-
-        await loadCourses();
-        await loadLessons();
-        await loadQuizzes();
-        await loadQuizSettings();
-
-        refreshDashboard();
-
-        closeCourseEditor();
-
-        notify("Course and its lessons and quizzes deleted successfully.");
-
-    } catch (error) {
-
-        console.error("Delete course error:", error);
-
-        notify("Unable to delete course: " + error.message);
-
-    }
-
-};
-
-
-// =====================================================
-// 26. PUBLISH / UNPUBLISH COURSE
-// =====================================================
-
-async function changeCourseStatus(status) {
-
-    const courseId = getValue("editCourseId");
-
-    if (!courseId) {
-        notify("Save the course before publishing it.");
-        return;
-    }
-
-    try {
-
-        await updateDoc(
-            doc(db, "courses", courseId),
-            {
-                published: status,
-                isPublished: status,
-                updatedAt: serverTimestamp()
-            }
-        );
-
-        await loadCourses();
-
-        refreshDashboard();
-
-        updateCoursePublicationStatus();
-
-        notify(
-            status
-                ? "Course published successfully."
-                : "Course unpublished successfully."
-        );
-
-    } catch (error) {
-
-        console.error("Publication error:", error);
-
-        notify("Unable to update course status: " + error.message);
-
-    }
-
-}
-
-
-// =====================================================
-// 27. COURSE PUBLICATION STATUS
-// =====================================================
-
-function updateCoursePublicationStatus() {
-
-    const statusElement = getElement("coursePublishStatus");
-
-    if (!statusElement) return;
-
-    const courseId = getValue("editCourseId");
-
-    const course = courses.find(item => item.id === courseId);
-
-    statusElement.textContent = course?.published
-        ? "Published"
-        : "Unpublished";
-
-}
-
-
-// =====================================================
-// 28. COURSE SCHEDULE
-// =====================================================
 
 async function saveCourseSchedule(event) {
-
     event.preventDefault();
 
-    const courseId = getValue("editCourseId");
+    const id = value("scheduleCourseId") || activeCourseId;
 
-    if (!courseId) {
-        notify("Save the course before setting its schedule.");
+    if (!id) {
+        alert("Save the course first.");
         return;
     }
 
-    const openingDate = getValue("editCourseOpeningDate");
-    const closingDate = getValue("editCourseClosingDate");
+    const opening = value("editCourseOpeningDate");
+    const closing = value("editCourseClosingDate");
 
-    if (
-        openingDate &&
-        closingDate &&
-        new Date(closingDate) <= new Date(openingDate)
-    ) {
-
-        notify("Closing date must be later than opening date.");
+    if (opening && closing && new Date(closing) <= new Date(opening)) {
+        alert("Closing date must be later than opening date.");
         return;
-
     }
 
     try {
+        await updateDoc(doc(db, "courses", id), {
+            openingDateTime: opening,
+            closingDateTime: closing,
+            updatedAt: serverTimestamp()
+        });
 
-        await updateDoc(
-            doc(db, "courses", courseId),
-            {
-                openingDateTime: openingDate,
-                closingDateTime: closingDate,
-                updatedAt: serverTimestamp()
-            }
-        );
+        message("courseScheduleStatus", "Schedule saved successfully.");
 
-        await loadCourses();
-
-        updateScheduleStatus();
-
-        notify("Course schedule saved successfully.");
+        await refreshData();
 
     } catch (error) {
-
-        console.error("Schedule error:", error);
-
-        notify("Unable to save schedule: " + error.message);
-
+        showError(error);
     }
-
 }
 
 
-function updateScheduleStatus() {
+async function publishCourse() {
+    const id = activeCourseId || value("editCourseId");
 
-    const status = getElement("courseScheduleStatus");
+    if (!id) {
+        alert("Save the course before publishing.");
+        return;
+    }
 
-    if (!status) return;
+    try {
+        await updateDoc(doc(db, "courses", id), {
+            published: true,
+            isPublished: true,
+            updatedAt: serverTimestamp()
+        });
 
-    const course = courses.find(
-        item => item.id === getValue("editCourseId")
-    );
+        message("coursePublishStatus", "Course published successfully.");
+
+        await refreshData();
+
+    } catch (error) {
+        showError(error);
+    }
+}
+
+
+async function unpublishCourse() {
+    const id = activeCourseId || value("editCourseId");
+
+    if (!id) return;
+
+    if (!confirm("Unpublish this course?")) return;
+
+    try {
+        await updateDoc(doc(db, "courses", id), {
+            published: false,
+            isPublished: false,
+            updatedAt: serverTimestamp()
+        });
+
+        message("coursePublishStatus", "Course unpublished.");
+
+        await refreshData();
+
+    } catch (error) {
+        showError(error);
+    }
+}
+
+
+function previewCourse() {
+    const id = activeCourseId || value("editCourseId");
+    const course = findCourse(id);
 
     if (!course) {
-
-        status.textContent = "Save the course before setting a schedule.";
+        alert("Save the course first.");
         return;
-
     }
 
-    status.textContent =
-        "Opening: " +
-        (course.openingDateTime || "Not set") +
-        " | Closing: " +
-        (course.closingDateTime || "Not set");
+    html("coursePreviewContent", `
+        <h2>${escapeHTML(value("editCourseTitle") || course.title)}</h2>
+        <p><strong>Department:</strong> ${escapeHTML(value("editCourseDepartment") || course.department)}</p>
+        <p><strong>Level:</strong> ${escapeHTML(value("editCourseLevel") || course.level)}</p>
+        <p><strong>Category:</strong> ${escapeHTML(value("editCourseCategory") || course.category)}</p>
+        <p>${escapeHTML(value("editCourseDescription") || course.description)}</p>
+    `);
 
+    $("coursePreview")?.classList.remove("hidden");
 }
 
 
-// =====================================================
-// 29. IMPORT COURSE CATALOGUE BUTTON
-// =====================================================
-
-function createImportButton() {
-
-    const container = getElement("manageCourses");
-
-    if (!container || getElement("importCatalogueBtn")) return;
-
-    const button = document.createElement("button");
-
-    button.id = "importCatalogueBtn";
-    button.className = "primary-btn";
-    button.textContent = "Import Course Catalogue";
-
-    const toolbar = container.querySelector(".course-toolbar");
-
-    if (toolbar) {
-        toolbar.appendChild(button);
-    } else {
-        container.prepend(button);
-    }
-
-    button.addEventListener("click", importCourseCatalogue);
-
+function closePreview() {
+    $("coursePreview")?.classList.add("hidden");
 }
 
 
-// =====================================================
-// 30. IMPORT COURSE CATALOGUE
-// =====================================================
+// ======================================================
+// 12. COURSE EDITOR
+// ======================================================
 
-async function importCourseCatalogue() {
+async function loadCourseEditor(courseId) {
+    const courseLessons = lessons.filter(item => item.courseId === courseId);
 
-    const catalogue = window.learnSphereCourseCatalog || [];
+    renderEditorLessons(courseLessons);
 
-    if (!catalogue.length) {
+    const courseQuizzes = quizzes.filter(item => item.courseId === courseId);
 
-        notify("Course catalogue is empty or course-catalog.js is missing.");
-        return;
+    renderEditorQuestions(courseQuizzes);
 
-    }
-
-    if (!confirm(
-        "Import missing catalogue courses and set catalogue courses to Unpublished?"
-    )) return;
-
-    try {
-
-        const snapshot = await getDocs(collection(db, "courses"));
-
-        const existing = new Map(
-            snapshot.docs.map(item => [item.id, item.data()])
-        );
-
-        let imported = 0;
-        let updated = 0;
-
-        let batch = writeBatch(db);
-        let operations = 0;
-
-        async function commitBatch() {
-
-            if (operations > 0) {
-
-                await batch.commit();
-
-                batch = writeBatch(db);
-                operations = 0;
-
-            }
-
-        }
-
-        for (let index = 0; index < catalogue.length; index++) {
-
-            const course = catalogue[index];
-            const courseId = `catalogue_${index}`;
-
-            const reference = doc(db, "courses", courseId);
-
-            if (existing.has(courseId)) {
-
-                const data = existing.get(courseId);
-
-                if (
-                    data.published !== false ||
-                    data.isPublished !== false
-                ) {
-
-                    batch.update(reference, {
-                        published: false,
-                        isPublished: false,
-                        updatedAt: serverTimestamp()
-                    });
-
-                    updated++;
-                    operations++;
-
-                }
-
-            } else {
-
-                batch.set(reference, {
-                    ...course,
-                    published: false,
-                    isPublished: false,
-                    createdAt: serverTimestamp(),
-                    updatedAt: serverTimestamp()
-                });
-
-                imported++;
-                operations++;
-
-            }
-
-            if (operations >= 450) {
-                await commitBatch();
-            }
-
-        }
-
-        await commitBatch();
-
-        await loadCourses();
-
-        refreshDashboard();
-
-        notify(
-            "Catalogue import completed!\n\n" +
-            "New courses: " + imported + "\n" +
-            "Reset to unpublished: " + updated
-        );
-
-    } catch (error) {
-
-        console.error("Catalogue import error:", error);
-
-        notify("Catalogue import failed: " + error.message);
-
-    }
-
-}
-
-
-// =====================================================
-// 31. LESSON SELECTOR FOR QUIZZES
-// =====================================================
-
-function populateLessonSelector() {
-
-    const selector = getElement("editorQuizLessonId");
-
-    if (!selector) return;
-
-    const courseLessons = lessons.filter(
-        item => item.courseId === currentCourseId
+    const settings = quizSettings.find(item =>
+        item.courseId === courseId
     );
 
-    selector.innerHTML = `
-        <option value="">Select a lesson</option>
-        ${courseLessons.map(lesson => `
-            <option value="${escapeHTML(lesson.id)}">
-                ${escapeHTML(lesson.title)}
-            </option>
-        `).join("")}
-    `;
+    if (settings) {
+        setValue("editorSettingsCourseId", courseId);
+        setValue("editorQuizTitle", settings.title || "");
+        setValue("editorQuizType", settings.quizType || "course");
+        setValue("editorQuizTimeLimit", settings.timeLimitMinutes || 40);
+        setValue("editorQuizMaxAttempts", settings.maxAttempts || 2);
+        setValue("editorQuizQuestionLimit", settings.questionLimit || 20);
+        setValue("editorQuizOpeningDate", settings.openingDateTime || "");
+        setValue("editorQuizClosingDate", settings.closingDateTime || "");
+        setValue("editorQuizInstructions", settings.instructions || "");
 
-}
-
-
-function updateQuizTypeDisplay() {
-
-    const type = getElement("editorQuizType")?.value || "course";
-
-    const group = getElement("lessonQuizSelectorGroup");
-
-    if (group) {
-        group.style.display = type === "lesson" ? "block" : "none";
-    }
-
-}
-
-
-// =====================================================
-// 32. QUESTION TYPE DISPLAY
-// =====================================================
-
-function updateQuestionTypeDisplay() {
-
-    const questionType =
-        getElement("editorQuestionType")?.value || "mcq";
-
-    const mcqFields = getElement("mcqQuestionFields");
-
-    if (!mcqFields) return;
-
-    const optionFields = [
-
-        "editorOptionA",
-        "editorOptionB",
-        "editorOptionC",
-        "editorOptionD",
-        "editorCorrectAnswer"
-
-    ];
-
-    if (questionType === "theory") {
-
-        mcqFields.style.display = "none";
-
-        optionFields.forEach(id => {
-
-            const field = getElement(id);
-
-            if (field) {
-                field.required = false;
-            }
-
-        });
-
+        setChecked("editorShuffleQuestions", settings.shuffleQuestions);
+        setChecked("editorShuffleOptions", settings.shuffleOptions);
+        setChecked("editorQuizPublished", settings.published);
     } else {
-
-        mcqFields.style.display = "block";
-
-        optionFields.forEach(id => {
-
-            const field = getElement(id);
-
-            if (field) {
-                field.required = true;
-            }
-
-        });
-
+        setValue("editorSettingsCourseId", courseId);
     }
 
+    updateCourseSelects();
 }
 
 
-// =====================================================
-// 33. SAVE QUIZ SETTINGS
-// =====================================================
-
-async function saveQuizSettings(event) {
-
-    event.preventDefault();
-
-    const courseId = getValue("editorSettingsCourseId");
-
-    if (!courseId) {
-
-        notify("Save the course before configuring its quiz.");
-        return;
-
-    }
-
-    const title = getValue("editorQuizTitle");
-
-    const type = getValue("editorQuizType") || "course";
-
-    const lessonId = getValue("editorQuizLessonId");
-
-    const timeLimit = Number(getValue("editorQuizTimeLimit") || 0);
-
-    const maxAttempts = Number(getValue("editorQuizMaxAttempts") || 1);
-
-    const questionLimitValue = getValue("editorQuizQuestionLimit");
-
-    const questionLimit = questionLimitValue
-        ? Number(questionLimitValue)
-        : 0;
-
-    const openingDate = getValue("editorQuizOpeningDate");
-
-    const closingDate = getValue("editorQuizClosingDate");
-
-    if (type === "lesson" && !lessonId) {
-
-        notify("Select the lesson this quiz belongs to.");
-        return;
-
-    }
-
-    if (type === "lesson") {
-
-        const selectedLesson = lessons.find(
-            item => item.id === lessonId && item.courseId === courseId
-        );
-
-        if (!selectedLesson) {
-
-            notify("The selected lesson does not belong to this course.");
-            return;
-
-        }
-
-    }
-
-    if (
-        !Number.isInteger(timeLimit) ||
-        timeLimit < 0
-    ) {
-
-        notify("Enter a valid time limit. Use 0 for no time limit.");
-        return;
-
-    }
-
-    if (
-        !Number.isInteger(maxAttempts) ||
-        maxAttempts < 1
-    ) {
-
-        notify("Maximum attempts must be at least 1.");
-        return;
-
-    }
-
-    if (
-        questionLimitValue &&
-        (!Number.isInteger(questionLimit) || questionLimit < 1)
-    ) {
-
-        notify("Enter a valid number of questions.");
-        return;
-
-    }
-
-    if (
-        openingDate &&
-        closingDate &&
-        new Date(closingDate) <= new Date(openingDate)
-    ) {
-
-        notify("Quiz closing date must be later than its opening date.");
-        return;
-
-    }
-
-    const settingsData = {
-
-        courseId,
-
-        title: title || "Course Quiz",
-
-        type,
-
-        lessonId: type === "lesson" ? lessonId : null,
-
-        instructions: getValue("editorQuizInstructions"),
-
-        timeLimitMinutes: timeLimit,
-
-        maxAttempts,
-
-        questionLimit,
-
-        openingDateTime: openingDate,
-
-        closingDateTime: closingDate,
-
-        shuffleQuestions: Boolean(
-            getElement("editorShuffleQuestions")?.checked
-        ),
-
-        shuffleOptions: Boolean(
-            getElement("editorShuffleOptions")?.checked
-        ),
-
-        published: Boolean(
-            getElement("editorQuizPublished")?.checked
-        ),
-
-        updatedAt: serverTimestamp(),
-
-        updatedBy: currentAdmin.uid
-
-    };
-
-    try {
-
-        let settingsId = activeQuizId;
-
-        if (settingsId) {
-
-            await updateDoc(
-                doc(db, "quizSettings", settingsId),
-                settingsData
-            );
-
-        } else {
-
-            settingsData.createdAt = serverTimestamp();
-            settingsData.createdBy = currentAdmin.uid;
-
-            const newSettings = await addDoc(
-                collection(db, "quizSettings"),
-                settingsData
-            );
-
-            settingsId = newSettings.id;
-            activeQuizId = settingsId;
-
-        }
-
-        setValue("editorQuizId", settingsId);
-
-        await loadQuizSettings();
-
-        updateQuizSettingsStatus();
-
-        notify(
-            "Quiz settings saved successfully.\n\n" +
-            "Add the questions for this quiz below."
-        );
-
-    } catch (error) {
-
-        console.error("Quiz settings error:", error);
-
-        notify("Unable to save quiz settings: " + error.message);
-
-    }
-
-}
-
-
-function updateQuizSettingsStatus() {
-
-    const status = getElement("quizSettingsStatus");
-
-    if (!status) return;
-
-    const settings = quizSettings.find(
-        item => item.id === activeQuizId
-    );
-
-    if (!settings) {
-
-        status.textContent = "Configure your quiz settings.";
-        return;
-
-    }
-
-    status.textContent =
-        "Quiz: " + (settings.title || "Course Quiz") +
-        " | Time limit: " + settings.timeLimitMinutes + " minutes" +
-        " | Attempts: " + settings.maxAttempts +
-        " | Status: " + (settings.published ? "Published" : "Unpublished");
-
-}
-
-
-// =====================================================
-// 34. DISPLAY EDITOR LESSONS
-// =====================================================
-
-function displayEditorLessons() {
-
-    const container = getElement("editorLessonList");
-
+function renderEditorLessons(items) {
+    const container = $("editorLessonList");
     if (!container) return;
 
-    const courseLessons = lessons.filter(
-        item => item.courseId === currentCourseId
-    );
-
-    if (!courseLessons.length) {
-
+    if (!items.length) {
         container.innerHTML = "<p>No lessons added yet.</p>";
-        populateLessonSelector();
         return;
-
     }
 
-    container.innerHTML = courseLessons.map(lesson => `
+    container.innerHTML = items.map(item => `
+        <div class="admin-card">
+            <h4>${escapeHTML(item.title)}</h4>
+            <p>${item.published ? "Published" : "Unpublished"}</p>
 
-        <div class="admin-item">
-
-            <h4>${escapeHTML(lesson.title)}</h4>
-
-            <p>${escapeHTML(lesson.description || "")}</p>
-
-            <p>
-                Publication:
-                <strong>
-                    ${lesson.published === false ? "Unpublished" : "Published"}
-                </strong>
-            </p>
-
-            <button
-                type="button"
-                onclick="editLesson('${escapeHTML(lesson.id)}')"
-            >
-                Edit Lesson
+            <button type="button" class="secondary-btn"
+                data-action="edit-lesson" data-id="${item.id}">
+                Edit
             </button>
 
-            <button
-                type="button"
-                onclick="deleteLesson('${escapeHTML(lesson.id)}')"
-            >
-                Delete Lesson
+            <button type="button" class="danger-btn"
+                data-action="delete-lesson" data-id="${item.id}">
+                Delete
             </button>
-
         </div>
-
     `).join("");
-
-    populateLessonSelector();
-
 }
 
 
-// =====================================================
-// 35. RESET LESSON FORM
-// =====================================================
-
-function resetLessonForm() {
-
-    const form = getElement("editorLessonForm");
-
-    if (!form) return;
-
-    form.reset();
-
-    setValue("editorLessonCourseId", currentCourseId);
-    setValue("editorLessonId", "");
-
-    delete form.dataset.editingId;
-
-    if (getElement("editorLessonPublished")) {
-        getElement("editorLessonPublished").checked = true;
-    }
-
-}
-
-
-// =====================================================
-// 36. SAVE LESSON
-// =====================================================
+// ======================================================
+// 13. LESSON MANAGEMENT
+// ======================================================
 
 async function saveLesson(event) {
-
     event.preventDefault();
 
-    const courseId = getValue("editorLessonCourseId");
+    const courseId = activeCourseId || value("editCourseId");
 
     if (!courseId) {
-
-        notify("Save the course before adding lessons.");
+        alert("Save or select a course first.");
         return;
-
     }
 
-    const title = getValue("editorLessonTitle");
-
-    if (!title) {
-
-        notify("Enter a lesson title.");
-        return;
-
-    }
-
-    const form = getElement("editorLessonForm");
-
-    const lessonId =
-        getValue("editorLessonId") ||
-        form?.dataset.editingId ||
-        "";
+    const id = value("editorLessonId");
 
     const lessonData = {
-
         courseId,
-
-        title,
-
-        description: getValue("editorLessonDescription"),
-
-        instructions: getValue("editorLessonInstructions"),
-
-        content: getValue("editorLessonContent"),
-
-        pdf: getValue("editorLessonPDF"),
-
-        video: getValue("editorLessonVideo"),
-
-        published: Boolean(
-            getElement("editorLessonPublished")?.checked
-        ),
-
+        title: value("editorLessonTitle"),
+        description: value("editorLessonDescription"),
+        instructions: value("editorLessonInstructions"),
+        content: value("editorLessonContent"),
+        pdfLink: value("editorLessonPDF"),
+        videoLink: value("editorLessonVideo"),
+        published: checked("editorLessonPublished"),
         updatedAt: serverTimestamp()
-
     };
 
-    try {
-
-        if (lessonId) {
-
-            await updateDoc(
-                doc(db, "lessons", lessonId),
-                lessonData
-            );
-
-            notify("Lesson updated successfully.");
-
-        } else {
-
-            lessonData.createdAt = serverTimestamp();
-
-            await addDoc(
-                collection(db, "lessons"),
-                lessonData
-            );
-
-            notify("Lesson added successfully.");
-
-        }
-
-        resetLessonForm();
-
-        await loadLessons();
-
-        refreshDashboard();
-
-        displayEditorLessons();
-
-    } catch (error) {
-
-        console.error("Lesson save error:", error);
-
-        notify("Unable to save lesson: " + error.message);
-
+    if (!lessonData.title || !lessonData.content) {
+        alert("Enter the lesson title and content.");
+        return;
     }
 
+    try {
+        if (id) {
+            await updateDoc(doc(db, "lessons", id), lessonData);
+        } else {
+            lessonData.createdAt = serverTimestamp();
+
+            await addDoc(collection(db, "lessons"), lessonData);
+        }
+
+        alert("Lesson saved successfully.");
+
+        clearLessonForm();
+
+        await refreshData();
+
+        await loadCourseEditor(courseId);
+
+    } catch (error) {
+        showError(error);
+    }
 }
 
 
-// =====================================================
-// 37. EDIT LESSON
-// =====================================================
+function editLesson(id) {
+    const lesson = findLesson(id);
+    if (!lesson) return;
 
-window.editLesson = function(lessonId) {
-
-    const lesson = lessons.find(item => item.id === lessonId);
-
-    if (!lesson) {
-
-        notify("Lesson not found.");
-        return;
-
-    }
-
-    const form = getElement("editorLessonForm");
-
-    if (!form) return;
-
-    form.dataset.editingId = lessonId;
-
-    setValue("editorLessonId", lessonId);
+    setValue("editorLessonId", id);
     setValue("editorLessonCourseId", lesson.courseId);
     setValue("editorLessonTitle", lesson.title);
     setValue("editorLessonDescription", lesson.description);
     setValue("editorLessonInstructions", lesson.instructions);
     setValue("editorLessonContent", lesson.content);
-    setValue("editorLessonPDF", lesson.pdf);
-    setValue("editorLessonVideo", lesson.video);
+    setValue("editorLessonPDF", lesson.pdfLink || lesson.pdfUrl);
+    setValue("editorLessonVideo", lesson.videoLink || lesson.youtubeLink);
 
-    if (getElement("editorLessonPublished")) {
-        getElement("editorLessonPublished").checked =
-            lesson.published !== false;
-    }
-
-    notify("Edit the lesson details and click Save Lesson.");
-
-};
+    setChecked("editorLessonPublished", lesson.published);
+}
 
 
-// =====================================================
-// 38. DELETE LESSON
-// =====================================================
+function clearLessonForm() {
+    $("editorLessonForm")?.reset();
 
-window.deleteLesson = async function(lessonId) {
+    setValue("editorLessonId", "");
+    setValue("editorLessonCourseId", activeCourseId);
 
+    setChecked("editorLessonPublished", false);
+}
+
+
+async function deleteLesson(id) {
     if (!confirm("Delete this lesson?")) return;
 
     try {
+        await deleteDoc(doc(db, "lessons", id));
 
-        await deleteDoc(doc(db, "lessons", lessonId));
+        await refreshData();
 
-        await loadLessons();
-
-        refreshDashboard();
-
-        displayEditorLessons();
-
-        notify("Lesson deleted successfully.");
+        if (activeCourseId) {
+            await loadCourseEditor(activeCourseId);
+        }
 
     } catch (error) {
-
-        console.error("Delete lesson error:", error);
-
-        notify("Unable to delete lesson: " + error.message);
-
+        showError(error);
     }
+}
 
-};
 
-
-// =====================================================
-// 39. DISPLAY EDITOR QUIZZES
-// =====================================================
-
-function displayEditorQuizzes() {
-
-    const container = getElement("editorQuizList");
-
+function renderLessons() {
+    const container = $("adminLessonList");
     if (!container) return;
 
-    const courseQuizzes = quizzes.filter(
-        item => item.courseId === currentCourseId
-    );
+    const search = value("adminLessonSearch").toLowerCase();
 
-    if (!courseQuizzes.length) {
+    const filtered = lessons.filter(item => {
+        const course = findCourse(item.courseId);
 
-        container.innerHTML = "<p>No quiz questions added yet.</p>";
-
-        updateQuizSummary([]);
-
-        return;
-
-    }
-
-    container.innerHTML = courseQuizzes.map((quiz, index) => {
-
-        const settings = quizSettings.find(
-            item => item.id === quiz.quizId
+        return (
+            (item.title || "").toLowerCase().includes(search) ||
+            (course?.title || "").toLowerCase().includes(search)
         );
+    });
 
-        const questionType = quiz.type === "theory"
-            ? "Theory"
-            : "MCQ";
-
-        return `
-
-            <div class="admin-item">
-
-                <h4>
-                    ${index + 1}.
-                    ${escapeHTML(quiz.question || quiz.questionText)}
-                </h4>
-
-                <p>
-                    Quiz:
-                    ${escapeHTML(settings?.title || "Legacy / General Quiz")}
-                </p>
-
-                <p>
-                    Question Type:
-                    <strong>${questionType}</strong>
-                </p>
-
-                <p>
-                    Marks:
-                    ${escapeHTML(quiz.marks ?? 1)}
-                </p>
-
-                <button
-                    type="button"
-                    onclick="editQuiz('${escapeHTML(quiz.id)}')"
-                >
-                    Edit Question
-                </button>
-
-                <button
-                    type="button"
-                    onclick="deleteQuiz('${escapeHTML(quiz.id)}')"
-                >
-                    Delete Question
-                </button>
-
-            </div>
-
-        `;
-
-    }).join("");
-
-    updateQuizSummary(courseQuizzes);
-
-}
-
-
-// =====================================================
-// 40. QUIZ MARK SUMMARY
-// =====================================================
-
-function updateQuizSummary(questionList) {
-
-    const count = getElement("editorQuizQuestionCount");
-    const total = getElement("editorQuizTotalMarks");
-
-    const questions = questionList || [];
-
-    const totalMarks = questions.reduce(
-        (sum, question) => sum + Number(question.marks || 1),
-        0
-    );
-
-    if (count) {
-        count.textContent = questions.length;
+    if (!filtered.length) {
+        container.innerHTML = "<p>No lessons found.</p>";
+        return;
     }
 
-    if (total) {
-        total.textContent = totalMarks;
-    }
+    container.innerHTML = filtered.map(item => `
+        <div class="admin-card">
+            <h3>${escapeHTML(item.title)}</h3>
+            <p>Course: ${escapeHTML(findCourse(item.courseId)?.title || "Unknown")}</p>
+            <p>${item.published ? "Published" : "Unpublished"}</p>
 
+            <button type="button" class="secondary-btn"
+                data-action="open-lesson-course" data-id="${item.courseId}">
+                Open Course
+            </button>
+        </div>
+    `).join("");
 }
 
 
-// =====================================================
-// 41. RESET QUIZ QUESTION FORM
-// =====================================================
+// ======================================================
+// 14. QUIZ SETTINGS
+// ======================================================
 
-function resetQuizQuestionForm() {
+function toggleLessonQuizSelector() {
+    const group = $("lessonQuizSelectorGroup");
+    if (!group) return;
 
-    const form = getElement("editorQuizForm");
+    const isLessonQuiz = value("editorQuizType") === "lesson";
 
-    if (!form) return;
-
-    form.reset();
-
-    delete form.dataset.editingId;
-
-    setValue("editorQuizCourseId", currentCourseId);
-
-    setValue("editorQuizId", activeQuizId);
-
-    setValue("editorQuestionMark", "1");
-
-    setValue("editorQuestionType", "mcq");
-
-    updateQuestionTypeDisplay();
-
+    group.style.display = isLessonQuiz ? "block" : "none";
 }
 
 
-// =====================================================
-// 42. SAVE QUIZ QUESTION
-// SUPPORTS MCQ AND THEORY
-// =====================================================
-
-async function saveQuiz(event) {
-
+async function saveQuizSettings(event) {
     event.preventDefault();
 
-    const courseId = getValue("editorQuizCourseId");
+    const courseId = activeCourseId || value("editCourseId");
 
     if (!courseId) {
-
-        notify("Save the course before adding quiz questions.");
+        alert("Save or select a course first.");
         return;
-
     }
 
-    const question = getValue("editorQuestionText");
+    const opening = value("editorQuizOpeningDate");
+    const closing = value("editorQuizClosingDate");
 
-    const questionType =
-        getValue("editorQuestionType") || "mcq";
-
-    const marks = Number(
-        getValue("editorQuestionMark") || 1
-    );
-
-    if (!question) {
-
-        notify("Enter the question.");
+    if (opening && closing && new Date(closing) <= new Date(opening)) {
+        alert("Quiz closing date must be later than opening date.");
         return;
-
     }
 
-    if (
-        !Number.isFinite(marks) ||
-        marks <= 0
-    ) {
-
-        notify("Enter valid marks for this question.");
-        return;
-
-    }
-
-    let options = [];
-    let correctAnswer = null;
-
-
-    // MCQ VALIDATION
-
-    if (questionType === "mcq") {
-
-        options = [
-
-            getValue("editorOptionA"),
-            getValue("editorOptionB"),
-            getValue("editorOptionC"),
-            getValue("editorOptionD")
-
-        ];
-
-        correctAnswer = Number(
-            getValue("editorCorrectAnswer")
-        );
-
-        if (options.some(option => !option)) {
-
-            notify("Complete all four MCQ options.");
-            return;
-
-        }
-
-        if (![0, 1, 2, 3].includes(correctAnswer)) {
-
-            notify("Select the correct answer.");
-            return;
-
-        }
-
-    }
-
-
-    // GET EDITING INFORMATION
-
-    const form = getElement("editorQuizForm");
-
-    const questionDocumentId =
-        form?.dataset.editingId || "";
-
-    const selectedQuizId =
-        getValue("editorQuizId") || activeQuizId || null;
-
-    const settings = quizSettings.find(
-        item => item.id === selectedQuizId
-    );
-
-
-    // QUESTION DOCUMENT
-
-    const quizData = {
-
+    const settings = {
         courseId,
-
-        quizId: selectedQuizId,
-
-        lessonId: settings?.lessonId || null,
-
-        type: questionType,
-
-        question,
-
-        questionText: question,
-
-        options,
-
-        correctAnswer,
-
-        marks,
-
+        title: value("editorQuizTitle"),
+        quizType: value("editorQuizType"),
+        lessonId: value("editorQuizLessonId"),
+        timeLimitMinutes: Number(value("editorQuizTimeLimit")) || 40,
+        maxAttempts: Number(value("editorQuizMaxAttempts")) || 2,
+        questionLimit: Number(value("editorQuizQuestionLimit")) || 20,
+        openingDateTime: opening,
+        closingDateTime: closing,
+        instructions: value("editorQuizInstructions"),
+        shuffleQuestions: checked("editorShuffleQuestions"),
+        shuffleOptions: checked("editorShuffleOptions"),
+        published: checked("editorQuizPublished"),
         updatedAt: serverTimestamp()
-
     };
 
-
-    try {
-
-        if (questionDocumentId) {
-
-            await updateDoc(
-                doc(db, "quizzes", questionDocumentId),
-                quizData
-            );
-
-            notify(
-                questionType === "theory"
-                    ? "Theory question updated successfully."
-                    : "MCQ question updated successfully."
-            );
-
-        } else {
-
-            quizData.createdAt = serverTimestamp();
-
-            await addDoc(
-                collection(db, "quizzes"),
-                quizData
-            );
-
-            notify(
-                questionType === "theory"
-                    ? "Theory question added successfully."
-                    : "MCQ question added successfully."
-            );
-
-        }
-
-        resetQuizQuestionForm();
-
-        await loadQuizzes();
-
-        refreshDashboard();
-
-        displayEditorQuizzes();
-
-    } catch (error) {
-
-        console.error("Quiz save error:", error);
-
-        notify(
-            "Unable to save quiz question: " +
-            error.message
-        );
-
+    if (!settings.title) {
+        alert("Enter a quiz title.");
+        return;
     }
 
+    try {
+        const existing = quizSettings.find(item =>
+            item.courseId === courseId
+        );
+
+        if (existing) {
+            await updateDoc(doc(db, "quizSettings", existing.id), settings);
+        } else {
+            settings.createdAt = serverTimestamp();
+
+            await addDoc(collection(db, "quizSettings"), settings);
+        }
+
+        message("quizSettingsStatus", "Quiz settings saved successfully.");
+
+        await refreshData();
+
+    } catch (error) {
+        showError(error);
+    }
 }
 
 
-// =====================================================
-// 43. EDIT QUIZ QUESTION
-// =====================================================
+// ======================================================
+// 15. QUIZ QUESTIONS
+// ======================================================
 
-window.editQuiz = function(quizId) {
+function toggleQuestionType() {
+    const mcqFields = $("mcqQuestionFields");
+    if (!mcqFields) return;
 
-    const quiz = quizzes.find(item => item.id === quizId);
+    mcqFields.style.display =
+        value("editorQuestionType") === "theory" ? "none" : "block";
+}
 
-    if (!quiz) {
 
-        notify("Quiz question not found.");
+async function saveQuizQuestion(event) {
+    event.preventDefault();
+
+    const courseId = activeCourseId || value("editCourseId");
+
+    if (!courseId) {
+        alert("Select a course first.");
         return;
-
     }
 
-    const form = getElement("editorQuizForm");
+    const questionType = value("editorQuestionType");
+    const id = value("editorQuizId");
 
-    if (!form) return;
+    const questionData = {
+        courseId,
+        quizId: activeQuizId || value("editorQuizCourseId") || courseId,
+        type: questionType,
+        question: value("editorQuestionText"),
+        marks: Number(value("editorQuestionMark")) || 1,
+        updatedAt: serverTimestamp()
+    };
 
-    form.dataset.editingId = quizId;
+    if (!questionData.question) {
+        alert("Enter a question.");
+        return;
+    }
 
-    const options = Array.isArray(quiz.options)
-        ? quiz.options
-        : [];
+    if (questionType === "mcq") {
+        questionData.options = [
+            value("editorOptionA"),
+            value("editorOptionB"),
+            value("editorOptionC"),
+            value("editorOptionD")
+        ];
 
-    const questionType = quiz.type === "theory"
-        ? "theory"
-        : "mcq";
+        questionData.correctAnswer = Number(value("editorCorrectAnswer"));
 
-    setValue("editorQuizCourseId", quiz.courseId);
+        if (questionData.options.some(option => !option)) {
+            alert("Fill in all four options.");
+            return;
+        }
+    } else {
+        questionData.options = [];
+        questionData.correctAnswer = null;
+    }
 
-    setValue("editorQuizId", quiz.quizId || "");
+    try {
+        if (id) {
+            await updateDoc(doc(db, "quizzes", id), questionData);
+        } else {
+            questionData.createdAt = serverTimestamp();
 
-    setValue("editorQuestionType", questionType);
+            await addDoc(collection(db, "quizzes"), questionData);
+        }
 
-    setValue(
-        "editorQuestionText",
-        quiz.question || quiz.questionText
-    );
+        alert("Quiz question saved successfully.");
+
+        clearQuestionForm();
+
+        await refreshData();
+
+        if (activeCourseId) {
+            await loadCourseEditor(activeCourseId);
+        }
+
+    } catch (error) {
+        showError(error);
+    }
+}
+
+
+function editQuestion(id) {
+    const question = findQuiz(id);
+    if (!question) return;
+
+    setValue("editorQuizId", id);
+    setValue("editorQuizCourseId", question.courseId);
+    setValue("editorQuestionType", question.type || "mcq");
+    setValue("editorQuestionText", question.question);
+    setValue("editorQuestionMark", question.marks || 1);
+
+    const options = Array.isArray(question.options)
+        ? question.options
+        : Object.values(question.options || {});
 
     setValue("editorOptionA", options[0] || "");
-
     setValue("editorOptionB", options[1] || "");
-
     setValue("editorOptionC", options[2] || "");
-
     setValue("editorOptionD", options[3] || "");
 
-    setValue(
-        "editorCorrectAnswer",
-        quiz.correctAnswer ?? ""
+    setValue("editorCorrectAnswer", question.correctAnswer ?? 0);
+
+    toggleQuestionType();
+}
+
+
+function clearQuestionForm() {
+    $("editorQuizForm")?.reset();
+
+    setValue("editorQuizId", "");
+    setValue("editorQuizCourseId", activeCourseId);
+
+    setValue("editorQuestionType", "mcq");
+    setValue("editorQuestionMark", "1");
+
+    toggleQuestionType();
+}
+
+
+function renderEditorQuestions(items) {
+    const container = $("editorQuizList");
+    if (!container) return;
+
+    if (!items.length) {
+        container.innerHTML = "<p>No quiz questions added yet.</p>";
+        text("editorQuizQuestionCount", "0");
+        text("editorQuizTotalMarks", "0");
+        return;
+    }
+
+    const totalMarks = items.reduce((sum, item) =>
+        sum + Number(item.marks || 1), 0
     );
 
-    setValue(
-        "editorQuestionMark",
-        quiz.marks ?? 1
+    text("editorQuizQuestionCount", items.length);
+    text("editorQuizTotalMarks", totalMarks);
+
+    container.innerHTML = items.map((item, index) => `
+        <div class="admin-card">
+            <h4>Question ${index + 1}</h4>
+            <p>${escapeHTML(item.question)}</p>
+            <p>Type: ${escapeHTML(item.type || "mcq")}</p>
+            <p>Marks: ${Number(item.marks || 1)}</p>
+
+            <button type="button" class="secondary-btn"
+                data-action="edit-question" data-id="${item.id}">
+                Edit
+            </button>
+
+            <button type="button" class="danger-btn"
+                data-action="delete-question" data-id="${item.id}">
+                Delete
+            </button>
+        </div>
+    `).join("");
+}
+
+
+function renderQuizzes() {
+    const container = $("adminQuizList");
+    if (!container) return;
+
+    const search = value("adminQuizSearch").toLowerCase();
+
+    const filtered = quizzes.filter(item =>
+        (item.question || "").toLowerCase().includes(search)
     );
 
-    activeQuizId = quiz.quizId || null;
+    if (!filtered.length) {
+        container.innerHTML = "<p>No quiz questions found.</p>";
+        return;
+    }
 
-    updateQuestionTypeDisplay();
+    container.innerHTML = filtered.map(item => `
+        <div class="admin-card">
+            <h3>${escapeHTML(item.question)}</h3>
+            <p>Course: ${escapeHTML(findCourse(item.courseId)?.title || "Unknown")}</p>
+            <p>Type: ${escapeHTML(item.type || "mcq")}</p>
+            <p>Marks: ${Number(item.marks || 1)}</p>
 
-    notify(
-        questionType === "theory"
-            ? "Edit the theory question and click Save Quiz Question."
-            : "Edit the MCQ question and click Save Quiz Question."
-    );
+            <button type="button" class="secondary-btn"
+                data-action="open-quiz-course" data-id="${item.courseId}">
+                Open Course
+            </button>
+        </div>
+    `).join("");
+}
 
-};
 
-
-// =====================================================
-// 44. DELETE QUIZ QUESTION
-// =====================================================
-
-window.deleteQuiz = async function(quizId) {
-
+async function deleteQuestion(id) {
     if (!confirm("Delete this quiz question?")) return;
 
     try {
+        await deleteDoc(doc(db, "quizzes", id));
 
-        await deleteDoc(doc(db, "quizzes", quizId));
+        await refreshData();
 
-        await loadQuizzes();
-
-        refreshDashboard();
-
-        displayEditorQuizzes();
-
-        notify("Quiz question deleted successfully.");
-
-    } catch (error) {
-
-        console.error("Delete quiz error:", error);
-
-        notify("Unable to delete quiz: " + error.message);
-
-    }
-
-};
-
-
-// =====================================================
-// 45. COURSE PREVIEW
-// =====================================================
-
-function previewCourse() {
-
-    const title = getValue("editCourseTitle");
-    const description = getValue("editCourseDescription");
-    const category = getValue("editCourseCategory");
-    const department = getValue("editCourseDepartment");
-    const level = getValue("editCourseLevel");
-    const image = getValue("editCourseImage");
-
-    const container = getElement("coursePreviewContent");
-
-    if (!container) return;
-
-    container.innerHTML = `
-
-        ${image ? `
-            <img
-                src="${escapeHTML(image)}"
-                alt="${escapeHTML(title)}"
-            >
-        ` : ""}
-
-        <h2>${escapeHTML(title)}</h2>
-
-        <p>${escapeHTML(description)}</p>
-
-        <p>Category: ${escapeHTML(category)}</p>
-
-        <p>Department: ${escapeHTML(department)}</p>
-
-        <p>Level: ${escapeHTML(level)}</p>
-
-    `;
-
-    getElement("coursePreview")?.classList.remove("hidden");
-
-}
-
-
-// =====================================================
-// 46. DISPLAY ALL LESSONS
-// =====================================================
-
-function displayAllLessons() {
-
-    const container = getElement("adminLessonList");
-
-    if (!container) return;
-
-    if (!lessons.length) {
-
-        container.innerHTML = "<p>No lessons available yet.</p>";
-        return;
-
-    }
-
-    container.innerHTML = lessons.map(lesson => {
-
-        const course = courses.find(
-            item => item.id === lesson.courseId
-        );
-
-        return `
-
-            <div class="admin-item">
-
-                <h3>${escapeHTML(lesson.title)}</h3>
-
-                <p>Course: ${escapeHTML(course?.title || "Unknown Course")}</p>
-
-                <p>${escapeHTML(lesson.description || "")}</p>
-
-                <p>
-                    Status:
-                    ${lesson.published === false ? "Unpublished" : "Published"}
-                </p>
-
-                <button
-                    type="button"
-                    onclick="editCourse('${escapeHTML(lesson.courseId)}')"
-                >
-                    Open Course
-                </button>
-
-                <button
-                    type="button"
-                    onclick="deleteLesson('${escapeHTML(lesson.id)}')"
-                >
-                    Delete Lesson
-                </button>
-
-            </div>
-
-        `;
-
-    }).join("");
-
-}
-
-
-// =====================================================
-// 47. DISPLAY ALL QUIZZES
-// =====================================================
-
-function displayAllQuizzes() {
-
-    const container = getElement("adminQuizList");
-
-    if (!container) return;
-
-    if (!quizzes.length) {
-
-        container.innerHTML = "<p>No quizzes available yet.</p>";
-        return;
-
-    }
-
-    container.innerHTML = quizzes.map(quiz => {
-
-        const course = courses.find(
-            item => item.id === quiz.courseId
-        );
-
-        const settings = quizSettings.find(
-            item => item.id === quiz.quizId
-        );
-
-        const questionType = quiz.type === "theory"
-            ? "Theory"
-            : "MCQ";
-
-        let optionsHTML = "";
-
-        if (questionType === "MCQ") {
-
-            optionsHTML = `
-
-                <ol>
-                    ${(quiz.options || []).map(option => `
-                        <li>${escapeHTML(option)}</li>
-                    `).join("")}
-                </ol>
-
-            `;
-
-        } else {
-
-            optionsHTML = `
-                <p>Students will type their answers.</p>
-            `;
-
+        if (activeCourseId) {
+            await loadCourseEditor(activeCourseId);
         }
 
-        return `
-
-            <div class="admin-item">
-
-                <h3>
-                    ${escapeHTML(quiz.question || quiz.questionText)}
-                </h3>
-
-                <p>
-                    Course:
-                    ${escapeHTML(course?.title || "Unknown Course")}
-                </p>
-
-                <p>
-                    Quiz:
-                    ${escapeHTML(settings?.title || "Legacy / General Quiz")}
-                </p>
-
-                <p>
-                    Question Type:
-                    <strong>${questionType}</strong>
-                </p>
-
-                <p>
-                    Marks:
-                    ${escapeHTML(quiz.marks ?? 1)}
-                </p>
-
-                ${optionsHTML}
-
-                <button
-                    type="button"
-                    onclick="editQuiz('${escapeHTML(quiz.id)}')"
-                >
-                    Edit Question
-                </button>
-
-                <button
-                    type="button"
-                    onclick="deleteQuiz('${escapeHTML(quiz.id)}')"
-                >
-                    Delete Question
-                </button>
-
-            </div>
-
-        `;
-
-    }).join("");
-
+    } catch (error) {
+        showError(error);
+    }
 }
 
 
-// =====================================================
-// 48. DISPLAY STUDENTS
-// =====================================================
+// ======================================================
+// 16. BATTLE ARENA COMPETITIONS
+// ======================================================
 
-function displayStudents() {
+async function createBattleQuiz(event) {
+    event.preventDefault();
 
-    const container = getElement("adminStudentList");
+    const opening = value("battleOpeningDate");
+    const closing = value("battleClosingDate");
 
+    if (opening && closing && new Date(closing) <= new Date(opening)) {
+        alert("Closing date must be later than opening date.");
+        return;
+    }
+
+    const data = {
+        title: value("battleQuizTitle"),
+        description: value("battleQuizDescription"),
+        questionLimit: Number(value("battleQuestionLimit")) || 10,
+        durationSeconds: Number(value("battleDuration")) || 60,
+        openingDate: opening,
+        closingDate: closing,
+        published: false,
+        status: "draft",
+        createdBy: currentAdmin.uid,
+        createdAt: serverTimestamp()
+    };
+
+    if (!data.title) {
+        alert("Enter a competition title.");
+        return;
+    }
+
+    try {
+        await addDoc(collection(db, "battleQuizzes"), data);
+
+        $("battleQuizForm")?.reset();
+
+        message("battleAdminMessage", "Competition created successfully.");
+
+        await refreshData();
+
+    } catch (error) {
+        showError(error);
+    }
+}
+
+
+function renderBattleQuizzes() {
+    const container = $("adminBattleList");
     if (!container) return;
 
-    const search = getValue("adminStudentSearch").toLowerCase();
+    if (!battleQuizzes.length) {
+        container.innerHTML = "<p>No competitions created yet.</p>";
+        return;
+    }
 
-    const filtered = students.filter(student => {
+    container.innerHTML = sortNewest(battleQuizzes).map(battle => `
+        <div class="admin-card">
+            <h3>${escapeHTML(battle.title)}</h3>
+            <p>${escapeHTML(battle.description)}</p>
+            <p>Questions: ${Number(battle.questionLimit || 0)}</p>
+            <p>Duration: ${Number(battle.durationSeconds || 0)} seconds</p>
+            <p>Status: ${battle.published ? "Published" : "Unpublished"}</p>
 
-        return (
+            <button type="button" class="secondary-btn"
+                data-action="select-battle" data-id="${battle.id}">
+                Manage Questions
+            </button>
 
-            String(student.fullName || "").toLowerCase().includes(search) ||
+            <button type="button" class="primary-btn"
+                data-action="toggle-battle" data-id="${battle.id}">
+                ${battle.published ? "Unpublish" : "Publish"}
+            </button>
 
-            String(student.email || "").toLowerCase().includes(search) ||
+            <button type="button" class="danger-btn"
+                data-action="delete-battle" data-id="${battle.id}">
+                Delete
+            </button>
+        </div>
+    `).join("");
+}
 
-            String(student.department || "").toLowerCase().includes(search) ||
 
-            String(student.level || "").toLowerCase().includes(search)
+async function toggleBattle(id) {
+    const battle = findBattle(id);
+    if (!battle) return;
 
+    try {
+        await updateDoc(doc(db, "battleQuizzes", id), {
+            published: !battle.published,
+            status: battle.published ? "draft" : "published",
+            updatedAt: serverTimestamp()
+        });
+
+        await refreshData();
+
+    } catch (error) {
+        showError(error);
+    }
+}
+
+
+async function deleteBattle(id) {
+    if (!confirm("Delete this competition?")) return;
+
+    try {
+        await deleteDoc(doc(db, "battleQuizzes", id));
+
+        await refreshData();
+
+    } catch (error) {
+        showError(error);
+    }
+}
+
+
+// ======================================================
+// 17. BATTLE QUESTIONS
+// ======================================================
+
+async function saveBattleQuestion(event) {
+    event.preventDefault();
+
+    const quizId = value("battleQuestionQuizId");
+
+    if (!quizId) {
+        alert("Select a competition.");
+        return;
+    }
+
+    const id = value("battleQuestionId");
+
+    const data = {
+        battleQuizId: quizId,
+        question: value("battleQuestionText"),
+        options: {
+            A: value("battleOptionA"),
+            B: value("battleOptionB"),
+            C: value("battleOptionC"),
+            D: value("battleOptionD")
+        },
+        correctAnswer: ["A", "B", "C", "D"][
+            Number(value("battleCorrectAnswer")) || 0
+        ],
+        marks: Number(value("battleQuestionMarks")) || 1,
+        published: true,
+        updatedAt: serverTimestamp()
+    };
+
+    if (!data.question ||
+        Object.values(data.options).some(option => !option)) {
+        alert("Complete the question and all four options.");
+        return;
+    }
+
+    try {
+        if (id) {
+            await updateDoc(doc(db, "battleQuestions", id), data);
+        } else {
+            data.createdBy = currentAdmin.uid;
+            data.createdAt = serverTimestamp();
+
+            await addDoc(collection(db, "battleQuestions"), data);
+        }
+
+        $("battleQuestionForm")?.reset();
+
+        setValue("battleQuestionId", "");
+
+        message("battleQuestionMessage", "Battle question saved successfully.");
+
+        await refreshData();
+
+    } catch (error) {
+        showError(error);
+    }
+}
+
+
+function renderBattleQuestions() {
+    const container = $("battleQuestionList");
+    if (!container) return;
+
+    let questions = battleQuestions;
+
+    if (activeBattleQuizId) {
+        questions = questions.filter(item =>
+            item.battleQuizId === activeBattleQuizId
         );
+    }
 
+    if (!questions.length) {
+        container.innerHTML = "<p>No battle questions to display.</p>";
+        return;
+    }
+
+    container.innerHTML = questions.map(item => `
+        <div class="admin-card">
+            <h4>${escapeHTML(item.question)}</h4>
+            <p>A: ${escapeHTML(item.options?.A)}</p>
+            <p>B: ${escapeHTML(item.options?.B)}</p>
+            <p>C: ${escapeHTML(item.options?.C)}</p>
+            <p>D: ${escapeHTML(item.options?.D)}</p>
+            <p>Correct answer: ${escapeHTML(item.correctAnswer)}</p>
+
+            <button type="button" class="danger-btn"
+                data-action="delete-battle-question" data-id="${item.id}">
+                Delete
+            </button>
+        </div>
+    `).join("");
+}
+
+
+function selectBattle(id) {
+    activeBattleQuizId = id;
+
+    setValue("battleQuestionQuizId", id);
+
+    renderBattleQuestions();
+
+    $("battleQuestionForm")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
     });
+}
+
+
+async function deleteBattleQuestion(id) {
+    if (!confirm("Delete this battle question?")) return;
+
+    try {
+        await deleteDoc(doc(db, "battleQuestions", id));
+
+        await refreshData();
+
+    } catch (error) {
+        showError(error);
+    }
+}
+
+
+// ======================================================
+// 18. BATTLE MATCH HISTORY
+// ======================================================
+
+function renderBattleMatches() {
+    const container = $("adminBattleMatchesList");
+    if (!container) return;
+
+    if (!battleMatches.length) {
+        container.innerHTML = "<p>No battle match records found.</p>";
+        return;
+    }
+
+    container.innerHTML = sortNewest(battleMatches).map(match => `
+        <div class="admin-card">
+            <h4>Match ${escapeHTML(match.id)}</h4>
+            <p>Player 1: ${escapeHTML(match.player1Name || match.player1Id || "Unknown")}</p>
+            <p>Player 2: ${escapeHTML(match.player2Name || match.player2Id || "Unknown")}</p>
+            <p>Status: ${escapeHTML(match.status || "Unknown")}</p>
+            <p>Winner: ${escapeHTML(match.winnerName || match.winnerId || "Not available")}</p>
+            <p>Date: ${formatDate(match.createdAt)}</p>
+        </div>
+    `).join("");
+}
+
+
+// ======================================================
+// 19. STUDENTS
+// ======================================================
+
+function renderStudents() {
+    const container = $("adminStudentList");
+    if (!container) return;
+
+    const search = value("adminStudentSearch").toLowerCase();
+
+    const filtered = students.filter(student =>
+        (student.fullName || student.name || "").toLowerCase().includes(search) ||
+        (student.email || "").toLowerCase().includes(search) ||
+        (student.department || "").toLowerCase().includes(search) ||
+        (student.matricNumber || "").toLowerCase().includes(search)
+    );
 
     if (!filtered.length) {
-
         container.innerHTML = "<p>No students found.</p>";
         return;
-
     }
 
     container.innerHTML = filtered.map(student => `
-
-        <div class="admin-item">
-
-            <h3>${escapeHTML(student.fullName || "Unnamed Student")}</h3>
-
-            <p>Email: ${escapeHTML(student.email || "Not available")}</p>
-
-            <p>University: ${escapeHTML(student.university || "Not available")}</p>
-
-            <p>Department: ${escapeHTML(student.department || "Not available")}</p>
-
-            <p>Level: ${escapeHTML(student.level || "Not available")}</p>
-
+        <div class="admin-card">
+            <h3>${escapeHTML(student.fullName || student.name || "Student")}</h3>
+            <p>Email: ${escapeHTML(student.email)}</p>
+            <p>Matric Number: ${escapeHTML(student.matricNumber)}</p>
+            <p>Department: ${escapeHTML(student.department)}</p>
+            <p>Level: ${escapeHTML(student.level)}</p>
         </div>
-
     `).join("");
-
 }
 
 
-/// =====================================================
-// 49. DISPLAY RESULTS
-// =====================================================
+// ======================================================
+// 20. INSTRUCTORS
+// ======================================================
 
-function displayResults() {
-
-    const container = getElement("adminResultList");
-
+function renderInstructors() {
+    const container = $("adminInstructorList");
     if (!container) return;
 
-    const search = getValue("adminResultSearch").toLowerCase();
-
-    const filtered = results.filter(result => {
-
-        const student = students.find(
-            item => item.id === result.studentId
-        );
-
-        const course = courses.find(
-            item => item.id === result.courseId
-        );
-
-        return (
-
-            String(student?.fullName || result.studentName || "")
-                .toLowerCase().includes(search) ||
-
-            String(course?.title || result.courseTitle || "")
-                .toLowerCase().includes(search)
-
-        );
-
-    });
-
-    if (!filtered.length) {
-
-        container.innerHTML = "<p>No student results found.</p>";
-        return;
-
-    }
-
-    container.innerHTML = filtered.map(result => {
-
-        const student = students.find(
-            item => item.id === result.studentId
-        );
-
-        const course = courses.find(
-            item => item.id === result.courseId
-        );
-
-        const isPending = result.gradingStatus === "pending";
-
-        return `
-
-            <div class="admin-item">
-
-                <h3>
-                    ${escapeHTML(student?.fullName || result.studentName || "Unknown Student")}
-                </h3>
-
-                <p>
-                    Course:
-                    ${escapeHTML(course?.title || result.courseTitle || "Unknown Course")}
-                </p>
-
-                <p>
-                    Quiz:
-                    ${escapeHTML(result.quizTitle || "Course Quiz")}
-                </p>
-
-                ${
-                    isPending
-                    ? `
-                        <p style="color: orange;">
-                            <strong>Grading: Pending</strong>
-                        </p>
-
-                        <p>
-                            Total Marks:
-                            ${escapeHTML(result.totalMarks || 0)}
-                        </p>
-                    `
-                    : `
-                        <p>Score: ${escapeHTML(result.score ?? 0)}</p>
-
-                        <p>
-                            Percentage:
-                            ${escapeHTML(result.percentage ?? 0)}%
-                        </p>
-
-                        <p>
-                            Status:
-                            ${result.passed ? "Passed" : "Not passed"}
-                        </p>
-                    `
-                }
-
-                <button
-                    type="button"
-                    onclick="editResult('${escapeHTML(result.id)}')"
-                >
-                    ${isPending ? "Mark Theory Answers" : "Edit Marks"}
-                </button>
-
-            </div>
-
-        `;
-
-    }).join("");
-
-}
-
-
-// =====================================================
-// 50. EDIT STUDENT MARKS AND GRADE THEORY
-// =====================================================
-
-window.editResult = async function(resultId) {
-
-    const result = results.find(item => item.id === resultId);
-
-    if (!result) {
-
-        notify("Result not found.");
-        return;
-
-    }
-
-    const answers = Array.isArray(result.answers)
-        ? result.answers
-        : [];
-
-    const theoryAnswers = answers.filter(
-        answer => answer.type === "theory"
-    );
-
-    // =========================================
-    // NORMAL MCQ RESULT
-    // =========================================
-
-    if (!theoryAnswers.length) {
-
-        const totalMarks = Number(
-            result.totalMarks ||
-            result.totalQuestions ||
-            0
-        );
-
-        if (!totalMarks || totalMarks <= 0) {
-
-            notify("This result has no valid total marks.");
-            return;
-
-        }
-
-        const newScore = prompt(
-            `Enter the new score for ${result.studentName || "this student"}.\nMaximum: ${totalMarks}`,
-            result.score ?? 0
-        );
-
-        if (newScore === null) return;
-
-        const score = Number(newScore);
-
-        if (
-            !Number.isFinite(score) ||
-            score < 0 ||
-            score > totalMarks
-        ) {
-
-            notify("Enter a valid score between 0 and " + totalMarks);
-            return;
-
-        }
-
-        const percentage = Math.round(
-            (score / totalMarks) * 100
-        );
-
-        const passed = percentage >= 70;
-
-        try {
-
-            await updateDoc(
-                doc(db, "results", resultId),
-                {
-                    score,
-                    percentage,
-                    passed,
-                    gradingStatus: "graded",
-                    gradedAt: serverTimestamp(),
-                    gradedBy: currentAdmin.uid,
-                    updatedAt: serverTimestamp()
-                }
-            );
-
-            await loadResults();
-
-            displayResults();
-
-            notify("Student result updated successfully.");
-
-        } catch (error) {
-
-            console.error(error);
-
-            notify("Unable to update result: " + error.message);
-
-        }
-
-        return;
-
-    }
-
-
-    // =========================================
-    // THEORY MARKING INTERFACE
-    // =========================================
-
-    const oldModal = getElement("theoryGradingModal");
-
-    if (oldModal) {
-        oldModal.remove();
-    }
-
-    const modal = document.createElement("div");
-
-    modal.id = "theoryGradingModal";
-
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.75);
-        z-index: 99999;
-        overflow-y: auto;
-        padding: 25px 15px;
-    `;
-
-    let questionHTML = "";
-
-    answers.forEach((answer, index) => {
-
-        const maximumMarks = Number(answer.marks || 1);
-
-        if (answer.type === "theory") {
-
-            questionHTML += `
-
-                <div style="
-                    background: white;
-                    padding: 20px;
-                    border-radius: 10px;
-                    margin-bottom: 20px;
-                    color: #172033;
-                ">
-
-                    <h3>Question ${index + 1}</h3>
-
-                    <p style="margin: 12px 0;">
-                        <strong>
-                            ${escapeHTML(answer.question || "Question not available")}
-                        </strong>
-                    </p>
-
-                    <div style="
-                        background: #f1f5f9;
-                        padding: 15px;
-                        border-radius: 8px;
-                        margin-bottom: 15px;
-                        white-space: pre-wrap;
-                    ">
-                        <strong>Student's Answer:</strong>
-
-                        <p style="margin-top: 8px;">
-                            ${escapeHTML(answer.answer || "No answer submitted")}
-                        </p>
-                    </div>
-
-                    <label>
-                        Award Marks (Maximum ${maximumMarks})
-                    </label>
-
-                    <input
-                        type="number"
-                        class="theory-mark-input"
-                        data-index="${index}"
-                        min="0"
-                        max="${maximumMarks}"
-                        step="0.5"
-                        value="${answer.awardedMarks ?? 0}"
-                        style="
-                            display: block;
-                            width: 100%;
-                            padding: 12px;
-                            margin: 8px 0 15px;
-                        "
-                        required
-                    >
-
-                    <label>Feedback (Optional)</label>
-
-                    <textarea
-                        class="theory-feedback-input"
-                        data-index="${index}"
-                        rows="3"
-                        placeholder="Write feedback for this answer..."
-                        style="
-                            display: block;
-                            width: 100%;
-                            padding: 12px;
-                            margin-top: 8px;
-                        "
-                    >${escapeHTML(answer.feedback || "")}</textarea>
-
-                </div>
-
-            `;
-
-        } else {
-
-            questionHTML += `
-
-                <div style="
-                    background: #f1f5f9;
-                    padding: 15px;
-                    border-radius: 10px;
-                    margin-bottom: 15px;
-                    color: #172033;
-                ">
-
-                    <strong>MCQ Question ${index + 1}</strong>
-
-                    <p>
-                        ${escapeHTML(answer.question || "MCQ answer")}
-                    </p>
-
-                    <p>
-                        Student's Answer:
-                        ${escapeHTML(answer.answer || "Not available")}
-                    </p>
-
-                    <p>
-                        ${answer.isCorrect ? "Correct" : "Incorrect"}
-                    </p>
-
-                </div>
-
-            `;
-
-        }
-
-    });
-
-
-    modal.innerHTML = `
-
-        <div style="
-            background: white;
-            max-width: 750px;
-            margin: auto;
-            padding: 25px;
-            border-radius: 12px;
-            color: #172033;
-        ">
-
-            <h2>Grade Theory Submission</h2>
-
-            <p>
-                <strong>Student:</strong>
-                ${escapeHTML(result.studentName || "Unknown")}
-            </p>
-
-            <p>
-                <strong>Course:</strong>
-                ${escapeHTML(result.courseTitle || "Unknown Course")}
-            </p>
-
-            <p>
-                <strong>Quiz:</strong>
-                ${escapeHTML(result.quizTitle || "Course Quiz")}
-            </p>
-
-            <hr style="margin: 20px 0;">
-
-            ${questionHTML}
-
-            <div style="
-                display: flex;
-                gap: 10px;
-                flex-wrap: wrap;
-            ">
-
-                <button
-                    type="button"
-                    id="submitTheoryMarksBtn"
-                    style="
-                        background: #16a34a;
-                        color: white;
-                        border: none;
-                        padding: 13px 20px;
-                        border-radius: 7px;
-                        cursor: pointer;
-                    "
-                >
-                    Submit Marks
-                </button>
-
-                <button
-                    type="button"
-                    id="cancelTheoryMarksBtn"
-                    style="
-                        background: #64748b;
-                        color: white;
-                        border: none;
-                        padding: 13px 20px;
-                        border-radius: 7px;
-                        cursor: pointer;
-                    "
-                >
-                    Cancel
-                </button>
-
-            </div>
-
-        </div>
-
-    `;
-
-    document.body.appendChild(modal);
-
-
-    // =========================================
-    // CANCEL MARKING
-    // =========================================
-
-    getElement("cancelTheoryMarksBtn").addEventListener(
-        "click",
-        () => modal.remove()
-    );
-
-
-    // =========================================
-    // SAVE THEORY MARKS
-    // =========================================
-
-    getElement("submitTheoryMarksBtn").addEventListener(
-        "click",
-        async () => {
-
-            const markInputs = modal.querySelectorAll(
-                ".theory-mark-input"
-            );
-
-            const feedbackInputs = modal.querySelectorAll(
-                ".theory-feedback-input"
-            );
-
-            const updatedAnswers = answers.map(answer => ({
-                ...answer
-            }));
-
-            let theoryScore = 0;
-
-            let mcqScore = 0;
-
-            let allMarksValid = true;
-
-
-            // Check MCQ marks
-
-            updatedAnswers.forEach(answer => {
-
-                if (answer.type !== "theory") {
-
-                    if (answer.isCorrect === true) {
-
-                        mcqScore += Number(answer.marks || 1);
-
-                    }
-
-                }
-
-            });
-
-
-            // Check Theory marks
-
-            markInputs.forEach(input => {
-
-                const index = Number(input.dataset.index);
-
-                const awardedMarks = Number(input.value);
-
-                const maximumMarks = Number(
-                    updatedAnswers[index].marks || 1
-                );
-
-                if (
-                    input.value === "" ||
-                    !Number.isFinite(awardedMarks) ||
-                    awardedMarks < 0 ||
-                    awardedMarks > maximumMarks
-                ) {
-
-                    allMarksValid = false;
-
-                    input.style.border = "2px solid red";
-
-                    return;
-
-                }
-
-                const feedbackInput = Array.from(feedbackInputs).find(
-                    item => Number(item.dataset.index) === index
-                );
-
-                updatedAnswers[index].awardedMarks = awardedMarks;
-
-                updatedAnswers[index].feedback =
-                    feedbackInput?.value.trim() || "";
-
-                theoryScore += awardedMarks;
-
-            });
-
-
-            if (!allMarksValid) {
-
-                notify("Please enter valid marks for every Theory question.");
-
-                return;
-
-            }
-
-
-            // Calculate final result
-
-            const score = mcqScore + theoryScore;
-
-            const totalMarks = Number(result.totalMarks || 0);
-
-            if (totalMarks <= 0 || score > totalMarks) {
-
-                notify("The final score is invalid. Please check the total marks.");
-
-                return;
-
-            }
-
-            const percentage = Math.round(
-                (score / totalMarks) * 100
-            );
-
-            const passed = percentage >= 70;
-
-
-            // Save to Firestore
-
-            try {
-
-                getElement("submitTheoryMarksBtn").disabled = true;
-
-                getElement("submitTheoryMarksBtn").textContent =
-                    "Saving Marks...";
-
-                await updateDoc(
-                    doc(db, "results", resultId),
-                    {
-                        answers: updatedAnswers,
-                        score,
-                        totalMarks,
-                        percentage,
-                        passed,
-                        gradingStatus: "graded",
-                        gradedAt: serverTimestamp(),
-                        gradedBy: currentAdmin.uid,
-                        updatedAt: serverTimestamp()
-                    }
-                );
-
-                modal.remove();
-
-                await loadResults();
-
-                displayResults();
-
-                notify(
-                    "Theory marking completed successfully!\n\n" +
-                    "Score: " + score + "/" + totalMarks + "\n" +
-                    "Percentage: " + percentage + "%\n" +
-                    "Status: " + (passed ? "Passed" : "Not passed")
-                );
-
-            } catch (error) {
-
-                console.error("Theory grading error:", error);
-
-                getElement("submitTheoryMarksBtn").disabled = false;
-
-                getElement("submitTheoryMarksBtn").textContent =
-                    "Submit Marks";
-
-                notify(
-                    "Unable to save marks: " + error.message
-                );
-
-            }
-
-        }
-    );
-
-};
-
-// =====================================================
-// 51. DISPLAY CERTIFICATES
-// =====================================================
-
-function displayCertificates() {
-
-    const container = getElement("adminCertificateList");
-
-    if (!container) return;
-
-    const search = getValue("adminCertificateSearch").toLowerCase();
-
-    const filtered = certificates.filter(certificate => {
-
-        const student = students.find(
-            item => item.id === certificate.studentId
-        );
-
-        const course = courses.find(
-            item => item.id === certificate.courseId
-        );
-
-        return (
-
-            String(student?.fullName || certificate.studentName || "")
-                .toLowerCase().includes(search) ||
-
-            String(course?.title || certificate.courseTitle || "")
-                .toLowerCase().includes(search) ||
-
-            String(certificate.id).toLowerCase().includes(search)
-
-        );
-
-    });
-
-    if (!filtered.length) {
-
-        container.innerHTML = "<p>No certificates found.</p>";
-        return;
-
-    }
-
-    container.innerHTML = filtered.map(certificate => {
-
-        const student = students.find(
-            item => item.id === certificate.studentId
-        );
-
-        const course = courses.find(
-            item => item.id === certificate.courseId
-        );
-
-        return `
-
-            <div class="admin-item">
-
-                <h3>${escapeHTML(student?.fullName || certificate.studentName || "Unknown Student")}</h3>
-
-                <p>Course: ${escapeHTML(course?.title || certificate.courseTitle || "Unknown Course")}</p>
-
-                <p>Certificate ID: ${escapeHTML(certificate.id)}</p>
-
-                <p>Status: ${certificate.revoked ? "Revoked" : "Valid"}</p>
-
-                <button
-                    type="button"
-                    onclick="editCertificate('${escapeHTML(certificate.id)}')"
-                >
-                    Edit Certificate
-                </button>
-
-                <button
-                    type="button"
-                    onclick="toggleCertificate('${escapeHTML(certificate.id)}')"
-                >
-                    ${certificate.revoked ? "Restore Certificate" : "Revoke Certificate"}
-                </button>
-
-            </div>
-
-        `;
-
-    }).join("");
-
-}
-
-
-// =====================================================
-// 52. EDIT CERTIFICATE
-// =====================================================
-
-window.editCertificate = async function(certificateId) {
-
-    const certificate = certificates.find(
-        item => item.id === certificateId
-    );
-
-    if (!certificate) {
-
-        notify("Certificate not found.");
-        return;
-
-    }
-
-    const newName = prompt(
-        "Enter the certificate holder's name:",
-        certificate.studentName || ""
-    );
-
-    if (newName === null) return;
-
-    const newCourseTitle = prompt(
-        "Enter the course title:",
-        certificate.courseTitle || ""
-    );
-
-    if (newCourseTitle === null) return;
-
-    if (!newName.trim() || !newCourseTitle.trim()) {
-
-        notify("Name and course title cannot be empty.");
-        return;
-
-    }
-
-    try {
-
-        await updateDoc(
-            doc(db, "certificates", certificateId),
-            {
-                studentName: newName.trim(),
-                courseTitle: newCourseTitle.trim(),
-                updatedAt: serverTimestamp(),
-                updatedBy: currentAdmin.uid
-            }
-        );
-
-        await loadCertificates();
-
-        displayCertificates();
-
-        notify("Certificate details updated successfully.");
-
-    } catch (error) {
-
-        console.error("Certificate edit error:", error);
-
-        notify("Unable to edit certificate: " + error.message);
-
-    }
-
-};
-
-
-// =====================================================
-// 53. REVOKE / RESTORE CERTIFICATE
-// =====================================================
-
-window.toggleCertificate = async function(certificateId) {
-
-    const certificate = certificates.find(
-        item => item.id === certificateId
-    );
-
-    if (!certificate) return;
-
-    const newStatus = !certificate.revoked;
-
-    const action = newStatus ? "revoke" : "restore";
-
-    if (!confirm(`Are you sure you want to ${action} this certificate?`)) {
-        return;
-    }
-
-    try {
-
-        await updateDoc(
-            doc(db, "certificates", certificateId),
-            {
-                revoked: newStatus,
-                updatedAt: serverTimestamp(),
-                updatedBy: currentAdmin.uid
-            }
-        );
-
-        await loadCertificates();
-
-        displayCertificates();
-
-        notify(
-            newStatus
-                ? "Certificate revoked successfully."
-                : "Certificate restored successfully."
-        );
-
-    } catch (error) {
-
-        console.error("Certificate status error:", error);
-
-        notify("Unable to update certificate: " + error.message);
-
-    }
-
-};
-
-
-// =====================================================
-// 54. INSTRUCTOR MANAGEMENT
-// =====================================================
-
-function displayInstructors() {
-
-    const container = getElement("adminInstructorList");
-
-    if (!container) return;
-
-    const search = getValue("adminInstructorSearch").toLowerCase();
-
-    const filter =
-        getElement("adminInstructorFilter")?.value || "all";
+    const search = value("adminInstructorSearch").toLowerCase();
+    const filter = value("adminInstructorFilter") || "all";
 
     const filtered = instructors.filter(instructor => {
+        const status = String(instructor.status || "pending").toLowerCase();
 
-        const searchableText = [
+        const matchesSearch =
+            (instructor.fullName || instructor.name || "").toLowerCase().includes(search) ||
+            (instructor.email || "").toLowerCase().includes(search);
 
-            instructor.fullName,
-            instructor.email,
-            instructor.university,
-            instructor.faculty,
-            instructor.department,
-            instructor.specialisation,
-            instructor.courses
-
-        ].join(" ").toLowerCase();
-
-        const status = instructor.status || "pending";
-
-        const matchesSearch = searchableText.includes(search);
-
-        const matchesFilter =
-            filter === "all" || status === filter;
+        const matchesFilter = filter === "all" || status === filter;
 
         return matchesSearch && matchesFilter;
-
     });
 
     if (!filtered.length) {
-
-        container.innerHTML = `
-            <div class="empty-message">
-                <h3>No Instructor Applications Found</h3>
-                <p>There are no applications matching your search.</p>
-            </div>
-        `;
-
-        updateInstructorStatistics();
-
+        container.innerHTML = "<p>No instructors found.</p>";
         return;
-
     }
 
-    container.innerHTML = filtered.map(instructor => {
+    container.innerHTML = filtered.map(instructor => `
+        <div class="admin-card">
+            <h3>${escapeHTML(instructor.fullName || instructor.name || "Instructor")}</h3>
+            <p>Email: ${escapeHTML(instructor.email)}</p>
+            <p>Department: ${escapeHTML(instructor.department)}</p>
+            <p>Status: ${escapeHTML(instructor.status || "pending")}</p>
 
-        const status = instructor.status || "pending";
+            <button type="button" class="primary-btn"
+                data-action="approve-instructor" data-id="${instructor.id}">
+                Approve
+            </button>
 
-        return `
-
-            <div class="admin-item instructor-admin-card">
-
-                <h3>
-                    ${escapeHTML(instructor.fullName || "Unnamed Instructor")}
-                </h3>
-
-                <p>
-                    <strong>Email:</strong>
-                    ${escapeHTML(instructor.email || "Not available")}
-                </p>
-
-                <p>
-                    <strong>University:</strong>
-                    ${escapeHTML(instructor.university || "Not provided")}
-                </p>
-
-                <p>
-                    <strong>Faculty:</strong>
-                    ${escapeHTML(instructor.faculty || "Not provided")}
-                </p>
-
-                <p>
-                    <strong>Department:</strong>
-                    ${escapeHTML(instructor.department || "Not provided")}
-                </p>
-
-                <p>
-                    <strong>Specialisation:</strong>
-                    ${escapeHTML(instructor.specialisation || "Not provided")}
-                </p>
-
-                <p>
-                    <strong>Courses Interested in Teaching:</strong>
-                    ${escapeHTML(instructor.courses || "Not provided")}
-                </p>
-
-                <p>
-                    <strong>Application Date:</strong>
-                    ${escapeHTML(formatDate(instructor.createdAt))}
-                </p>
-
-                <p>
-                    <strong>Status:</strong>
-
-                    <span class="instructor-status ${escapeHTML(status)}">
-                        ${escapeHTML(status.toUpperCase())}
-                    </span>
-                </p>
-
-                ${
-                    status === "pending"
-                    ? `
-
-                        <button
-                            type="button"
-                            onclick="approveInstructor('${escapeHTML(instructor.id)}')"
-                            class="approve-instructor-btn"
-                        >
-                            Approve Instructor
-                        </button>
-
-                        <button
-                            type="button"
-                            onclick="rejectInstructor('${escapeHTML(instructor.id)}')"
-                            class="reject-instructor-btn"
-                        >
-                            Reject Application
-                        </button>
-
-                    `
-                    : ""
-                }
-
-            </div>
-
-        `;
-
-    }).join("");
-
-    updateInstructorStatistics();
-
+            <button type="button" class="danger-btn"
+                data-action="reject-instructor" data-id="${instructor.id}">
+                Reject
+            </button>
+        </div>
+    `).join("");
 }
 
 
-// =====================================================
-// 55. UPDATE INSTRUCTOR STATISTICS
-// =====================================================
+async function updateInstructorStatus(id, status) {
+    if (!confirm("Change instructor status to " + status + "?")) return;
 
-function updateInstructorStatistics() {
+    try {
+        await updateDoc(doc(db, "instructors", id), {
+            status,
+            updatedAt: serverTimestamp()
+        });
 
-    const pending = instructors.filter(
-        item => (item.status || "pending") === "pending"
-    ).length;
+        await refreshData();
 
-    const approved = instructors.filter(
-        item => item.status === "approved"
-    ).length;
-
-    const rejected = instructors.filter(
-        item => item.status === "rejected"
-    ).length;
-
-    const values = {
-
-        pendingInstructorCount: pending,
-        approvedInstructorCount: approved,
-        rejectedInstructorCount: rejected,
-        totalInstructors: instructors.length,
-        totalPendingInstructors: pending,
-        pendingInstructorBadge: pending
-
-    };
-
-    Object.entries(values).forEach(([id, value]) => {
-
-        const element = getElement(id);
-
-        if (element) {
-            element.textContent = value;
-        }
-
-    });
-
+    } catch (error) {
+        showError(error);
+    }
 }
 
 
-// =====================================================
-// 56. APPROVE INSTRUCTOR
-// =====================================================
+// ======================================================
+// 21. RESULTS
+// ======================================================
 
-window.approveInstructor = async function(instructorId) {
+function renderResults() {
+    const container = $("adminResultList");
+    if (!container) return;
 
-    const instructor = instructors.find(
-        item => item.id === instructorId
+    const search = value("adminResultSearch").toLowerCase();
+
+    const filtered = sortNewest(results).filter(result =>
+        (result.studentName || "").toLowerCase().includes(search) ||
+        (result.courseTitle || "").toLowerCase().includes(search) ||
+        (result.quizTitle || "").toLowerCase().includes(search)
     );
 
-    if (!instructor) {
-
-        notify("Instructor application not found.");
+    if (!filtered.length) {
+        container.innerHTML = "<p>No student results found.</p>";
         return;
-
     }
 
-    if (!confirm(
-        `Approve ${instructor.fullName || "this instructor"}?`
-    )) return;
+    container.innerHTML = filtered.map(result => `
+        <div class="admin-card">
+            <h3>${escapeHTML(result.studentName || "Student")}</h3>
+            <p>Course: ${escapeHTML(result.courseTitle)}</p>
+            <p>Quiz: ${escapeHTML(result.quizTitle)}</p>
+            <p>Score: ${Number(result.score || 0)} / ${Number(result.totalMarks || 0)}</p>
+            <p>Percentage: ${Number(result.percentage || 0)}%</p>
+            <p>Grading: ${escapeHTML(result.gradingStatus || "Completed")}</p>
+            <p>Date: ${formatDate(result.submittedAt)}</p>
 
-    try {
-
-        await updateDoc(
-            doc(db, "instructors", instructorId),
-            {
-                status: "approved",
-                approvedAt: serverTimestamp(),
-                approvedBy: currentAdmin.uid
-            }
-        );
-
-        await loadInstructors();
-
-        displayInstructors();
-
-        notify(
-            "Instructor approved successfully. They can now access the instructor dashboard."
-        );
-
-    } catch (error) {
-
-        console.error("Instructor approval error:", error);
-
-        notify("Unable to approve instructor: " + error.message);
-
-    }
-
-};
+            <button type="button" class="primary-btn"
+                data-action="edit-result" data-id="${result.id}">
+                Edit Marks
+            </button>
+        </div>
+    `).join("");
+}
 
 
-// =====================================================
-// 57. REJECT INSTRUCTOR
-// =====================================================
+async function editResultMarks(id) {
+    const result = results.find(item => item.id === id);
+    if (!result) return;
 
-window.rejectInstructor = async function(instructorId) {
+    const currentScore = Number(result.score || 0);
 
-    const instructor = instructors.find(
-        item => item.id === instructorId
+    const newScore = prompt(
+        "Student: " + (result.studentName || "Unknown") +
+        "\nQuiz: " + (result.quizTitle || "Quiz") +
+        "\nCurrent score: " + currentScore +
+        "\nTotal marks: " + Number(result.totalMarks || 0) +
+        "\n\nEnter the corrected total score:"
     );
 
-    if (!instructor) {
+    if (newScore === null) return;
 
-        notify("Instructor application not found.");
+    const score = Number(newScore);
+    const total = Number(result.totalMarks || 0);
+
+    if (!Number.isFinite(score) || score < 0 || score > total) {
+        alert("Enter a valid score between 0 and " + total + ".");
         return;
-
     }
 
-    if (!confirm(
-        `Reject ${instructor.fullName || "this instructor"}'s application?`
-    )) return;
+    const percentage = total > 0
+        ? Number(((score / total) * 100).toFixed(2))
+        : 0;
 
     try {
+        await updateDoc(doc(db, "results", id), {
+            score,
+            percentage,
+            gradingStatus: result.hasTheoryQuestions ? "manually_graded" : (result.gradingStatus || "completed"),
+            updatedAt: serverTimestamp(),
+            marksUpdatedBy: currentAdmin.uid
+        });
 
-        await updateDoc(
-            doc(db, "instructors", instructorId),
-            {
-                status: "rejected",
-                rejectedAt: serverTimestamp(),
-                rejectedBy: currentAdmin.uid
-            }
-        );
+        alert("Result marks updated successfully.");
 
-        await loadInstructors();
-
-        displayInstructors();
-
-        notify("Instructor application rejected.");
+        await refreshData();
 
     } catch (error) {
+        showError(error);
+    }
+}
 
-        console.error("Instructor rejection error:", error);
 
-        notify("Unable to reject application: " + error.message);
+// ======================================================
+// 22. CERTIFICATES
+// ======================================================
 
+function renderCertificates() {
+    const container = $("adminCertificateList");
+    if (!container) return;
+
+    const search = value("adminCertificateSearch").toLowerCase();
+
+    const filtered = sortNewest(certificates).filter(certificate =>
+        (certificate.studentName || "").toLowerCase().includes(search) ||
+        (certificate.courseTitle || "").toLowerCase().includes(search) ||
+        (certificate.certificateId || "").toLowerCase().includes(search)
+    );
+
+    if (!filtered.length) {
+        container.innerHTML = "<p>No certificates found.</p>";
+        return;
     }
 
-};
+    container.innerHTML = filtered.map(certificate => `
+        <div class="admin-card">
+            <h3>${escapeHTML(certificate.studentName || "Student")}</h3>
+            <p>Course: ${escapeHTML(certificate.courseTitle)}</p>
+            <p>Certificate ID: ${escapeHTML(certificate.certificateId)}</p>
+            <p>Score: ${Number(certificate.score || 0)}</p>
+            <p>Percentage: ${Number(certificate.percentage || 0)}%</p>
+            <p>Status: ${certificate.revoked || certificate.status === "revoked" ? "Revoked" : "Valid"}</p>
+            <p>Issued: ${formatDate(certificate.issuedAt || certificate.createdAt)}</p>
+
+            ${certificate.revoked || certificate.status === "revoked" ? "" : `
+                <button type="button" class="danger-btn"
+                    data-action="revoke-certificate" data-id="${certificate.id}">
+                    Revoke Certificate
+                </button>
+            `}
+        </div>
+    `).join("");
+}
 
 
-// =====================================================
-// 58. ANNOUNCEMENT MANAGEMENT
-// =====================================================
+async function revokeCertificate(id) {
+    if (!confirm("Are you sure you want to revoke this certificate?")) return;
+
+    try {
+        await updateDoc(doc(db, "certificates", id), {
+            status: "revoked",
+            revoked: true,
+            revokedAt: serverTimestamp(),
+            revokedBy: currentAdmin.uid
+        });
+
+        alert("Certificate revoked successfully.");
+
+        await refreshData();
+
+    } catch (error) {
+        showError(error);
+    }
+}
+
+
+// ======================================================
+// 23. ANNOUNCEMENTS
+// ======================================================
 
 async function publishAnnouncement(event) {
-
     event.preventDefault();
 
-    if (!currentAdmin) {
+    const data = {
+        title: value("announcementTitle"),
+        message: value("announcementMessage"),
+        targetDepartment: value("announcementDepartment") || "All",
+        targetLevel: value("announcementLevel") || "All",
+        createdBy: currentAdmin.uid,
+        createdAt: serverTimestamp()
+    };
 
-        notify("Administrator session not found.");
+    if (!data.title || !data.message) {
+        alert("Enter the announcement title and message.");
         return;
-
-    }
-
-    const title = getValue("announcementTitle");
-
-    const message = getValue("announcementMessage");
-
-    const department = getValue("announcementDepartment");
-
-    const level = getValue("announcementLevel");
-
-    if (!title || !message) {
-
-        notify("Enter an announcement title and message.");
-        return;
-
-    }
-
-    const form = getElement("announcementForm");
-
-    const submitButton = form?.querySelector(
-        'button[type="submit"]'
-    );
-
-    const originalButtonText = submitButton?.textContent;
-
-    if (submitButton) {
-
-        submitButton.disabled = true;
-        submitButton.textContent = "Publishing...";
-
     }
 
     try {
+        await addDoc(collection(db, "announcements"), data);
 
-        const announcementData = {
+        $("announcementForm")?.reset();
 
-            title,
+        alert("Announcement published successfully.");
 
-            message,
-
-            targetDepartment: department,
-
-            targetLevel: level,
-
-            createdAt: serverTimestamp(),
-
-            createdBy: currentAdmin.uid
-
-        };
-
-        await addDoc(
-            collection(db, "announcements"),
-            announcementData
-        );
-
-        form?.reset();
-
-        await loadAnnouncements();
-
-        notify("Announcement published successfully.");
+        await refreshData();
 
     } catch (error) {
-
-        console.error("Publish announcement error:", error);
-
-        notify(
-            "Unable to publish announcement: " +
-            error.message
-        );
-
-    } finally {
-
-        if (submitButton) {
-
-            submitButton.disabled = false;
-
-            submitButton.textContent =
-                originalButtonText || "Publish Announcement";
-
-        }
-
+        showError(error);
     }
-
 }
 
 
-function displayAnnouncements() {
-
-    const container = getElement("adminAnnouncementList");
-
+function renderAnnouncements() {
+    const container = $("adminAnnouncementList");
     if (!container) return;
 
     if (!announcements.length) {
-
-        container.innerHTML = `
-            <div class="empty-message">
-                <h3>No Announcements Yet</h3>
-                <p>Announcements you publish will appear here.</p>
-            </div>
-        `;
-
+        container.innerHTML = "<p>No announcements published yet.</p>";
         return;
-
     }
 
-    container.innerHTML = announcements.map(announcement => {
+    container.innerHTML = sortNewest(announcements).map(item => `
+        <div class="admin-card">
+            <h3>${escapeHTML(item.title)}</h3>
+            <p>${escapeHTML(item.message)}</p>
+            <p>Department: ${escapeHTML(item.targetDepartment || "All")}</p>
+            <p>Level: ${escapeHTML(item.targetLevel || "All")}</p>
+            <p>Date: ${formatDate(item.createdAt)}</p>
 
-        const department =
-            announcement.targetDepartment || "All Departments";
-
-        const level =
-            announcement.targetLevel || "All Levels";
-
-        return `
-
-            <div class="admin-item announcement-admin-card">
-
-                <h3>${escapeHTML(announcement.title)}</h3>
-
-                <p class="announcement-admin-message">
-                    ${escapeHTML(announcement.message).replace(/\n/g, "<br>")}
-                </p>
-
-                <p>
-                    <strong>Department:</strong>
-                    ${escapeHTML(department)}
-                </p>
-
-                <p>
-                    <strong>Level:</strong>
-                    ${escapeHTML(level)}
-                </p>
-
-                <p>
-                    <strong>Published:</strong>
-                    ${escapeHTML(formatDate(announcement.createdAt))}
-                </p>
-
-                <button
-                    type="button"
-                    class="delete-announcement-btn"
-                    onclick="deleteAnnouncement('${escapeHTML(announcement.id)}')"
-                >
-                    Delete Announcement
-                </button>
-
-            </div>
-
-        `;
-
-    }).join("");
-
+            <button type="button" class="danger-btn"
+                data-action="delete-announcement" data-id="${item.id}">
+                Delete
+            </button>
+        </div>
+    `).join("");
 }
 
 
-window.deleteAnnouncement = async function(announcementId) {
-
-    const announcement = announcements.find(
-        item => item.id === announcementId
-    );
-
-    if (!announcement) {
-
-        notify("Announcement not found.");
-        return;
-
-    }
-
-    const confirmed = confirm(
-        `Delete the announcement "${announcement.title}"?`
-    );
-
-    if (!confirmed) return;
+async function deleteAnnouncement(id) {
+    if (!confirm("Delete this announcement?")) return;
 
     try {
+        await deleteDoc(doc(db, "announcements", id));
 
-        await deleteDoc(
-            doc(db, "announcements", announcementId)
-        );
-
-        await loadAnnouncements();
-
-        notify("Announcement deleted successfully.");
+        await refreshData();
 
     } catch (error) {
-
-        console.error("Delete announcement error:", error);
-
-        notify(
-            "Unable to delete announcement: " +
-            error.message
-        );
-
+        showError(error);
     }
-
-};
-
-
-// =====================================================
-// 59. DASHBOARD STATISTICS
-// =====================================================
-
-function updateStatistics() {
-
-    const statistics = {
-
-        totalCourses: courses.length,
-
-        totalStudents: students.length,
-
-        totalLessons: lessons.length,
-
-        totalQuizzes: quizzes.length
-
-    };
-
-    Object.entries(statistics).forEach(([id, value]) => {
-
-        const element = getElement(id);
-
-        if (element) {
-            element.textContent = value;
-        }
-
-    });
-
-    updateInstructorStatistics();
-
 }
 
 
-// =====================================================
-// 60. END OF LEARNSPHERE ADMIN DASHBOARD
-// =====================================================
+// ======================================================
+// 24. COURSE DROPDOWNS
+// ======================================================
+
+function updateCourseSelects() {
+    const lessonSelect = $("editorQuizLessonId");
+
+    if (lessonSelect) {
+        const current = lessonSelect.value;
+
+        const courseLessons = lessons.filter(item =>
+            item.courseId === activeCourseId
+        );
+
+        lessonSelect.innerHTML = `
+            <option value="">Select Lesson</option>
+            ${courseLessons.map(item => `
+                <option value="${item.id}">
+                    ${escapeHTML(item.title)}
+                </option>
+            `).join("")}
+        `;
+
+        if (courseLessons.some(item => item.id === current)) {
+            lessonSelect.value = current;
+        }
+    }
+
+    const battleSelect = $("battleQuestionQuizId");
+
+    if (battleSelect) {
+        const current = battleSelect.value;
+
+        battleSelect.innerHTML = `
+            <option value="">Select Competition</option>
+            ${battleQuizzes.map(item => `
+                <option value="${item.id}">
+                    ${escapeHTML(item.title)}
+                </option>
+            `).join("")}
+        `;
+
+        if (battleQuizzes.some(item => item.id === current)) {
+            battleSelect.value = current;
+        }
+    }
+}
+
+
+// ======================================================
+// 25. DYNAMIC BUTTON ACTIONS
+// ======================================================
+
+async function handleDynamicButtons(event) {
+    const button = event.target.closest("[data-action]");
+
+    if (!button) return;
+
+    const action = button.dataset.action;
+    const id = button.dataset.id;
+
+    if (!id && action !== "none") return;
+
+    switch (action) {
+
+        case "edit-course":
+            editCourse(id);
+            break;
+
+        case "toggle-course": {
+            const course = findCourse(id);
+
+            if (!course) break;
+
+            try {
+                await updateDoc(doc(db, "courses", id), {
+                    published: !(course.published && course.isPublished),
+                    isPublished: !(course.published && course.isPublished),
+                    updatedAt: serverTimestamp()
+                });
+
+                await refreshData();
+
+            } catch (error) {
+                showError(error);
+            }
+
+            break;
+        }
+
+        case "edit-lesson":
+            editLesson(id);
+            break;
+
+        case "delete-lesson":
+            await deleteLesson(id);
+            break;
+
+        case "edit-question":
+            editQuestion(id);
+            break;
+
+        case "delete-question":
+            await deleteQuestion(id);
+            break;
+
+        case "open-lesson-course":
+        case "open-quiz-course":
+            if (findCourse(id)) {
+                editCourse(id);
+                showPage("courses");
+            }
+            break;
+
+        case "select-battle":
+            selectBattle(id);
+            break;
+
+        case "toggle-battle":
+            await toggleBattle(id);
+            break;
+
+        case "delete-battle":
+            await deleteBattle(id);
+            break;
+
+        case "delete-battle-question":
+            await deleteBattleQuestion(id);
+            break;
+
+        case "approve-instructor":
+            await updateInstructorStatus(id, "approved");
+            break;
+
+        case "reject-instructor":
+            await updateInstructorStatus(id, "rejected");
+            break;
+
+        case "edit-result":
+            await editResultMarks(id);
+            break;
+
+        case "revoke-certificate":
+            await revokeCertificate(id);
+            break;
+
+        case "delete-announcement":
+            await deleteAnnouncement(id);
+            break;
+    }
+}
+
+
+// ======================================================
+// 26. INITIAL FORM STATE
+// ======================================================
+
+function initializeDashboardForms() {
+    clearLessonForm();
+    clearQuestionForm();
+    toggleQuestionType();
+    toggleLessonQuizSelector();
+}
+
+
+// ======================================================
+// 27. STARTUP
+// ======================================================
+
+initializeDashboardForms();
+
+console.log("LearnSphere Admin Dashboard JavaScript loaded.");

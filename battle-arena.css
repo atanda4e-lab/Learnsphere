@@ -1,0 +1,284 @@
+/* =====================================
+   LEARNSPHERE BATTLE ARENA
+===================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #080d1c;
+    color: #ffffff;
+    line-height: 1.6;
+}
+
+button,
+a {
+    font-family: inherit;
+}
+
+
+/* =====================================
+   HEADER
+===================================== */
+
+.arena-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 6%;
+    background: #10182b;
+    border-bottom: 1px solid #26334d;
+}
+
+.arena-header h2 {
+    color: #ffb020;
+    font-size: 22px;
+}
+
+.arena-header h2 i {
+    color: #ff5c35;
+}
+
+.back-button {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.back-button:hover {
+    color: #ffb020;
+}
+
+.player-profile {
+    color: #b9c5da;
+    font-weight: bold;
+}
+
+
+/* =====================================
+   MAIN CONTAINER
+===================================== */
+
+.arena-container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 40px auto;
+}
+
+
+/* =====================================
+   HERO SECTION
+===================================== */
+
+.arena-hero {
+    padding: 65px 25px;
+    text-align: center;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #172b52, #35164d, #111827);
+    border: 1px solid #34476b;
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.3);
+}
+
+.hero-tag {
+    display: inline-block;
+    padding: 7px 15px;
+    margin-bottom: 18px;
+    border-radius: 30px;
+    background: rgba(255, 176, 32, 0.15);
+    color: #ffb020;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.arena-hero h1 {
+    font-size: clamp(30px, 5vw, 55px);
+    line-height: 1.2;
+    margin-bottom: 18px;
+}
+
+.arena-hero h1 span {
+    color: #ffb020;
+}
+
+.arena-hero > p {
+    max-width: 600px;
+    margin: auto;
+    color: #c0cbe0;
+}
+
+
+/* =====================================
+   HERO STATISTICS
+===================================== */
+
+.hero-stats {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 65px;
+    margin-top: 40px;
+}
+
+.hero-stats h3 {
+    color: #ffb020;
+    font-size: 30px;
+}
+
+.hero-stats p {
+    color: #c0cbe0;
+    font-size: 14px;
+}
+
+
+/* =====================================
+   BATTLE OPTIONS
+===================================== */
+
+.battle-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+    margin-top: 35px;
+}
+
+.battle-card {
+    padding: 30px 25px;
+    background: #111a2e;
+    border: 1px solid #293854;
+    border-radius: 16px;
+    transition: 0.3s ease;
+}
+
+.battle-card:hover {
+    transform: translateY(-7px);
+    border-color: #ffb020;
+    box-shadow: 0 12px 30px rgba(255, 176, 32, 0.1);
+}
+
+.card-icon {
+    width: 55px;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 176, 32, 0.12);
+    color: #ffb020;
+    border-radius: 14px;
+    font-size: 23px;
+    margin-bottom: 20px;
+}
+
+.battle-card h2 {
+    margin-bottom: 10px;
+    font-size: 21px;
+}
+
+.battle-card p {
+    min-height: 65px;
+    color: #aebbd2;
+    font-size: 14px;
+}
+
+.battle-card button {
+    width: 100%;
+    padding: 13px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 9px;
+    background: linear-gradient(90deg, #ffb020, #ff7438);
+    color: #111827;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.battle-card button:hover {
+    opacity: 0.85;
+    transform: scale(1.02);
+}
+
+
+/* =====================================
+   BATTLE STATUS
+===================================== */
+
+.battle-status,
+.battle-history {
+    margin-top: 35px;
+    padding: 25px;
+    background: #111a2e;
+    border: 1px solid #293854;
+    border-radius: 15px;
+}
+
+.battle-status h2,
+.battle-history h2 {
+    margin-bottom: 18px;
+    font-size: 21px;
+}
+
+.battle-status h2 i,
+.battle-history h2 i {
+    color: #ffb020;
+}
+
+#battleMessage,
+#battleHistoryList {
+    padding: 18px;
+    background: #0a1223;
+    border-radius: 10px;
+    color: #aebbd2;
+}
+
+
+/* =====================================
+   RESPONSIVE DESIGN
+===================================== */
+
+@media (max-width: 850px) {
+
+    .battle-options {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    .arena-header {
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .arena-header h2 {
+        font-size: 18px;
+    }
+
+    .arena-container {
+        width: 92%;
+        margin: 25px auto;
+    }
+
+    .arena-hero {
+        padding: 45px 18px;
+    }
+
+    .hero-stats {
+        gap: 25px;
+    }
+
+    .hero-stats h3 {
+        font-size: 24px;
+    }
+
+    .battle-options {
+        grid-template-columns: 1fr;
+    }
+
+}

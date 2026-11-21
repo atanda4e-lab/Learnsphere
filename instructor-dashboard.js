@@ -1,6 +1,5 @@
 // ========================================
 // LEARNSPHERE INSTRUCTOR DASHBOARD
-// COMPLETE FIREBASE JAVASCRIPT
 // FIREBASE VERSION 12.2.1
 // ========================================
 
@@ -289,6 +288,10 @@ function navigateTo(sectionId) {
         loadQuizzes();
     }
 
+    if (sectionId === "battle-questions") {
+        loadBattleQuestions();
+    }
+
     if (sectionId === "students") {
         loadStudents();
     }
@@ -495,6 +498,8 @@ async function loadDashboard() {
     await loadDashboardStatistics();
 
     await loadRecentCourses();
+
+    await loadBattleQuestions();
 
 }
 
@@ -1871,7 +1876,304 @@ async function loadRecentCourses() {
 
 
 // ========================================
-// 28. LOGOUT
+// 28. BATTLE ARENA - LOAD QUESTIONS
+// ========================================
+
+async function loadBattleQuestions() {
+
+    const container = getElement("battleQuestionsList");
+
+    if (!container || !currentUser) return;
+
+    container.innerHTML = "<p>Loading battle questions...</p>";
+
+    try {
+
+        const questionsQuery = query(
+            collection(db, "battleQuestions"),
+            where("createdBy", "==", currentUser.uid)
+        );
+
+        const snapshot = await getDocs(questionsQuery);
+
+        if (snapshot.empty) {
+
+            container.innerHTML = `
+                <p>You have not created any battle questions yet.</p>
+            `;
+
+            return;
+
+        }
+
+        container.innerHTML = "";
+
+        snapshot.forEach(questionDoc => {
+
+            const question = questionDoc.data();
+
+            const card = document.createElement("div");
+
+            card.className = "content-card";
+
+            card.innerHTML = `
+
+                <h3>${escapeHTML(question.question)}</h3>
+
+                <p>A. ${escapeHTML(question.options?.A)}</p>
+                <p>B. ${escapeHTML(question.options?.B)}</p>
+                <p>C. ${escapeHTML(question.options?.C)}</p>
+                <p>D. ${escapeHTML(question.options?.D)}</p>
+
+                <p>
+                    <strong>Correct Answer:</strong>
+                    ${escapeHTML(question.correctAnswer)}
+                </p>
+
+                <p>
+                    <strong>Status:</strong>
+                    ${question.published ? "Published" : "Unpublished"}
+                </p>
+
+                <div class="course-actions">
+
+                    <button
+                        class="primary-btn"
+                        data-battle-action="publish"
+                        data-id="${escapeHTML(questionDoc.id)}"
+                        data-status="${!question.published}">
+                        ${question.published ? "Unpublish" : "Publish"}
+                    </button>
+
+                    <button
+                        class="logout-btn"
+                        data-battle-action="delete"
+                        data-id="${escapeHTML(questionDoc.id)}">
+                        Delete
+                    </button>
+
+                </div>
+
+            `;
+
+            container.appendChild(card);
+
+        });
+
+    } catch (error) {
+
+        console.error("Battle question loading error:", error);
+
+        container.innerHTML = `
+            <p>Unable to load battle questions: ${escapeHTML(error.message)}</p>
+        `;
+
+    }
+
+}
+
+
+// ========================================
+// 29. BATTLE ARENA - SAVE QUESTIONS
+// ========================================
+
+getElement("battleQuestionForm")?.addEventListener("submit", async event => {
+
+    event.preventDefault();
+
+    if (!currentUser || !instructorData) {
+
+        showNotification(
+            "Please log in with an approved instructor account.",
+            "error"
+        );
+
+        return;
+
+    }
+
+    const question = getElement("battleQuestion").value.trim();
+
+    const options = {
+
+        A: getElement("battleOptionA").value.trim(),
+
+        B: getElement("battleOptionB").value.trim(),
+
+        C: getElement("battleOptionC").value.trim(),
+
+        D: getElement("battleOptionD").value.trim()
+
+    };
+
+    const correctAnswer = getElement("battleCorrectAnswer").value;
+
+    const saveButton = getElement("saveBattleQuestionBtn");
+
+    if (
+        !question ||
+        !options.A ||
+        !options.B ||
+        !options.C ||
+        !options.D ||
+        !["A", "B", "C", "D"].includes(correctAnswer)
+    ) {
+
+        showNotification(
+            "Please complete all question fields.",
+            "error"
+        );
+
+        return;
+
+    }
+
+    try {
+
+        saveButton.disabled = true;
+        saveButton.textContent = "Saving...";
+
+        await addDoc(collection(db, "battleQuestions"), {
+
+            question: question,
+
+            options: options,
+
+            correctAnswer: correctAnswer,
+
+            published: false,
+
+            createdBy: currentUser.uid,
+
+            createdByRole: "instructor",
+
+            instructorName: getInstructorName(),
+
+            department: instructorData.department,
+
+            createdAt: serverTimestamp(),
+
+            updatedAt: serverTimestamp()
+
+        });
+
+        getElement("battleQuestionForm").reset();
+
+        showNotification(
+            "Battle question saved successfully. It is currently unpublished."
+        );
+
+        await loadBattleQuestions();
+
+    } catch (error) {
+
+        console.error("Battle question saving error:", error);
+
+        showNotification(
+            "Unable to save battle question: " + error.message,
+            "error"
+        );
+
+    } finally {
+
+        saveButton.disabled = false;
+        saveButton.textContent = "Save Battle Question";
+
+    }
+
+});
+
+
+// ========================================
+// 30. BATTLE ARENA - PUBLISH / DELETE
+// ========================================
+
+document.addEventListener("click", async event => {
+
+    const button = event.target.closest("[data-battle-action]");
+
+    if (!button || !currentUser) return;
+
+    const action = button.dataset.battleAction;
+
+    const questionId = button.dataset.id;
+
+    const questionRef = doc(
+        db,
+        "battleQuestions",
+        questionId
+    );
+
+    try {
+
+        const questionSnap = await getDoc(questionRef);
+
+        if (!questionSnap.exists()) {
+
+            throw new Error("Battle question not found.");
+
+        }
+
+        const questionData = questionSnap.data();
+
+        if (questionData.createdBy !== currentUser.uid) {
+
+            throw new Error(
+                "You can only manage questions you created."
+            );
+
+        }
+
+        if (action === "publish") {
+
+            const newStatus = button.dataset.status === "true";
+
+            await updateDoc(questionRef, {
+
+                published: newStatus,
+
+                updatedAt: serverTimestamp()
+
+            });
+
+            showNotification(
+                newStatus
+                    ? "Battle question published successfully."
+                    : "Battle question unpublished successfully."
+            );
+
+        }
+
+        if (action === "delete") {
+
+            if (!confirm("Are you sure you want to delete this battle question?")) {
+                return;
+            }
+
+            await deleteDoc(questionRef);
+
+            showNotification("Battle question deleted successfully.");
+
+        }
+
+        await loadBattleQuestions();
+
+    } catch (error) {
+
+        console.error("Battle question action error:", error);
+
+        showNotification(
+            "Unable to manage battle question: " + error.message,
+            "error"
+        );
+
+    }
+
+});
+
+
+// ========================================
+// 31. LOGOUT
 // ========================================
 
 logoutBtn?.addEventListener("click", async () => {
@@ -1897,7 +2199,7 @@ logoutBtn?.addEventListener("click", async () => {
 
 
 // ========================================
-// 29. DASHBOARD READY
+// 32. DASHBOARD READY
 // ========================================
 
 console.log(

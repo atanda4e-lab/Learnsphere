@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Battle Room | LearnSphere</title>
+
+    <link rel="stylesheet" href="battle-room.css">
+
+</head>
+
+<body>
+
+    <button type="button" id="backToArenaBtn" class="back-btn">
+    ← Return to Battle Arena
+</button>
+
+    <header class="battle-header">
+
+        <h1>⚔️ LearnSphere Battle</h1>
+
+        <p>Challenge your knowledge. Defeat your opponent.</p>
+
+    </header>
+
+
+    <main class="battle-container">
+
+        <section class="battle-status">
+
+            <h2 id="battleStatus">Preparing Battle...</h2>
+
+            <div class="timer-box">
+
+                <span id="battleTimer">60</span>
+
+                <small>SECONDS LEFT</small>
+
+            </div>
+
+        </section>
+
+
+        <section class="players-container">
+
+            <div class="player-card">
+
+                <h3 id="playerOneName">Player 1</h3>
+
+                <p>Your Score</p>
+
+                <h2 id="playerOneScore">0</h2>
+
+            </div>
+
+
+            <div class="versus">VS</div>
+
+
+            <div class="player-card">
+
+                <h3 id="playerTwoName">Player 2</h3>
+
+                <p>Opponent Score</p>
+
+                <h2 id="playerTwoScore">0</h2>
+
+            </div>
+
+        </section>
+
+
+        <section class="question-container">
+
+            <div id="questionNumber">Question 1</div>
+
+            <h2 id="questionText">
+                Loading battle questions...
+            </h2>
+
+
+            <div id="answerOptions" class="answer-options">
+
+            </div>
+
+
+            <p id="answerMessage"></p>
+
+            <button id="nextQuestionBtn" disabled>
+                Next Question
+            </button>
+
+        </section>
+
+
+        <section id="battleResult" class="result-container">
+
+            <h2 id="winnerText"></h2>
+
+            <p id="finalScore"></p>
+
+            <button onclick="window.location.href='battle-arena.html'">
+                Return to Battle Arena
+            </button>
+
+        </section>
+
+    </main>
+
+
+    <script type="module" src="battle-room.js"></script>
+
+</body>
+
+</html>

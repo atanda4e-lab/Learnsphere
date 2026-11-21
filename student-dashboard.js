@@ -177,6 +177,7 @@ window.addEventListener("resize", function() {
 // ==========================================
 
 function showDashboardSection(sectionName) {
+
     document.querySelectorAll(".dashboard-section").forEach(section => {
         section.classList.remove("active");
     });
@@ -206,22 +207,44 @@ function showDashboardSection(sectionName) {
     }
 }
 
+
+// SIDEBAR NAVIGATION
+
 document.querySelectorAll(".sidebar-link").forEach(link => {
+
     link.addEventListener("click", function(event) {
+
+        // Allow normal links such as Battle Arena to open
+        if (!this.dataset.section) {
+            closeSidebar();
+            return;
+        }
+
+        // Prevent default only for dashboard sections
         event.preventDefault();
+
         showDashboardSection(this.dataset.section);
+
     });
+
 });
+
+
+// OTHER DASHBOARD BUTTONS
 
 document.querySelectorAll("[data-section]").forEach(button => {
+
     if (button.classList.contains("sidebar-link")) return;
 
-    button.addEventListener("click", function() {
+    button.addEventListener("click", function(event) {
+
+        event.preventDefault();
+
         showDashboardSection(this.dataset.section);
+
     });
+
 });
-
-
 // ==========================================
 // NOTIFICATION SYSTEM
 // ==========================================
