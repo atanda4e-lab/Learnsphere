@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -7,144 +8,205 @@
 
     <title>Battle Arena | LearnSphere</title>
 
-    <meta name="description" content="Challenge other students and compete in LearnSphere Battle Arena.">
-
     <link rel="stylesheet" href="battle-arena.css">
 
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body>
 
-    <header class="arena-header">
+    <div class="arena-container">
 
-        <a href="student-dashboard.html" class="back-button">
-            <i class="fas fa-arrow-left"></i>
-            Dashboard
-        </a>
+        <!-- HEADER -->
 
-        <h2><i class="fas fa-fire"></i> LearnSphere Arena</h2>
+        <header class="arena-header">
 
-        <div class="player-profile">
-            <span id="playerName">Loading...</span>
-        </div>
+            <div class="brand">
+                <h1>LearnSphere</h1>
+                <span>Battle Arena</span>
+            </div>
 
-    </header>
+            <div class="header-actions">
+                <span id="studentName">Loading student...</span>
+                <button id="student-dashboardBtn">Dashboard</button>
+            </div>
 
-    <main class="arena-container">
+        </header>
 
-        <section class="arena-hero">
+        <!-- MAIN CONTENT -->
 
-            <span class="hero-tag">THE ULTIMATE STUDENT SHOWDOWN</span>
+        <main class="arena-main">
 
-            <h1>ENTER THE <span>BATTLE ARENA</span></h1>
-
-            <p>Challenge students, test your knowledge and become an academic champion.</p>
-
-            <div class="hero-stats">
+            <section class="welcome-section">
 
                 <div>
-                    <h3 id="totalBattles">0</h3>
-                    <p>Total Battles</p>
+                    <p class="eyebrow">COMPETE. LEARN. WIN.</p>
+                    <h2>Welcome to the Battle Arena</h2>
+                    <p>Challenge other students and prove your knowledge.</p>
                 </div>
 
-                <div>
-                    <h3 id="totalWins">0</h3>
-                    <p>Victories</p>
+                <div class="student-level">
+                    <span>YOUR LEVEL</span>
+                    <h2 id="studentLevel">--</h2>
                 </div>
 
-                <div>
-                    <h3 id="totalXP">0</h3>
-                    <p>XP Points</p>
+            </section>
+
+            <!-- STUDENT STATS -->
+
+            <section class="stats-grid">
+
+                <div class="stat-card">
+                    <span>Total Battles</span>
+                    <h2 id="totalBattles">0</h2>
                 </div>
 
-            </div>
-
-        </section>
-
-
-        <section class="battle-options">
-
-            <div class="battle-card">
-
-                <div class="card-icon">
-                    <i class="fas fa-users"></i>
+                <div class="stat-card">
+                    <span>Victories</span>
+                    <h2 id="totalWins">0</h2>
                 </div>
 
-                <h2>Random Match</h2>
-
-                <p>Find another student and compete in a knowledge battle.</p>
-
-                <button id="randomMatchBtn">
-                    Find Opponent
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-
-            </div>
-
-
-            <div class="battle-card">
-
-                <div class="card-icon">
-                    <i class="fas fa-user-plus"></i>
+                <div class="stat-card">
+                    <span>Defeats</span>
+                    <h2 id="totalLosses">0</h2>
                 </div>
 
-                <h2>Challenge Student</h2>
-
-                <p>Choose another student and challenge them directly.</p>
-
-                <button id="challengeStudentBtn">
-                    Challenge Now
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-
-            </div>
-
-
-            <div class="battle-card">
-
-                <div class="card-icon">
-                    <i class="fas fa-trophy"></i>
+                <div class="stat-card">
+                    <span>Total XP</span>
+                    <h2 id="totalXP">0</h2>
                 </div>
 
-                <h2>Leaderboard</h2>
+            </section>
 
-                <p>Discover the top competitors in LearnSphere.</p>
+            <!-- MATCHMAKING -->
 
-                <button id="leaderboardBtn">
-                    View Rankings
-                    <i class="fas fa-arrow-right"></i>
-                </button>
+            <section class="arena-card">
 
-            </div>
+                <div class="section-heading">
+                    <h2>Find an Opponent</h2>
+                    <p>Enter the queue and get matched with another student.</p>
+                </div>
 
-        </section>
+                <div class="match-options">
 
+                    <button id="randomMatchBtn" class="primary-btn">
+                        Find Random Opponent
+                    </button>
 
-        <section class="battle-status">
+                    <button id="cancelMatchBtn" class="danger-btn" hidden>
+                        Cancel Search
+                    </button>
 
-            <h2><i class="fas fa-bolt"></i> Battle Status</h2>
+                </div>
 
-            <div id="battleMessage">
-                You are not currently in a battle.
-            </div>
+                <div id="matchmakingStatus" class="match-status">
+                    <div class="status-dot"></div>
+                    <div>
+                        <h3 id="matchStatusTitle">Ready to Battle?</h3>
+                        <p id="matchStatusMessage">
+                            Click Find Random Opponent to begin.
+                        </p>
+                    </div>
+                </div>
 
-        </section>
+                <div id="matchedOpponentBox" class="opponent-box" hidden>
 
+                    <h3>Opponent Found!</h3>
 
-        <section class="battle-history">
+                    <p id="matchedOpponentName">Waiting...</p>
 
-            <h2><i class="fas fa-history"></i> Recent Battles</h2>
+                    <button id="enterBattleBtn" class="primary-btn">
+                        Enter Battle Room
+                    </button>
 
-            <div id="battleHistoryList">
-                <p>Your battle history will appear here.</p>
-            </div>
+                </div>
 
-        </section>
+            </section>
 
-    </main>
+            <!-- CHALLENGE STUDENT -->
 
+            <section class="arena-card">
+
+                <div class="section-heading">
+                    <h2>Challenge a Student</h2>
+                    <p>Invite another student to compete against you.</p>
+                </div>
+
+                <div class="challenge-form">
+
+                    <input
+                        type="text"
+                        id="challengeStudentId"
+                        placeholder="Enter student's ID"
+                    >
+
+                    <button id="sendChallengeBtn" class="primary-btn">
+                        Send Challenge
+                    </button>
+
+                </div>
+
+                <div id="challengeStatus"></div>
+
+            </section>
+
+            <!-- COMPETITIONS -->
+
+            <section class="arena-card">
+
+                <div class="section-heading">
+                    <h2>Available Competitions</h2>
+                    <p>Choose a competition to battle in.</p>
+                </div>
+
+                <div id="competitionsContainer" class="competitions-grid">
+
+                    <p>Loading competitions...</p>
+
+                </div>
+
+            </section>
+
+            <!-- BATTLE HISTORY -->
+
+            <section class="arena-card">
+
+                <div class="section-heading">
+                    <h2>Recent Battles</h2>
+                    <p>Your previous battle activities.</p>
+                </div>
+
+                <div id="battleHistoryContainer">
+
+                    <p>No battle history available.</p>
+
+                </div>
+
+            </section>
+
+            <!-- LEADERBOARD -->
+
+            <section class="arena-card">
+
+                <div class="section-heading">
+                    <h2>Battle Leaderboard</h2>
+                    <p>Top performing students.</p>
+                </div>
+
+                <div id="leaderboardContainer">
+
+                    <p>Loading leaderboard...</p>
+
+                </div>
+
+            </section>
+
+        </main>
+
+        <!-- NOTIFICATION -->
+
+        <div id="notification" class="notification"></div>
+
+    </div>
 
     <script type="module" src="battle-arena.js"></script>
 

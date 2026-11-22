@@ -1,6 +1,21 @@
-/* =====================================
+
+/* =========================================
    LEARNSPHERE BATTLE ARENA
-===================================== */
+   COMPLETE RESPONSIVE DESIGN
+========================================= */
+
+:root {
+    --background: #080f1e;
+    --surface: #111d31;
+    --surface-light: #192943;
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --border: #26364f;
+}
 
 * {
     margin: 0;
@@ -10,240 +25,392 @@
 
 body {
     font-family: Arial, sans-serif;
-    background: #080d1c;
-    color: #ffffff;
-    line-height: 1.6;
+    background: var(--background);
+    color: var(--text);
+    min-height: 100vh;
 }
 
 button,
-a {
-    font-family: inherit;
+input {
+    font: inherit;
 }
 
+button {
+    cursor: pointer;
+    border: none;
+    transition: 0.2s ease;
+}
 
-/* =====================================
-   HEADER
-===================================== */
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.arena-container {
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* HEADER */
 
 .arena-header {
+    min-height: 75px;
+    padding: 15px 5%;
+    background: #0b1425;
+    border-bottom: 1px solid var(--border);
+
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 6%;
-    background: #10182b;
-    border-bottom: 1px solid #26334d;
+    gap: 20px;
 }
 
-.arena-header h2 {
-    color: #ffb020;
-    font-size: 22px;
+.brand h1 {
+    font-size: 25px;
+    color: #818cf8;
 }
 
-.arena-header h2 i {
-    color: #ff5c35;
+.brand span {
+    color: var(--muted);
+    font-size: 13px;
 }
 
-.back-button {
-    color: #ffffff;
-    text-decoration: none;
-    font-weight: bold;
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
 }
 
-.back-button:hover {
-    color: #ffb020;
+#studentName {
+    color: var(--muted);
+    font-size: 14px;
 }
 
-.player-profile {
-    color: #b9c5da;
-    font-weight: bold;
+#backDashboardBtn {
+    padding: 10px 16px;
+    background: var(--surface-light);
+    color: white;
+    border-radius: 8px;
 }
 
+/* MAIN */
 
-/* =====================================
-   MAIN CONTAINER
-===================================== */
-
-.arena-container {
+.arena-main {
     width: 90%;
-    max-width: 1200px;
-    margin: 40px auto;
+    max-width: 1250px;
+    margin: 35px auto;
 }
 
-
-/* =====================================
-   HERO SECTION
-===================================== */
-
-.arena-hero {
-    padding: 65px 25px;
-    text-align: center;
-    border-radius: 20px;
-    background: linear-gradient(135deg, #172b52, #35164d, #111827);
-    border: 1px solid #34476b;
-    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.3);
+.welcome-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 25px;
+    padding: 30px;
+    background: linear-gradient(135deg, #172554, #312e81);
+    border-radius: 16px;
+    margin-bottom: 25px;
 }
 
-.hero-tag {
-    display: inline-block;
-    padding: 7px 15px;
-    margin-bottom: 18px;
-    border-radius: 30px;
-    background: rgba(255, 176, 32, 0.15);
-    color: #ffb020;
+.eyebrow {
+    color: #a5b4fc;
     font-size: 12px;
     font-weight: bold;
     letter-spacing: 2px;
+    margin-bottom: 12px;
 }
 
-.arena-hero h1 {
-    font-size: clamp(30px, 5vw, 55px);
-    line-height: 1.2;
-    margin-bottom: 18px;
-}
-
-.arena-hero h1 span {
-    color: #ffb020;
-}
-
-.arena-hero > p {
-    max-width: 600px;
-    margin: auto;
-    color: #c0cbe0;
-}
-
-
-/* =====================================
-   HERO STATISTICS
-===================================== */
-
-.hero-stats {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 65px;
-    margin-top: 40px;
-}
-
-.hero-stats h3 {
-    color: #ffb020;
-    font-size: 30px;
-}
-
-.hero-stats p {
-    color: #c0cbe0;
-    font-size: 14px;
-}
-
-
-/* =====================================
-   BATTLE OPTIONS
-===================================== */
-
-.battle-options {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 22px;
-    margin-top: 35px;
-}
-
-.battle-card {
-    padding: 30px 25px;
-    background: #111a2e;
-    border: 1px solid #293854;
-    border-radius: 16px;
-    transition: 0.3s ease;
-}
-
-.battle-card:hover {
-    transform: translateY(-7px);
-    border-color: #ffb020;
-    box-shadow: 0 12px 30px rgba(255, 176, 32, 0.1);
-}
-
-.card-icon {
-    width: 55px;
-    height: 55px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 176, 32, 0.12);
-    color: #ffb020;
-    border-radius: 14px;
-    font-size: 23px;
-    margin-bottom: 20px;
-}
-
-.battle-card h2 {
+.welcome-section h2 {
+    font-size: 28px;
     margin-bottom: 10px;
-    font-size: 21px;
 }
 
-.battle-card p {
-    min-height: 65px;
-    color: #aebbd2;
-    font-size: 14px;
+.welcome-section p {
+    color: #cbd5e1;
+    line-height: 1.6;
 }
 
-.battle-card button {
-    width: 100%;
-    padding: 13px;
-    margin-top: 20px;
-    border: none;
-    border-radius: 9px;
-    background: linear-gradient(90deg, #ffb020, #ff7438);
-    color: #111827;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-.battle-card button:hover {
-    opacity: 0.85;
-    transform: scale(1.02);
-}
-
-
-/* =====================================
-   BATTLE STATUS
-===================================== */
-
-.battle-status,
-.battle-history {
-    margin-top: 35px;
-    padding: 25px;
-    background: #111a2e;
-    border: 1px solid #293854;
-    border-radius: 15px;
-}
-
-.battle-status h2,
-.battle-history h2 {
-    margin-bottom: 18px;
-    font-size: 21px;
-}
-
-.battle-status h2 i,
-.battle-history h2 i {
-    color: #ffb020;
-}
-
-#battleMessage,
-#battleHistoryList {
+.student-level {
+    min-width: 110px;
+    text-align: center;
     padding: 18px;
-    background: #0a1223;
-    border-radius: 10px;
-    color: #aebbd2;
+    background: #ffffff15;
+    border-radius: 12px;
 }
 
+.student-level span {
+    color: #c7d2fe;
+    font-size: 11px;
+}
 
-/* =====================================
-   RESPONSIVE DESIGN
-===================================== */
+.student-level h2 {
+    font-size: 35px;
+    margin-top: 8px;
+}
+
+/* STATISTICS */
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 25px;
+}
+
+.stat-card {
+    padding: 23px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.stat-card span {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.stat-card h2 {
+    font-size: 30px;
+    margin-top: 12px;
+    color: #a5b4fc;
+}
+
+/* GENERAL CARDS */
+
+.arena-card {
+    padding: 25px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 25px;
+}
+
+.section-heading {
+    margin-bottom: 22px;
+}
+
+.section-heading h2 {
+    font-size: 21px;
+    margin-bottom: 8px;
+}
+
+.section-heading p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+/* BUTTONS */
+
+.primary-btn,
+.danger-btn {
+    padding: 13px 20px;
+    color: white;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.primary-btn {
+    background: var(--primary);
+}
+
+.primary-btn:hover {
+    background: var(--primary-hover);
+}
+
+.danger-btn {
+    background: var(--danger);
+}
+
+.danger-btn:hover {
+    background: #dc2626;
+}
+
+.match-options {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* MATCH STATUS */
+
+.match-status {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-top: 25px;
+    padding: 18px;
+    background: #0b1425;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    margin-top: 5px;
+    border-radius: 50%;
+    background: var(--success);
+}
+
+.match-status h3 {
+    font-size: 15px;
+    margin-bottom: 7px;
+}
+
+.match-status p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.opponent-box {
+    margin-top: 20px;
+    padding: 20px;
+    background: #123323;
+    border: 1px solid #166534;
+    border-radius: 10px;
+}
+
+.opponent-box h3 {
+    color: #86efac;
+    margin-bottom: 10px;
+}
+
+.opponent-box p {
+    margin-bottom: 18px;
+    color: #dcfce7;
+}
+
+/* CHALLENGE */
+
+.challenge-form {
+    display: flex;
+    gap: 12px;
+}
+
+.challenge-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 13px;
+    background: #0b1425;
+    border: 1px solid var(--border);
+    color: white;
+    border-radius: 8px;
+    outline: none;
+}
+
+.challenge-form input:focus {
+    border-color: var(--primary);
+}
+
+#challengeStatus {
+    margin-top: 15px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+/* COMPETITIONS */
+
+.competitions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.competition-card {
+    padding: 20px;
+    background: #0b1425;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.competition-card h3 {
+    font-size: 17px;
+    margin-bottom: 10px;
+}
+
+.competition-card p {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.competition-card button {
+    width: 100%;
+}
+
+/* HISTORY AND LEADERBOARD */
+
+.history-item,
+.leaderboard-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.history-item:last-child,
+.leaderboard-item:last-child {
+    border-bottom: none;
+}
+
+.history-item p,
+.leaderboard-item p {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.win-label {
+    color: #4ade80;
+    font-weight: bold;
+}
+
+.loss-label {
+    color: #f87171;
+    font-weight: bold;
+}
+
+/* NOTIFICATION */
+
+.notification {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    max-width: 350px;
+    padding: 15px 20px;
+    background: #1e293b;
+    border: 1px solid var(--border);
+    color: white;
+    border-radius: 10px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(15px);
+    transition: 0.3s ease;
+    z-index: 1000;
+}
+
+.notification.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+[hidden] {
+    display: none !important;
+}
+
+/* RESPONSIVE */
 
 @media (max-width: 850px) {
 
-    .battle-options {
+    .stats-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 
@@ -252,33 +419,67 @@ a {
 @media (max-width: 600px) {
 
     .arena-header {
-        flex-wrap: wrap;
-        gap: 15px;
+        align-items: flex-start;
+        flex-direction: column;
     }
 
-    .arena-header h2 {
-        font-size: 18px;
-    }
-
-    .arena-container {
+    .arena-main {
         width: 92%;
-        margin: 25px auto;
+        margin: 20px auto;
     }
 
-    .arena-hero {
-        padding: 45px 18px;
+    .welcome-section {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 22px;
     }
 
-    .hero-stats {
-        gap: 25px;
+    .welcome-section h2 {
+        font-size: 23px;
     }
 
-    .hero-stats h3 {
-        font-size: 24px;
+    .student-level {
+        width: 100%;
     }
 
-    .battle-options {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .stat-card {
+        padding: 17px;
+    }
+
+    .stat-card h2 {
+        font-size: 25px;
+    }
+
+    .arena-card {
+        padding: 19px;
+    }
+
+    .challenge-form {
+        flex-direction: column;
+    }
+
+    .challenge-form button {
+        width: 100%;
+    }
+
+    .competitions-grid {
         grid-template-columns: 1fr;
+    }
+
+    .match-options button {
+        width: 100%;
+    }
+
+    .notification {
+        left: 15px;
+        right: 15px;
+        bottom: 15px;
+        max-width: none;
     }
 
 }

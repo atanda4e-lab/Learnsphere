@@ -1824,3 +1824,93 @@ tr:hover td {
     }
 
 }
+/* =========================================
+   LEARNSPHERE MOBILE SIDEBAR FIX
+   ========================================= */
+
+@media (max-width: 768px) {
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        max-width: 85vw;
+        height: 100vh;
+        height: 100dvh;
+
+        background: #080e1c;
+
+        transform: translateX(-110%);
+        transition: transform 0.3s ease;
+
+        z-index: 99999;
+
+        overflow-y: auto;
+        overflow-x: hidden;
+
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    .sidebar.active {
+        transform: translateX(0);
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    .sidebar-navigation {
+        display: block;
+        width: 100%;
+        padding: 15px;
+    }
+
+    .sidebar-navigation .nav-link {
+        display: flex !important;
+        width: 100%;
+        min-height: 46px;
+        align-items: center;
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .sidebar-navigation .nav-heading {
+        display: block !important;
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .sidebar-footer {
+        display: block;
+        margin-top: auto;
+    }
+
+    #mobileMenuBtn {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 100000;
+    }
+
+}
+
+/* Prevent mobile menu from affecting desktop */
+@media (min-width: 769px) {
+
+    .sidebar {
+        transform: translateX(0) !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+    }
+
+}

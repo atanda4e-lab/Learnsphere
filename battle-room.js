@@ -1,12 +1,12 @@
-// ========================================
+// ======================================================
 // LEARNSPHERE BATTLE ROOM
-// BATTLE ENGINE
-// ========================================
+// COMPLETE FIREBASE BATTLE ENGINE
+// ======================================================
 
 
-// ========================================
+// ======================================================
 // 1. FIREBASE IMPORTS
-// ========================================
+// ======================================================
 
 import { auth, db } from "./firebase.js";
 
@@ -15,10 +15,10 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
 import {
-    collection,
     doc,
     getDoc,
     getDocs,
+    collection,
     query,
     where,
     updateDoc,
@@ -28,12 +28,14 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 
-// ========================================
+// ======================================================
 // 2. HTML ELEMENTS
-// ========================================
+// ======================================================
+
+const backToArenaBtn = document.getElementById("backToArenaBtn");
+const returnToArenaBtn = document.getElementById("returnToArenaBtn");
 
 const battleStatus = document.getElementById("battleStatus");
-
 const battleTimer = document.getElementById("battleTimer");
 
 const playerOneName = document.getElementById("playerOneName");
@@ -43,261 +45,210 @@ const playerOneScore = document.getElementById("playerOneScore");
 const playerTwoScore = document.getElementById("playerTwoScore");
 
 const questionNumber = document.getElementById("questionNumber");
-const questionText = document.getElementElementById
-    ? document.getElementElementById("questionText")
-    : document.getElementById("questionText");
+const questionText = document.getElementById("questionText");
+const questionMarks = document.getElementById("questionMarks");
+
+const questionProgressBar = document.getElementById("questionProgressBar");
 
 const answerOptions = document.getElementById("answerOptions");
-
 const answerMessage = document.getElementById("answerMessage");
 
 const nextQuestionBtn = document.getElementById("nextQuestionBtn");
 
+const waitingMessage = document.getElementById("waitingMessage");
+const questionSection = document.getElementById("questionSection");
+
 const battleResult = document.getElementById("battleResult");
-
 const winnerText = document.getElementById("winnerText");
-
 const finalScore = document.getElementById("finalScore");
 
-// BACK TO BATTLE ARENA BUTTON
-
-const backToArenaBtn = document.getElementById("backToArenaBtn");
-
-if (backToArenaBtn) {
-    backToArenaBtn.addEventListener("click", function () {
-
-        if (timerInterval) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-        }
-
-        if (battleListener) {
-            battleListener();
-            battleListener = null;
-        }
-
-        window.location.href = "battle-arena.html";
-
-    });
-}
+const battleError = document.getElementById("battleError");
 
 
-// ========================================
+// ======================================================
 // 3. GLOBAL VARIABLES
-// ========================================
+// ======================================================
 
-let currentStudent = null;
+const params = new URLSearchParams(window.location.search);
 
-let currentBattleId = null;
+const battleId = params.get("battleId");
 
-let currentBattle = null;
+let currentUser = null;
+let studentProfile = null;
 
-let battleQuestions = [];
+let battleData = null;
+let questions = [];
 
 let currentQuestionIndex = 0;
 
-let myScore = 0;
-
-let opponentScore = 0;
-let lastRenderedQuestionIndex = -1;
-
-let selectedAnswer = null;
-
-let battleStarted = false;
-
-let battleEnded = false;
+let unsubscribeBattle = null;
 
 let timerInterval = null;
 
-let battleListener = null;
+let battleStarted = false;
+let battleFinished = false;
+let isSubmittingAnswer = false;
 
-let questionListener = null;
-
-let answerSubmitted = false;
-
-let remainingSeconds = 60;
+let myAnswers = {};
 
 
-// ========================================
-// 4. DISPLAY MESSAGE
-// ========================================
+// ======================================================
+// 4. GENERAL FUNCTIONS
+// ======================================================
 
-function showStatus(message) {
+function showError(message) {
 
-    if (battleStatus) {
-        battleStatus.textContent = message;
-    }
+    battleError.textContent = message;
+
+    battleError.classList.remove("hidden");
 
 }
 
 
-// ========================================
-// 5. GET BATTLE ID FROM URL
-// ========================================
+function hideError() {
 
-const urlParams = new URLSearchParams(window.location.search);
-
-currentBattleId = urlParams.get("battleId");
-
-
-// ========================================
-// 6. LOAD STUDENT
-// ========================================
-
-async function loadStudent(user) {
-
-    try {
-
-        const studentRef = doc(db, "students", user.uid);
-
-        const studentSnap = await getDoc(studentRef);
-
-        if (!studentSnap.exists()) {
-
-            showStatus("Student profile not found.");
-
-            return;
-
-        }
-
-        const studentData = studentSnap.data();
-
-        if (studentData.role !== "student") {
-
-            showStatus("Only students can enter this battle.");
-
-            return;
-
-        }
-
-        currentStudent = {
-
-            uid: user.uid,
-
-            fullName: studentData.fullName || "Student",
-
-            department: studentData.department || "",
-
-            level: studentData.level || ""
-
-        };
-
-        console.log("Battle student:", currentStudent);
-
-        await loadBattle();
-
-    }
-
-    catch (error) {
-
-        console.error("Student loading error:", error);
-
-        showStatus("Unable to load your student profile.");
-
-    }
+    battleError.classList.add("hidden");
 
 }
 
 
-// ========================================
-// 7. LOAD BATTLE DOCUMENT
-// ========================================
+function showWaiting() {
 
-async function loadBattle() {
+    waitingMessage.classList.remove("hidden");
 
-    if (!currentBattleId) {
+    questionSection.classList.add("hidden");
 
-        showStatus("Battle ID is missing.");
-
-        return;
-
-    }
-
-    try {
-
-        showStatus("Loading battle room...");
-
-        const battleRef = doc(db, "battles", currentBattleId);
-
-        const battleSnap = await getDoc(battleRef);
-
-        if (!battleSnap.exists()) {
-
-            showStatus("Battle room not found.");
-
-            return;
-
-        }
-
-        currentBattle = {
-
-            ...battleSnap.data(),
-
-            id: battleSnap.id
-
-        };
+}
 
 
-        // Check that student belongs to battle
+function hideWaiting() {
 
-        const isPlayerOne =
-            currentBattle.player1Id === currentStudent.uid;
+    waitingMessage.classList.add("hidden");
 
-        const isPlayerTwo =
-            currentBattle.player2Id === currentStudent.uid;
-
-        if (!isPlayerOne && !isPlayerTwo) {
-
-            showStatus("You are not a participant in this battle.");
-
-            return;
-
-        }
+}
 
 
-        // Display player names
+function showQuestions() {
 
-        if (playerOneName) {
+    questionSection.classList.remove("hidden");
 
-            playerOneName.textContent =
-                currentBattle.player1Name || "Player 1";
+    waitingMessage.classList.add("hidden");
 
-        }
-
-        if (playerTwoName) {
-
-            playerTwoName.textContent =
-                currentBattle.player2Name || "Player 2";
-
-        }
+}
 
 
-       showStatus("Battle room loaded successfully!");
+function formatTime(seconds) {
 
-console.log("Battle room:", currentBattle);
+    const minutes = Math.floor(seconds / 60);
 
-// Load questions and initialize the battle
+    const remainingSeconds = seconds % 60;
 
-await loadBattleQuestions();
+    return (
+        String(minutes).padStart(2, "0") +
+        ":" +
+        String(remainingSeconds).padStart(2, "0")
+    );
+
+}
+
+
+function shuffleArray(array) {
+
+    const shuffled = [...array];
+
+    for (let i = shuffled.length - 1; i > 0; i--) {
+
+        const j = Math.floor(Math.random() * (i + 1));
+
+        [shuffled[i], shuffled[j]] = [
+            shuffled[j],
+            shuffled[i]
+        ];
 
     }
 
-    catch (error) {
+    return shuffled;
 
-        console.error("Battle loading error:", error);
+}
 
-        showStatus("Unable to load battle room.");
+
+function getTimestampMilliseconds(value) {
+
+    if (!value) return null;
+
+    if (typeof value === "number") {
+        return value;
+    }
+
+    if (typeof value.toMillis === "function") {
+        return value.toMillis();
+    }
+
+    if (typeof value.toDate === "function") {
+        return value.toDate().getTime();
+    }
+
+    if (typeof value === "string") {
+
+        const parsed = new Date(value).getTime();
+
+        return Number.isNaN(parsed) ? null : parsed;
+
+    }
+
+    return null;
+
+}
+
+
+// ======================================================
+// 5. NAVIGATION
+// ======================================================
+
+function returnToArena() {
+
+    cleanupBattle();
+
+    window.location.href = "battle-arena.html";
+
+}
+
+
+backToArenaBtn?.addEventListener("click", returnToArena);
+
+returnToArenaBtn?.addEventListener("click", returnToArena);
+
+
+// ======================================================
+// 6. CLEANUP
+// ======================================================
+
+function cleanupBattle() {
+
+    if (timerInterval) {
+
+        clearInterval(timerInterval);
+
+        timerInterval = null;
+
+    }
+
+    if (unsubscribeBattle) {
+
+        unsubscribeBattle();
+
+        unsubscribeBattle = null;
 
     }
 
 }
 
 
-// ========================================
-// 8. AUTHENTICATION
-// ========================================
+// ======================================================
+// 7. AUTHENTICATION
+// ======================================================
 
-onAuthStateChanged(auth, async function (user) {
+onAuthStateChanged(auth, async (user) => {
 
     if (!user) {
 
@@ -307,203 +258,317 @@ onAuthStateChanged(auth, async function (user) {
 
     }
 
-    await loadStudent(user);
+    currentUser = user;
+
+    if (!battleId) {
+
+        showError("Battle ID is missing. Return to the Battle Arena.");
+
+        battleStatus.textContent = "Invalid battle";
+
+        return;
+
+    }
+
+    await loadStudentProfile();
 
 });
-// ========================================
-// 9. LOAD PUBLISHED BATTLE QUESTIONS
-// ========================================
 
-async function loadBattleQuestions() {
+
+// ======================================================
+// 8. LOAD STUDENT PROFILE
+// ======================================================
+
+async function loadStudentProfile() {
 
     try {
 
-        showStatus("Loading published battle questions...");
-
-        const questionsRef = collection(db, "battleQuestions");
-
-        const questionsQuery = query(
-            questionsRef,
-            where("published", "==", true)
+        const profileRef = doc(
+            db,
+            "students",
+            currentUser.uid
         );
 
-        const questionsSnap = await getDocs(questionsQuery);
+        const profileSnap = await getDoc(profileRef);
 
-        let allQuestions = questionsSnap.docs.map(function (item) {
+        if (!profileSnap.exists()) {
+
+            showError("Student profile not found.");
+
+            return;
+
+        }
+
+        studentProfile = profileSnap.data();
+
+        if (studentProfile.role !== "student") {
+
+            showError("Only registered students can enter battles.");
+
+            return;
+
+        }
+
+        await enterBattleRoom();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showError("Unable to load your student profile.");
+
+    }
+
+}
+
+
+// ======================================================
+// 9. ENTER BATTLE ROOM
+// ======================================================
+
+async function enterBattleRoom() {
+
+    try {
+
+        const battleRef = doc(
+            db,
+            "battles",
+            battleId
+        );
+
+        const battleSnap = await getDoc(battleRef);
+
+        if (!battleSnap.exists()) {
+
+            showError("This battle does not exist.");
+
+            return;
+
+        }
+
+        const data = battleSnap.data();
+
+        const uid = currentUser.uid;
+
+        const isPlayerOne = data.player1Id === uid;
+
+        const isPlayerTwo = data.player2Id === uid;
+
+        if (!isPlayerOne && !isPlayerTwo) {
+
+            showError("You are not a participant in this battle.");
+
+            return;
+
+        }
+
+        if (data.status === "completed") {
+
+            battleData = data;
+
+            displayBattleResult(data);
+
+            return;
+
+        }
+
+        const enteredField = isPlayerOne
+            ? "player1Entered"
+            : "player2Entered";
+
+       await updateDoc(battleRef, {
+
+    [enteredField]: true
+
+});
+
+        await prepareBattleIfReady();
+
+        listenToBattle();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showError(
+            "Unable to enter the battle room. Check your Firebase permissions."
+        );
+
+    }
+
+}
+
+
+// ======================================================
+// 10. PREPARE BATTLE
+// ======================================================
+
+async function prepareBattleIfReady() {
+
+    try {
+
+        const battleRef = doc(
+            db,
+            "battles",
+            battleId
+        );
+
+        const battleSnap = await getDoc(battleRef);
+
+        if (!battleSnap.exists()) return;
+
+        const data = battleSnap.data();
+
+        if (data.status === "active") return;
+
+        if (data.status === "completed") return;
+
+        if (!data.player1Entered || !data.player2Entered) {
+
+            showWaiting();
+
+            battleStatus.textContent = "Waiting for opponent";
+
+            return;
+
+        }
+
+        // Load available questions.
+
+        let questionsQuery;
+
+        if (data.competitionId) {
+
+            questionsQuery = query(
+
+                collection(db, "battleQuestions"),
+
+                where("published", "==", true),
+
+                where("battleQuizId", "==", data.competitionId)
+
+            );
+
+        } else {
+
+            questionsQuery = query(
+
+                collection(db, "battleQuestions"),
+
+                where("published", "==", true)
+
+            );
+
+        }
+
+        const questionSnapshot = await getDocs(questionsQuery);
+
+        let availableQuestions = [];
+
+        questionSnapshot.forEach((questionDoc) => {
+
+            availableQuestions.push({
+
+                id: questionDoc.id,
+
+                ...questionDoc.data()
+
+            });
+
+        });
+
+        if (availableQuestions.length === 0) {
+
+            showError(
+                "No published questions are available for this battle."
+            );
+
+            return;
+
+        }
+
+        const questionLimit = Math.max(
+
+            1,
+
+            Number(data.questionLimit || 10)
+
+        );
+
+        availableQuestions = shuffleArray(availableQuestions);
+
+        availableQuestions = availableQuestions.slice(
+            0,
+            questionLimit
+        );
+
+        const formattedQuestions = availableQuestions.map((question) => {
 
             return {
-                ...item.data(),
-                id: item.id
+
+                id: question.id,
+
+                question:
+                    question.question ||
+                    question.questionText ||
+                    "Question unavailable",
+
+                options: question.options || {},
+
+                correctAnswer: question.correctAnswer,
+
+                marks: Number(question.marks || 1)
+
             };
 
         });
 
-        allQuestions = allQuestions.filter(function (question) {
+        // Transaction prevents both players from replacing
+        // the shared question list at the same time.
 
-            return (
-                question.question &&
-                question.options &&
-                question.options.A &&
-                question.options.B &&
-                question.options.C &&
-                question.options.D &&
-                question.correctAnswer
+        await runTransaction(db, async (transaction) => {
+
+            const freshSnap = await transaction.get(battleRef);
+
+            if (!freshSnap.exists()) return;
+
+            const freshData = freshSnap.data();
+
+            if (freshData.status !== "waiting") return;
+
+            if (
+                !freshData.player1Entered ||
+                !freshData.player2Entered
+            ) {
+
+                return;
+
+            }
+
+            if (
+                Array.isArray(freshData.questions) &&
+                freshData.questions.length > 0
+            ) {
+
+                return;
+
+            }
+
+            const duration = Number(
+                freshData.durationSeconds || 60
             );
-
-        });
-
-       if (allQuestions.length === 0) {
-    showStatus("No published battle questions are available.");
-    return;
-}
-
-        // Shuffle questions
-
-        allQuestions = shuffleBattleArray(allQuestions);
-
-        // Select 10 questions
-
-        battleQuestions = allQuestions.slice(0, 10);
-
-        console.log(
-            "Published battle questions loaded:",
-            battleQuestions
-        );
-
-        await initializeBattle();
-
-    }
-
-    catch (error) {
-
-        console.error("Question loading error:", error);
-
-        showStatus(
-            "Failed to load published battle questions: " + error.message
-        );
-
-    }
-
-}
-// ========================================
-// 10. GET QUESTION OPTIONS
-// ========================================
-
-function getBattleOptions(question) {
-
-    if (Array.isArray(question.options)) {
-
-        return question.options;
-
-    }
-
-    if (question.options && typeof question.options === "object") {
-
-        return [
-            question.options.A,
-            question.options.B,
-            question.options.C,
-            question.options.D
-        ].filter(function (option) {
-
-            return option !== undefined && option !== null;
-
-        });
-
-    }
-
-    return [];
-
-}
-
-
-// ========================================
-// 11. SHUFFLE ARRAY
-// ========================================
-
-function shuffleBattleArray(array) {
-
-    for (let i = array.length - 1; i > 0; i--) {
-
-        const j = Math.floor(Math.random() * (i + 1));
-
-        [array[i], array[j]] = [array[j], array[i]];
-
-    }
-
-    return array;
-
-}
-// ========================================
-// 12. INITIALIZE BATTLE
-// ========================================
-
-async function initializeBattle() {
-
-    try {
-
-        const battleRef = doc(db, "battles", currentBattleId);
-
-        await runTransaction(db, async function (transaction) {
-
-            const battleSnap = await transaction.get(battleRef);
-
-            if (!battleSnap.exists()) {
-
-                throw new Error("Battle does not exist.");
-
-            }
-
-            const battleData = battleSnap.data();
-
-
-            // If battle already started, don't restart it
-
-            if (battleData.status === "active") {
-
-                return;
-
-            }
-
-
-            // If battle already ended
-
-            if (battleData.status === "completed") {
-
-                return;
-
-            }
-
-
-            // Prepare shared questions
-
-            const sharedQuestions = battleQuestions.map(function (question) {
-
-                return {
-
-                    id: question.id,
-
-                    question: question.question || question.questionText,
-
-                    options: getBattleOptions(question),
-
-                    correctAnswer: question.correctAnswer
-
-                };
-
-            });
-
 
             const startTime = Date.now();
 
-            const endTime = startTime + 60000;
-
-
             transaction.update(battleRef, {
 
-                questions: sharedQuestions,
+                questions: formattedQuestions,
 
                 status: "active",
+
+                startedAt: serverTimestamp(),
+
+                endsAt: startTime + duration * 1000,
 
                 player1Score: 0,
 
@@ -511,157 +576,702 @@ async function initializeBattle() {
 
                 player1Answers: {},
 
-                player2Answers: {},
-
-                startedAt: startTime,
-
-                endsAt: endTime,
-
-                durationSeconds: 60
+                player2Answers: {}
 
             });
 
         });
 
+    } catch (error) {
 
-        // Listen for battle changes
+        console.error("Battle preparation error:", error);
 
-        listenToBattle();
-
-
-    }
-
-    catch (error) {
-
-        console.error("Battle initialization error:", error);
-
-        showStatus("Unable to initialize battle: " + error.message);
+        showError(
+            "Could not prepare the battle. Check your Firestore rules and indexes."
+        );
 
     }
 
 }
-// ========================================
-// 13. LIVE BATTLE LISTENER
-// ========================================
+
+
+// ======================================================
+// 11. LISTEN TO BATTLE
+// ======================================================
 
 function listenToBattle() {
 
-    const battleRef = doc(db, "battles", currentBattleId);
+    const battleRef = doc(
+        db,
+        "battles",
+        battleId
+    );
 
-    if (battleListener) {
-        battleListener();
-    }
+    unsubscribeBattle = onSnapshot(
 
-    battleListener = onSnapshot(battleRef, function (snapshot) {
+        battleRef,
 
-        if (!snapshot.exists()) {
+        async (snapshot) => {
 
-            showStatus("Battle no longer exists.");
+            if (!snapshot.exists()) {
 
-            return;
+                showError("Battle not found.");
+
+                return;
+
+            }
+
+            battleData = snapshot.data();
+
+            updatePlayerInformation();
+
+            if (battleData.status === "waiting") {
+
+                showWaiting();
+
+                battleStatus.textContent = "Waiting for opponent";
+
+                await prepareBattleIfReady();
+
+                return;
+
+            }
+
+            if (battleData.status === "active") {
+
+                if (!Array.isArray(battleData.questions)) {
+
+                    showError("Battle questions are not available.");
+
+                    return;
+
+                }
+
+                if (battleData.questions.length === 0) {
+
+                    showError("No questions were added to this battle.");
+
+                    return;
+
+                }
+
+                battleStarted = true;
+
+                battleFinished = false;
+
+                questions = battleData.questions;
+
+                updateMyAnswers();
+
+                showQuestions();
+
+                battleStatus.textContent = "Battle in progress";
+
+                startTimer();
+
+                if (questions.length > 0) {
+
+                    findNextUnansweredQuestion();
+
+                    displayQuestion();
+
+                }
+
+                checkAllQuestionsAnswered();
+
+                return;
+
+            }
+
+            if (battleData.status === "completed") {
+
+                battleFinished = true;
+
+                cleanupBattle();
+
+                displayBattleResult(battleData);
+
+            }
+
+        },
+
+        (error) => {
+
+            console.error(error);
+
+            showError("Lost connection to the battle.");
 
         }
 
-        currentBattle = {
-            ...snapshot.data(),
-            id: snapshot.id
-        };
-
-
-        // Get shared questions
-
-        if (currentBattle.questions) {
-
-            battleQuestions = currentBattle.questions;
-
-        }
-
-
-        // Update scores
-
-        myScore = currentStudent.uid === currentBattle.player1Id
-            ? currentBattle.player1Score || 0
-            : currentBattle.player2Score || 0;
-
-        opponentScore = currentStudent.uid === currentBattle.player1Id
-            ? currentBattle.player2Score || 0
-            : currentBattle.player1Score || 0;
-
-
-        if (playerOneScore) {
-
-            playerOneScore.textContent =
-                currentBattle.player1Score || 0;
-
-        }
-
-        if (playerTwoScore) {
-
-            playerTwoScore.textContent =
-                currentBattle.player2Score || 0;
-
-        }
-
-
-        // Battle state
-
-        if (currentBattle.status === "active") {
-
-            battleStarted = true;
-
-            showStatus("⚔️ Battle in progress!");
-
-            startBattleTimer();
-
-          if (lastRenderedQuestionIndex !== currentQuestionIndex) {
-
-    lastRenderedQuestionIndex = currentQuestionIndex;
-
-    displayBattleQuestion();
+    );
 
 }
 
-        }
+
+// ======================================================
+// 12. UPDATE PLAYER INFORMATION
+// ======================================================
+
+function updatePlayerInformation() {
+
+    if (!battleData) return;
+
+    playerOneName.textContent =
+        battleData.player1Name || "Player 1";
+
+    playerTwoName.textContent =
+        battleData.player2Name || "Player 2";
+
+    playerOneScore.textContent =
+        battleData.player1Score || 0;
+
+    playerTwoScore.textContent =
+        battleData.player2Score || 0;
+
+    const isPlayerOne =
+        currentUser.uid === battleData.player1Id;
+
+    document
+        .getElementById("playerOneCard")
+        ?.classList.toggle("active", isPlayerOne);
+
+    document
+        .getElementById("playerTwoCard")
+        ?.classList.toggle("active", !isPlayerOne);
+
+}
 
 
-        if (currentBattle.status === "completed") {
+// ======================================================
+// 13. UPDATE MY ANSWERS
+// ======================================================
 
-            finishBattleDisplay();
+function updateMyAnswers() {
 
-        }
+    if (!battleData) return;
 
-    }, function (error) {
+    const isPlayerOne =
+        currentUser.uid === battleData.player1Id;
 
-        console.error("Battle listener error:", error);
+    myAnswers = isPlayerOne
 
-        showStatus("Unable to synchronize battle.");
+        ? battleData.player1Answers || {}
+
+        : battleData.player2Answers || {};
+
+}
+
+
+// ======================================================
+// 14. FIND NEXT UNANSWERED QUESTION
+// ======================================================
+
+function findNextUnansweredQuestion() {
+
+    currentQuestionIndex = questions.findIndex((question) => {
+
+        return !myAnswers[question.id];
 
     });
 
+    if (currentQuestionIndex === -1) {
+
+        currentQuestionIndex = questions.length;
+
+    }
+
 }
-// ========================================
-// 14. BATTLE TIMER
-// ========================================
 
-function startBattleTimer() {
 
-    // Prevent multiple countdown intervals
+// ======================================================
+// 15. DISPLAY QUESTION
+// ======================================================
+
+function displayQuestion() {
+
+    if (battleFinished) return;
+
+    if (currentQuestionIndex >= questions.length) {
+
+        questionText.textContent = "You have completed all questions.";
+
+        answerOptions.innerHTML = "";
+
+        answerMessage.textContent =
+            "Waiting for the battle to finish.";
+
+        nextQuestionBtn.disabled = true;
+
+        nextQuestionBtn.textContent = "Completed";
+
+        return;
+
+    }
+
+    const question = questions[currentQuestionIndex];
+
+    const savedAnswer = myAnswers[question.id];
+
+    questionNumber.textContent =
+
+        `${currentQuestionIndex + 1} / ${questions.length}`;
+
+    questionText.textContent = question.question;
+
+    questionMarks.textContent = question.marks || 1;
+
+    questionProgressBar.style.width =
+
+        `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+
+    answerOptions.innerHTML = "";
+
+    answerMessage.textContent = "";
+
+    answerMessage.className = "answer-message";
+
+    nextQuestionBtn.disabled = true;
+
+    nextQuestionBtn.textContent = "Next Question →";
+
+    const options = question.options || {};
+
+    let optionEntries = [];
+
+    if (Array.isArray(options)) {
+
+        optionEntries = options.map((option, index) => {
+
+            return [
+
+                ["A", "B", "C", "D"][index],
+
+                option
+
+            ];
+
+        });
+
+    } else {
+
+        optionEntries = Object.entries(options);
+
+    }
+
+    optionEntries.forEach(([letter, option]) => {
+
+        const button = document.createElement("button");
+
+        button.type = "button";
+
+        button.className = "answer-option";
+
+        const letterSpan = document.createElement("span");
+
+        letterSpan.className = "answer-letter";
+
+        letterSpan.textContent = letter;
+
+        const textSpan = document.createElement("span");
+
+        textSpan.textContent = option;
+
+        button.appendChild(letterSpan);
+
+        button.appendChild(textSpan);
+
+        if (savedAnswer) {
+
+            button.disabled = true;
+
+            if (savedAnswer.answer === letter) {
+
+                button.classList.add("selected");
+
+            }
+
+            if (
+                normalizeAnswer(question.correctAnswer) ===
+                normalizeAnswer(letter)
+            ) {
+
+                button.classList.add("correct");
+
+            }
+
+            if (
+                savedAnswer.answer === letter &&
+                !savedAnswer.isCorrect
+            ) {
+
+                button.classList.add("wrong");
+
+            }
+
+        } else {
+
+            button.addEventListener("click", () => {
+
+                submitBattleAnswer(letter, button);
+
+            });
+
+        }
+
+        answerOptions.appendChild(button);
+
+    });
+
+    if (savedAnswer) {
+
+        answerMessage.textContent = savedAnswer.isCorrect
+
+            ? "Correct answer! You earned points."
+
+            : "Incorrect answer. Better luck on the next question.";
+
+        answerMessage.classList.add(
+
+            savedAnswer.isCorrect ? "success" : "error"
+
+        );
+
+        nextQuestionBtn.disabled = false;
+
+    }
+
+}
+
+
+// ======================================================
+// 16. NORMALIZE ANSWERS
+// ======================================================
+
+function normalizeAnswer(value) {
+
+    if (value === undefined || value === null) {
+
+        return "";
+
+    }
+
+    return String(value)
+        .trim()
+        .toLowerCase();
+
+}
+
+
+// ======================================================
+// 17. CHECK CORRECT ANSWER
+// ======================================================
+
+function isAnswerCorrect(selectedAnswer, correctAnswer, options) {
+
+    const selected = normalizeAnswer(selectedAnswer);
+
+    const correct = normalizeAnswer(correctAnswer);
+
+    if (selected === correct) return true;
+
+    if (Array.isArray(options)) {
+
+        const letters = ["A", "B", "C", "D"];
+
+        const selectedIndex = letters.indexOf(
+            selectedAnswer.toUpperCase()
+        );
+
+        if (selectedIndex >= 0) {
+
+            return normalizeAnswer(options[selectedIndex]) === correct;
+
+        }
+
+    } else if (options && typeof options === "object") {
+
+        const correctOption = options[correctAnswer];
+
+        if (correctOption !== undefined) {
+
+            return normalizeAnswer(selected) ===
+                normalizeAnswer(correctOption);
+
+        }
+
+    }
+
+    return false;
+
+}
+
+
+// ======================================================
+// 18. SUBMIT ANSWER
+// ======================================================
+
+async function submitBattleAnswer(selectedAnswer, selectedButton) {
+
+    if (isSubmittingAnswer || battleFinished) return;
+
+    const question = questions[currentQuestionIndex];
+
+    if (!question) return;
+
+    if (myAnswers[question.id]) return;
+
+    isSubmittingAnswer = true;
+
+    const isPlayerOne =
+        currentUser.uid === battleData.player1Id;
+
+    const answerField = isPlayerOne
+        ? "player1Answers"
+        : "player2Answers";
+
+    const scoreField = isPlayerOne
+        ? "player1Score"
+        : "player2Score";
+
+    const correct = isAnswerCorrect(
+
+        selectedAnswer,
+
+        question.correctAnswer,
+
+        question.options
+
+    );
+
+    const marks = correct
+        ? Number(question.marks || 1)
+        : 0;
+
+    const battleRef = doc(
+        db,
+        "battles",
+        battleId
+    );
+
+    try {
+
+        await runTransaction(db, async (transaction) => {
+
+            const snapshot = await transaction.get(battleRef);
+
+            if (!snapshot.exists()) {
+
+                throw new Error("Battle no longer exists.");
+
+            }
+
+            const data = snapshot.data();
+
+            if (data.status !== "active") {
+
+                throw new Error("This battle is no longer active.");
+
+            }
+
+            const answers = data[answerField] || {};
+
+            if (answers[question.id]) {
+
+                return;
+
+            }
+
+            const updatedAnswers = {
+
+                ...answers,
+
+                [question.id]: {
+
+                    answer: selectedAnswer,
+
+                    isCorrect: correct,
+
+                    marks: marks,
+
+                    answeredAt: Date.now()
+
+                }
+
+            };
+
+            transaction.update(battleRef, {
+
+                [answerField]: updatedAnswers,
+
+                [scoreField]:
+
+                    Number(data[scoreField] || 0) + marks
+
+            });
+
+        });
+
+        selectedButton.classList.add("selected");
+
+        answerMessage.textContent = correct
+
+            ? `Correct! You earned ${marks} points.`
+
+            : "Incorrect answer. Keep going!";
+
+        answerMessage.className = correct
+
+            ? "answer-message success"
+
+            : "answer-message error";
+
+        const buttons = answerOptions.querySelectorAll("button");
+
+        buttons.forEach((button) => {
+
+            button.disabled = true;
+
+        });
+
+        nextQuestionBtn.disabled = false;
+
+    } catch (error) {
+
+        console.error(error);
+
+        showError(error.message || "Unable to submit your answer.");
+
+    } finally {
+
+        isSubmittingAnswer = false;
+
+    }
+
+}
+
+
+// ======================================================
+// 19. NEXT QUESTION
+// ======================================================
+
+nextQuestionBtn.addEventListener("click", () => {
+
+    if (nextQuestionBtn.disabled) return;
+
+    if (currentQuestionIndex < questions.length - 1) {
+
+        currentQuestionIndex++;
+
+        while (
+
+            currentQuestionIndex < questions.length &&
+
+            myAnswers[questions[currentQuestionIndex].id]
+
+        ) {
+
+            currentQuestionIndex++;
+
+        }
+
+        displayQuestion();
+
+    } else {
+
+        currentQuestionIndex = questions.length;
+
+        displayQuestion();
+
+        checkAllQuestionsAnswered();
+
+    }
+
+});
+
+
+// ======================================================
+// 20. CHECK COMPLETION
+// ======================================================
+
+async function checkAllQuestionsAnswered() {
+
+    if (!battleData || battleFinished) return;
+
+    const playerOneAnswers =
+        battleData.player1Answers || {};
+
+    const playerTwoAnswers =
+        battleData.player2Answers || {};
+
+    const playerOneCompleted = questions.every((question) => {
+
+        return Boolean(playerOneAnswers[question.id]);
+
+    });
+
+    const playerTwoCompleted = questions.every((question) => {
+
+        return Boolean(playerTwoAnswers[question.id]);
+
+    });
+
+    if (playerOneCompleted && playerTwoCompleted) {
+
+        await finishBattle("completed");
+
+    }
+
+}
+
+
+// ======================================================
+// 21. START TIMER
+// ======================================================
+
+function startTimer() {
 
     if (timerInterval) return;
 
-    timerInterval = setInterval(function () {
+    if (!battleData.endsAt) {
 
-        if (!currentBattle || !currentBattle.endsAt) return;
+        showError("Battle timer is unavailable.");
+
+        return;
+
+    }
+
+    const endTime = getTimestampMilliseconds(
+        battleData.endsAt
+    );
+
+    if (!endTime) {
+
+        showError("Invalid battle timer.");
+
+        return;
+
+    }
+
+    function updateTimer() {
 
         const remaining = Math.max(
+
             0,
-            Math.ceil((currentBattle.endsAt - Date.now()) / 1000)
+
+            Math.ceil((endTime - Date.now()) / 1000)
+
         );
 
-        remainingSeconds = remaining;
+        battleTimer.textContent = formatTime(remaining);
 
-        if (battleTimer) {
-            battleTimer.textContent = remaining;
+        if (remaining <= 10) {
+
+            battleTimer.classList.add("danger");
+
+        } else {
+
+            battleTimer.classList.remove("danger");
+
         }
 
         if (remaining <= 0) {
@@ -670,414 +1280,64 @@ function startBattleTimer() {
 
             timerInterval = null;
 
-            endBattle();
+            finishBattle("time");
 
         }
 
-    }, 250);
+    }
+
+    updateTimer();
+
+    timerInterval = setInterval(updateTimer, 1000);
 
 }
 
 
-// ========================================
-// 15. DISPLAY BATTLE QUESTION
-// ========================================
-
-function displayBattleQuestion() {
-
-    if (!battleQuestions.length) {
-
-        showStatus("No battle questions available.");
-
-        return;
-
-    }
-
-    if (battleEnded) return;
-
-    if (currentQuestionIndex >= battleQuestions.length) {
-
-        if (questionText) {
-            questionText.textContent = "You have completed all questions!";
-        }
-
-        if (answerOptions) {
-            answerOptions.innerHTML = "";
-        }
-
-        if (questionNumber) {
-            questionNumber.textContent = "Completed";
-        }
-
-        if (nextQuestionBtn) {
-            nextQuestionBtn.disabled = true;
-        }
-
-        return;
-
-    }
-
-
-    const question = battleQuestions[currentQuestionIndex];
-
-    const options = getBattleOptions(question);
-
-
-    // Display question number
-
-    if (questionNumber) {
-
-        questionNumber.textContent =
-            "Question " + (currentQuestionIndex + 1) +
-            " of " + battleQuestions.length;
-
-    }
-
-
-    // Display question text
-
-    if (questionText) {
-
-        questionText.textContent =
-            question.question || question.questionText || "Question unavailable.";
-
-    }
-
-
-    // Clear previous options
-
-    if (answerOptions) {
-
-        answerOptions.innerHTML = "";
-
-    }
-
-
-    selectedAnswer = null;
-
-    answerSubmitted = false;
-
-
-    // Display answer options
-
-    options.forEach(function (option, index) {
-
-        const button = document.createElement("button");
-
-        button.className = "answer-option";
-
-        button.textContent =
-            String.fromCharCode(65 + index) + ". " + option;
-
-        button.type = "button";
-
-        button.addEventListener("click", function () {
-
-            if (answerSubmitted || battleEnded) return;
-
-            selectedAnswer = index;
-
-            document.querySelectorAll(".answer-option").forEach(function (item) {
-
-                item.classList.remove("selected");
-
-            });
-
-            button.classList.add("selected");
-
-        });
-
-        answerOptions.appendChild(button);
-
-    });
-
-
-    // Reset message
-
-    if (answerMessage) {
-
-        answerMessage.textContent = "Choose your answer.";
-
-    }
-
-
-    // Enable next button
-
-   if (nextQuestionBtn) {
-
-    nextQuestionBtn.disabled = false;
-
-    nextQuestionBtn.textContent = "Submit Answer";
-
-}
-}
-// ========================================
-// 16. CHECK CORRECT ANSWER
-// ========================================
-
-function isBattleAnswerCorrect(question, selectedIndex) {
-
-    const correct = String(question.correctAnswer ?? "").trim();
-
-    const letters = ["A", "B", "C", "D"];
-
-    const options = getBattleOptions(question);
-
-    if (["0", "1", "2", "3"].includes(correct)) {
-
-        return selectedIndex === Number(correct);
-
-    }
-
-    if (letters.includes(correct.toUpperCase())) {
-
-        return selectedIndex === letters.indexOf(correct.toUpperCase());
-
-    }
-
-    const selectedOption = options[selectedIndex];
-
-    return Boolean(selectedOption) &&
-        String(selectedOption).trim().toLowerCase() === correct.toLowerCase();
-
-}
-
-
-// ========================================
-// 17. SUBMIT BATTLE ANSWER
-// ========================================
-
-async function submitBattleAnswer() {
-
-    if (answerSubmitted || battleEnded) return;
-
-    if (selectedAnswer === null) {
-
-        if (answerMessage) {
-            answerMessage.textContent = "Please select an answer first.";
-        }
-
-        return;
-
-    }
-
-    if (remainingSeconds <= 0) {
-
-        endBattle();
-
-        return;
-
-    }
+// ======================================================
+// 22. FINISH BATTLE
+// ======================================================
+
+async function finishBattle(reason) {
+
+    if (battleFinished) return;
+
+    const battleRef = doc(
+        db,
+        "battles",
+        battleId
+    );
 
     try {
 
-        answerSubmitted = true;
+        await runTransaction(db, async (transaction) => {
 
-        const question = battleQuestions[currentQuestionIndex];
+            const snapshot = await transaction.get(battleRef);
 
-        const isCorrect = isBattleAnswerCorrect(question, selectedAnswer);
+            if (!snapshot.exists()) return;
 
-        const battleRef = doc(db, "battles", currentBattleId);
+            const data = snapshot.data();
 
-        await runTransaction(db, async function (transaction) {
+            if (data.status !== "active") return;
 
-            const battleSnap = await transaction.get(battleRef);
+            const scoreOne = Number(data.player1Score || 0);
 
-            if (!battleSnap.exists()) {
-                throw new Error("Battle not found.");
-            }
-
-            const battleData = battleSnap.data();
-
-            if (battleData.status !== "active") {
-                throw new Error("This battle has ended.");
-            }
-
-            if (Date.now() >= battleData.endsAt) {
-                throw new Error("Time is up.");
-            }
-
-            const isPlayerOne =
-                currentStudent.uid === battleData.player1Id;
-
-            const answerField = isPlayerOne
-                ? "player1Answers"
-                : "player2Answers";
-
-            const scoreField = isPlayerOne
-                ? "player1Score"
-                : "player2Score";
-
-            const answers = battleData[answerField] || {};
-
-            if (answers[question.id] !== undefined) {
-                throw new Error("You already answered this question.");
-            }
-
-            answers[question.id] = {
-                selectedAnswer: selectedAnswer,
-                correct: isCorrect
-            };
-
-            const newScore =
-                (battleData[scoreField] || 0) + (isCorrect ? 1 : 0);
-
-            transaction.update(battleRef, {
-                [answerField]: answers,
-                [scoreField]: newScore
-            });
-
-        });
-
-        if (answerMessage) {
-
-            answerMessage.textContent = isCorrect
-                ? "Correct answer! +1 point."
-                : "Incorrect answer.";
-
-        }
-
-        if (answerOptions) {
-
-            answerOptions.querySelectorAll("button").forEach(function (button) {
-
-                button.disabled = true;
-
-            });
-
-        }
-        if (nextQuestionBtn) {
-
-    nextQuestionBtn.textContent = "Next Question";
-
-}
-
-    }
-
-    catch (error) {
-
-        console.error("Answer submission error:", error);
-
-        answerSubmitted = false;
-
-        if (answerMessage) {
-            answerMessage.textContent = error.message;
-        }
-
-    }
-
-}
-
-
-// ========================================
-// 18. NEXT QUESTION
-// ========================================
-
-function nextBattleQuestion() {
-
-    if (!answerSubmitted || battleEnded) return;
-
-    currentQuestionIndex++;
-
-    lastRenderedQuestionIndex = -1;
-
-    if (currentQuestionIndex < battleQuestions.length) {
-
-        displayBattleQuestion();
-
-    }
-
-    else {
-
-        if (questionText) {
-            questionText.textContent = "You have completed all questions!";
-        }
-
-        if (answerOptions) {
-            answerOptions.innerHTML = "";
-        }
-
-        if (questionNumber) {
-            questionNumber.textContent = "Completed";
-        }
-
-        if (nextQuestionBtn) {
-            nextQuestionBtn.disabled = true;
-        }
-
-    }
-
-}
-
-
-// ========================================
-// 19. NEXT BUTTON EVENT
-// ========================================
-
-if (nextQuestionBtn) {
-
-    nextQuestionBtn.addEventListener("click", async function () {
-
-        if (!answerSubmitted) {
-
-            await submitBattleAnswer();
-
-        }
-
-        else {
-
-            nextBattleQuestion();
-
-        }
-
-    });
-
-}
-// ========================================
-// 20. END BATTLE
-// ========================================
-
-async function endBattle() {
-
-    if (battleEnded) return;
-
-    try {
-
-        const battleRef = doc(db, "battles", currentBattleId);
-
-        await runTransaction(db, async function (transaction) {
-
-            const battleSnap = await transaction.get(battleRef);
-
-            if (!battleSnap.exists()) {
-                throw new Error("Battle not found.");
-            }
-
-            const battleData = battleSnap.data();
-
-            // Another player may have already ended the battle
-
-            if (battleData.status === "completed") {
-                return;
-            }
-
-            const scoreOne = battleData.player1Score || 0;
-            const scoreTwo = battleData.player2Score || 0;
+            const scoreTwo = Number(data.player2Score || 0);
 
             let winnerId = null;
-            let winnerName = "It's a draw!";
+
+            let winnerName = "Draw";
 
             if (scoreOne > scoreTwo) {
 
-                winnerId = battleData.player1Id;
-                winnerName = battleData.player1Name;
+                winnerId = data.player1Id;
 
-            }
+                winnerName = data.player1Name;
 
-            else if (scoreTwo > scoreOne) {
+            } else if (scoreTwo > scoreOne) {
 
-                winnerId = battleData.player2Id;
-                winnerName = battleData.player2Name;
+                winnerId = data.player2Id;
+
+                winnerName = data.player2Name;
 
             }
 
@@ -1089,99 +1349,82 @@ async function endBattle() {
 
                 winnerName: winnerName,
 
-                finalScore: {
-                    player1: scoreOne,
-                    player2: scoreTwo
-                },
+                finalScore: `${scoreOne} - ${scoreTwo}`,
 
-                completedAt: Date.now()
+                completedAt: serverTimestamp(),
+
+                completionReason: reason
 
             });
 
         });
 
-        battleEnded = true;
+    } catch (error) {
 
-        if (timerInterval) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-        }
-
-        showStatus("Battle completed!");
-
-    }
-
-    catch (error) {
-
-        console.error("Battle ending error:", error);
-
-        showStatus("Unable to finish battle: " + error.message);
+        console.error("Battle completion error:", error);
 
     }
 
 }
 
 
-// ========================================
-// 21. DISPLAY BATTLE RESULT
-// ========================================
+// ======================================================
+// 23. DISPLAY BATTLE RESULT
+// ======================================================
 
-function finishBattleDisplay() {
+function displayBattleResult(data) {
 
-    battleEnded = true;
+    cleanupBattle();
 
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
+    battleFinished = true;
 
-    const scoreOne = currentBattle.player1Score || 0;
-    const scoreTwo = currentBattle.player2Score || 0;
+    questionSection.classList.add("hidden");
 
-    if (battleTimer) {
-        battleTimer.textContent = "00";
-    }
+    waitingMessage.classList.add("hidden");
 
-    if (battleResult) {
-        battleResult.hidden = false;
-    }
+    battleResult.classList.remove("hidden");
 
-    if (winnerText) {
+    battleStatus.textContent = "Battle completed";
 
-        if (!currentBattle.winnerId) {
+    battleTimer.textContent = "00:00";
 
-            winnerText.textContent = "🤝 It's a draw!";
+    const myScore = currentUser.uid === data.player1Id
 
-        }
+        ? Number(data.player1Score || 0)
 
-        else if (currentBattle.winnerId === currentStudent.uid) {
+        : Number(data.player2Score || 0);
 
-            winnerText.textContent = "🏆 Congratulations! You won!";
+    const opponentScore = currentUser.uid === data.player1Id
 
-        }
+        ? Number(data.player2Score || 0)
 
-        else {
+        : Number(data.player1Score || 0);
 
-            winnerText.textContent =
-                "The winner is " + currentBattle.winnerName + "!";
+    if (!data.winnerId) {
 
-        }
+        winnerText.textContent = "It's a Draw!";
 
-    }
+    } else if (data.winnerId === currentUser.uid) {
 
-    if (finalScore) {
+        winnerText.textContent = "Congratulations! You Won!";
 
-        finalScore.textContent =
-            currentBattle.player1Name + ": " + scoreOne +
-            " | " +
-            currentBattle.player2Name + ": " + scoreTwo;
+    } else {
+
+        winnerText.textContent = "You Lost This Battle";
 
     }
 
-    showStatus("The battle has ended!");
+    finalScore.textContent =
 
-    if (nextQuestionBtn) {
-        nextQuestionBtn.disabled = true;
-    }
+        `Your score: ${myScore} | Opponent's score: ${opponentScore}`;
 
 }
+
+
+// ======================================================
+// 24. INITIAL PAGE STATE
+// ======================================================
+
+showWaiting();
+
+battleStatus.textContent = "Connecting...";
