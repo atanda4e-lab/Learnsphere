@@ -722,6 +722,133 @@ async function prepareBattleIfReady() {
 
 }
 
+// ======================================================
+// UPDATE STUDENT LEADERBOARD
+// ======================================================
+
+async function updateLeaderboardForCompletedBattle(data) {
+
+    const currentUser = auth.currentUser;
+
+    if (!currentUser || !data) return;
+
+    const uid = currentUser.uid;
+
+    let playerName = "";
+    let earnedXP = 0;
+    let result = "";
+
+    if (uid === data.player1Id) {
+
+        playerName = data.player1Name || "Student";
+
+    } else if (uid === data.player2Id) {
+
+        playerName = data.player2Name || "Student";
+
+    } else {
+
+        return;
+
+    }
+
+    if (!data.winnerId) {
+
+        earnedXP = 10;
+        result = "draw";
+
+    } else if (data.winnerId === uid) {
+
+        earnedXP = 20;
+        result = "win";
+
+    } else {
+
+        earnedXP = 5;
+        result = "defeat";
+
+    }
+
+    const leaderboardRef = doc(
+        db,
+        "battleLeaderboard",
+        uid
+    );
+
+    try {
+
+        await runTransaction(db, async (transaction) => {
+
+            const snapshot = await transaction.get(
+                leaderboardRef
+            );
+
+            const existing = snapshot.exists()
+                ? snapshot.data()
+                : {};
+
+            const completedBattles =
+                existing.completedBattleIds || [];
+
+            // Prevent awarding XP twice for the same battle.
+
+            if (completedBattles.includes(battleId)) {
+                return;
+            }
+
+            transaction.set(
+                leaderboardRef,
+                {
+
+                    studentId: uid,
+
+                    fullName: playerName,
+
+                    xp: Number(existing.xp || 0) + earnedXP,
+
+                    wins:
+                        Number(existing.wins || 0) +
+                        (result === "win" ? 1 : 0),
+
+                    defeats:
+                        Number(existing.defeats || 0) +
+                        (result === "defeat" ? 1 : 0),
+
+                    draws:
+                        Number(existing.draws || 0) +
+                        (result === "draw" ? 1 : 0),
+
+                    battlesPlayed:
+                        Number(existing.battlesPlayed || 0) + 1,
+
+                    completedBattleIds: [
+                        ...completedBattles,
+                        battleId
+                    ],
+
+                    updatedAt: serverTimestamp()
+
+                },
+
+                { merge: true }
+
+            );
+
+        });
+
+        alert("Leaderboard updated: " + earnedXP + " XP");
+
+    } catch (error) {
+
+        console.error(
+            "Leaderboard update error:",
+            error
+        );
+
+    }
+
+}
+
 
 // ======================================================
 // 11. LISTEN TO BATTLE
@@ -839,19 +966,23 @@ function listenToBattle() {
 
             }
 
-            // ======================================
-            // COMPLETED BATTLE
-            // ======================================
+           // ======================================
+// COMPLETED BATTLE
+// ======================================
 
-            if (battleData.status === "completed") {
+if (battleData.status === "completed") {
 
-                battleFinished = true;
+    battleFinished = true;
 
-                cleanupBattle();
+    await updateLeaderboardForCompletedBattle(
+        battleData
+    );
 
-                displayBattleResult(battleData);
+    cleanupBattle();
 
-            }
+    displayBattleResult(battleData);
+
+}
 
         },
 
