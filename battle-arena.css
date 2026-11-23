@@ -483,3 +483,65 @@ button:disabled {
     }
 
 }
+/* =========================================
+   PREMIUM BATTLE LEADERBOARD
+========================================= */
+
+#leaderboardContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.leaderboard-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 18px;
+    background: #0b1425;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: 0.25s ease;
+}
+
+.leaderboard-item:hover {
+    transform: translateY(-3px);
+    border-color: var(--primary);
+    background: #172554;
+}
+
+.leaderboard-item strong {
+    font-size: 14px;
+}
+
+.leaderboard-item p {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.leaderboard-item > strong:last-child {
+    color: #facc15;
+    font-size: 15px;
+    white-space: nowrap;
+}
+
+.leaderboard-item:first-child {
+    border-color: #eab308;
+    background: linear-gradient(100deg, #422006, #172033);
+}
+
+.leaderboard-item:nth-child(2) {
+    border-color: #94a3b8;
+}
+
+.leaderboard-item:nth-child(3) {
+    border-color: #b45309;
+}
+
+@media (max-width: 600px) {
+    .leaderboard-item {
+        padding: 15px;
+    }
+}
