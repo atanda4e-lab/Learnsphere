@@ -361,7 +361,7 @@ async function loadStudentNotifications() {
 }
 
 async function addStudentNotification(title, message, type = "general") {
-    if (!getStudentId()) return;
+    if (!getStudentId()) return false;
 
     try {
         const notificationData = {
@@ -370,6 +370,7 @@ async function addStudentNotification(title, message, type = "general") {
             message: message,
             type: type,
             isRead: false,
+            read: false,
             createdAt: serverTimestamp()
         };
 
@@ -385,17 +386,21 @@ async function addStudentNotification(title, message, type = "general") {
             message: message,
             type: type,
             createdAt: new Date(),
+            isRead: false,
             read: false,
             source: "firestore"
         });
 
         displayNotifications();
 
+        return true;
+
     } catch (error) {
         console.error("Notification creation error:", error);
+
+        return false;
     }
 }
-
 async function detectNewNotificationItems(
     items,
     trackingType,
@@ -424,21 +429,31 @@ async function detectNewNotificationItems(
 
     } catch (error) {
         console.error("Notification tracking error:", error);
+        return;
     }
 
     const newItems = items.filter(item =>
         !previousIds.includes(String(item.id))
     );
 
+    const successfullyProcessedIds = [...previousIds];
+
     for (const item of newItems) {
-        await addStudentNotification(
+        const created = await addStudentNotification(
             title,
             messageFunction(item),
             trackingType
         );
+
+        if (created) {
+            successfullyProcessedIds.push(String(item.id));
+        }
     }
 
-    localStorage.setItem(key, JSON.stringify(currentIds));
+    localStorage.setItem(
+        key,
+        JSON.stringify([...new Set(successfullyProcessedIds)])
+    );
 }
 
 async function checkForNewStudentActivity() {

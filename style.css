@@ -1,6 +1,35 @@
-/* ==============================
-   GENERAL SETTINGS
-============================== */
+/* =========================================
+   LEARNSPHERE HOMEPAGE
+   PREMIUM DARK NAVY + TEAL THEME
+========================================= */
+
+
+/* =========================================
+   1. GENERAL SETTINGS
+========================================= */
+
+:root {
+    --background: #071521;
+    --background-soft: #0B1D2B;
+    --surface: #102536;
+    --surface-light: #163448;
+    --surface-hover: #1B4054;
+
+    --primary: #0D9488;
+    --primary-light: #2DD4BF;
+    --primary-dark: #0F766E;
+
+    --success: #22C55E;
+    --danger: #F87171;
+    --warning: #FBBF24;
+
+    --text: #F1F5F9;
+    --text-muted: #94A3B8;
+    --border: #244155;
+
+    --shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+    --transition: 0.3s ease;
+}
 
 * {
     margin: 0;
@@ -14,8 +43,8 @@ html {
 
 body {
     font-family: "DM Sans", sans-serif;
-    color: #172033;
-    background-color: #ffffff;
+    color: var(--text);
+    background-color: var(--background);
     line-height: 1.6;
 }
 
@@ -43,15 +72,20 @@ section {
     overflow: hidden;
 }
 
+.hidden {
+    display: none !important;
+}
 
-/* ==============================
-   HEADER / NAVBAR
-============================== */
+
+/* =========================================
+   2. HEADER / NAVBAR
+========================================= */
 
 .header {
     width: 100%;
-    background: #ffffff;
-    box-shadow: 0 3px 20px rgba(0, 0, 0, 0.05);
+    background: var(--background-soft);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -72,17 +106,17 @@ section {
     font-family: "Manrope", sans-serif;
     font-size: 25px;
     font-weight: 800;
-    color: #172033;
+    color: var(--text);
     white-space: nowrap;
 }
 
 .logo i {
-    color: #3157d5;
+    color: var(--primary-light);
     font-size: 29px;
 }
 
 .logo span {
-    color: #3157d5;
+    color: var(--primary-light);
 }
 
 .navbar-links {
@@ -94,13 +128,13 @@ section {
 .navbar-links a {
     font-size: 14px;
     font-weight: 600;
-    color: #536078;
-    transition: 0.3s;
+    color: var(--text-muted);
+    transition: var(--transition);
 }
 
 .navbar-links a:hover,
 .navbar-links a.active {
-    color: #3157d5;
+    color: var(--primary-light);
 }
 
 .header-buttons {
@@ -112,7 +146,12 @@ section {
 .login-btn {
     font-size: 14px;
     font-weight: 700;
-    color: #3157d5;
+    color: var(--primary-light);
+    transition: var(--transition);
+}
+
+.login-btn:hover {
+    color: var(--text);
 }
 
 .register-btn {
@@ -120,17 +159,20 @@ section {
     align-items: center;
     gap: 9px;
     padding: 12px 19px;
-    background: #3157d5;
+    background: var(--primary);
     color: #ffffff;
+    border: 1px solid var(--primary);
     border-radius: 8px;
     font-size: 13px;
     font-weight: 700;
-    transition: 0.3s;
+    transition: var(--transition);
 }
 
 .register-btn:hover {
-    background: #2443ad;
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
     transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(13, 148, 136, 0.2);
 }
 
 .menu-btn {
@@ -138,17 +180,28 @@ section {
     background: none;
     border: none;
     font-size: 25px;
-    color: #3157d5;
+    color: var(--primary-light);
     cursor: pointer;
 }
 
 
-/* ==============================
-   HERO SECTION
-============================== */
+/* =========================================
+   3. HERO SECTION
+========================================= */
 
 .hero {
-    background: linear-gradient(135deg, #f4f7ff, #ffffff);
+    background:
+        radial-gradient(
+            circle at 85% 20%,
+            rgba(13, 148, 136, 0.13),
+            transparent 35%
+        ),
+        linear-gradient(
+            135deg,
+            var(--background),
+            var(--background-soft)
+        );
+
     padding: 85px 0 90px;
 }
 
@@ -163,8 +216,9 @@ section {
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    background: #e8edff;
-    color: #3157d5;
+    background: rgba(13, 148, 136, 0.15);
+    color: var(--primary-light);
+    border: 1px solid rgba(45, 212, 191, 0.2);
     padding: 10px 17px;
     border-radius: 30px;
     font-size: 13px;
@@ -177,19 +231,19 @@ section {
     font-size: clamp(38px, 5vw, 60px);
     line-height: 1.16;
     font-weight: 800;
-    color: #172033;
+    color: var(--text);
     margin-bottom: 22px;
 }
 
 .hero-text h1 span {
     display: block;
-    color: #3157d5;
+    color: var(--primary-light);
 }
 
 .hero-text > p {
     font-size: 16px;
     line-height: 1.9;
-    color: #667085;
+    color: var(--text-muted);
     max-width: 570px;
     margin-bottom: 30px;
 }
@@ -211,27 +265,32 @@ section {
     border-radius: 8px;
     font-size: 14px;
     font-weight: 700;
-    transition: 0.3s;
+    transition: var(--transition);
 }
 
 .primary-btn {
-    background: #3157d5;
+    background: var(--primary);
     color: #ffffff;
+    border: 1px solid var(--primary);
 }
 
 .primary-btn:hover {
-    background: #2443ad;
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
     transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(13, 148, 136, 0.2);
 }
 
 .secondary-btn {
-    border: 1px solid #dce3f3;
-    background: #ffffff;
-    color: #3157d5;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--primary-light);
 }
 
 .secondary-btn:hover {
-    background: #e8edff;
+    background: var(--surface-light);
+    border-color: var(--primary);
+    transform: translateY(-2px);
 }
 
 .hero-statistics {
@@ -242,14 +301,14 @@ section {
 }
 
 .hero-statistics h3 {
-    color: #3157d5;
+    color: var(--primary-light);
     font-size: 19px;
     font-weight: 800;
     margin-bottom: 4px;
 }
 
 .hero-statistics p {
-    color: #7a8498;
+    color: var(--text-muted);
     font-size: 12px;
 }
 
@@ -264,14 +323,16 @@ section {
     border-radius: 22px;
     position: relative;
     z-index: 2;
-    box-shadow: 0 20px 50px rgba(35, 58, 125, 0.15);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
 }
 
 .image-background {
     position: absolute;
     width: 85%;
     height: 90%;
-    background: #dce5ff;
+    background: rgba(13, 148, 136, 0.2);
+    border: 1px solid rgba(45, 212, 191, 0.2);
     border-radius: 25px;
     top: -20px;
     right: -20px;
@@ -283,25 +344,26 @@ section {
     align-items: center;
     gap: 13px;
     padding: 15px 19px;
-    background: #ffffff;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow);
     z-index: 3;
 }
 
 .floating-card i {
     font-size: 24px;
-    color: #3157d5;
+    color: var(--primary-light);
 }
 
 .floating-card h4 {
     font-size: 13px;
-    color: #172033;
+    color: var(--text);
 }
 
 .floating-card p {
     font-size: 11px;
-    color: #7a8498;
+    color: var(--text-muted);
 }
 
 .card-one {
@@ -315,9 +377,9 @@ section {
 }
 
 
-/* ==============================
-   SECTION HEADINGS
-============================== */
+/* =========================================
+   4. SECTION HEADINGS
+========================================= */
 
 .section-heading {
     text-align: center;
@@ -327,7 +389,7 @@ section {
 
 .section-label {
     display: inline-block;
-    color: #3157d5;
+    color: var(--primary-light);
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 1.5px;
@@ -341,30 +403,30 @@ section {
     font-size: clamp(28px, 4vw, 39px);
     line-height: 1.3;
     font-weight: 800;
-    color: #172033;
+    color: var(--text);
     margin-bottom: 17px;
 }
 
 .section-heading h2 span,
 .introduction h2 span,
 .about-text h2 span {
-    color: #3157d5;
+    color: var(--primary-light);
 }
 
 .section-heading > p {
-    color: #788297;
+    color: var(--text-muted);
     font-size: 15px;
     line-height: 1.8;
 }
 
 
-/* ==============================
-   QUICK ACCESS SECTION
-============================== */
+/* =========================================
+   5. QUICK ACCESS SECTION
+========================================= */
 
 .quick-access {
     padding: 90px 0;
-    background: #ffffff;
+    background: var(--background);
 }
 
 .quick-access-grid {
@@ -375,16 +437,17 @@ section {
 
 .quick-card {
     padding: 30px 23px;
-    border: 1px solid #e9edf6;
+    border: 1px solid var(--border);
     border-radius: 15px;
-    background: #ffffff;
-    transition: 0.3s;
+    background: var(--surface);
+    transition: var(--transition);
 }
 
 .quick-card:hover {
     transform: translateY(-8px);
-    border-color: #3157d5;
-    box-shadow: 0 15px 35px rgba(49, 87, 213, 0.09);
+    border-color: var(--primary);
+    background: var(--surface-light);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
 .quick-icon {
@@ -393,8 +456,9 @@ section {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #edf1ff;
-    color: #3157d5;
+    background: rgba(13, 148, 136, 0.15);
+    color: var(--primary-light);
+    border: 1px solid rgba(45, 212, 191, 0.15);
     border-radius: 12px;
     font-size: 23px;
     margin-bottom: 22px;
@@ -403,14 +467,14 @@ section {
 .quick-card h3 {
     font-family: "Manrope", sans-serif;
     font-size: 17px;
-    color: #172033;
+    color: var(--text);
     margin-bottom: 12px;
 }
 
 .quick-card p {
     font-size: 13px;
     line-height: 1.8;
-    color: #7a8498;
+    color: var(--text-muted);
     margin-bottom: 20px;
 }
 
@@ -420,17 +484,19 @@ section {
     gap: 9px;
     font-size: 13px;
     font-weight: 800;
-    color: #3157d5;
+    color: var(--primary-light);
 }
 
 
-/* ==============================
-   INTRODUCTION SECTION
-============================== */
+/* =========================================
+   6. INTRODUCTION SECTION
+========================================= */
 
 .introduction {
     padding: 85px 0;
-    background: #f5f7ff;
+    background: var(--background-soft);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
 }
 
 .introduction-content {
@@ -441,17 +507,17 @@ section {
 .introduction p {
     font-size: 15px;
     line-height: 2;
-    color: #69758a;
+    color: var(--text-muted);
 }
 
 
-/* ==============================
-   ABOUT SECTION
-============================== */
+/* =========================================
+   7. ABOUT SECTION
+========================================= */
 
 .about-section {
     padding: 100px 0;
-    background: #ffffff;
+    background: var(--background);
 }
 
 .about-content {
@@ -466,6 +532,8 @@ section {
     height: 430px;
     object-fit: cover;
     border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
 }
 
 .about-text h2 {
@@ -473,7 +541,7 @@ section {
 }
 
 .about-text p {
-    color: #737f94;
+    color: var(--text-muted);
     font-size: 15px;
     line-height: 1.9;
     margin-bottom: 18px;
@@ -484,13 +552,13 @@ section {
 }
 
 
-/* ==============================
-   FEATURES SECTION
-============================== */
+/* =========================================
+   8. FEATURES SECTION
+========================================= */
 
 .features-section {
     padding: 100px 0;
-    background: #f5f7ff;
+    background: var(--background-soft);
 }
 
 .features-grid {
@@ -500,23 +568,26 @@ section {
 }
 
 .feature-card {
-    background: #ffffff;
+    background: var(--surface);
     padding: 32px 27px;
     border-radius: 15px;
-    border: 1px solid #edf0f7;
-    transition: 0.3s;
+    border: 1px solid var(--border);
+    transition: var(--transition);
 }
 
 .feature-card:hover {
     transform: translateY(-7px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+    border-color: var(--primary);
+    background: var(--surface-light);
+    box-shadow: var(--shadow);
 }
 
 .feature-icon {
     width: 58px;
     height: 58px;
-    background: #edf1ff;
-    color: #3157d5;
+    background: rgba(13, 148, 136, 0.15);
+    color: var(--primary-light);
+    border: 1px solid rgba(45, 212, 191, 0.15);
     border-radius: 13px;
     display: flex;
     align-items: center;
@@ -529,23 +600,23 @@ section {
     font-family: "Manrope", sans-serif;
     font-size: 17px;
     margin-bottom: 12px;
-    color: #172033;
+    color: var(--text);
 }
 
 .feature-card p {
     font-size: 13px;
     line-height: 1.8;
-    color: #7a8498;
+    color: var(--text-muted);
 }
 
 
-/* ==============================
-   HOW IT WORKS
-============================== */
+/* =========================================
+   9. HOW IT WORKS
+========================================= */
 
 .how-section {
     padding: 100px 0;
-    background: #ffffff;
+    background: var(--background);
 }
 
 .steps-grid {
@@ -558,13 +629,15 @@ section {
     position: relative;
     padding: 35px 23px;
     text-align: center;
-    background: #f7f8fc;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 15px;
-    transition: 0.3s;
+    transition: var(--transition);
 }
 
 .step-card:hover {
-    background: #edf1ff;
+    background: var(--surface-light);
+    border-color: var(--primary);
     transform: translateY(-5px);
 }
 
@@ -574,12 +647,12 @@ section {
     right: 18px;
     font-size: 25px;
     font-weight: 800;
-    color: #d5ddf7;
+    color: #31536A;
 }
 
 .step-card > i {
     font-size: 30px;
-    color: #3157d5;
+    color: var(--primary-light);
     margin: 25px 0;
 }
 
@@ -587,22 +660,31 @@ section {
     font-family: "Manrope", sans-serif;
     font-size: 16px;
     margin-bottom: 12px;
+    color: var(--text);
 }
 
 .step-card p {
     font-size: 13px;
     line-height: 1.8;
-    color: #7a8498;
+    color: var(--text-muted);
 }
 
 
-/* ==============================
-   INSTRUCTOR SECTION
-============================== */
+/* =========================================
+   10. INSTRUCTOR SECTION
+========================================= */
 
 .instructor-section {
     padding: 75px 0;
-    background: #edf1ff;
+    background:
+        linear-gradient(
+            120deg,
+            #0D2B3A,
+            #103B49
+        );
+
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
 }
 
 .instructor-content {
@@ -616,16 +698,16 @@ section {
     font-family: "Manrope", sans-serif;
     font-size: 32px;
     line-height: 1.4;
-    color: #172033;
+    color: var(--text);
     margin-bottom: 15px;
 }
 
 .instructor-content h2 span {
-    color: #3157d5;
+    color: var(--primary-light);
 }
 
 .instructor-content p {
-    color: #69758a;
+    color: #B6C8D5;
     font-size: 14px;
     max-width: 600px;
     line-height: 1.8;
@@ -637,27 +719,41 @@ section {
     align-items: center;
     gap: 12px;
     padding: 16px 25px;
-    background: #3157d5;
+    background: var(--primary);
     color: #ffffff;
+    border: 1px solid var(--primary);
     border-radius: 9px;
     font-size: 14px;
     font-weight: 700;
-    transition: 0.3s;
+    transition: var(--transition);
 }
 
 .instructor-btn:hover {
-    background: #2443ad;
+    background: var(--primary-dark);
     transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(13, 148, 136, 0.2);
 }
 
 
-/* ==============================
-   CALL TO ACTION
-============================== */
+/* =========================================
+   11. CALL TO ACTION
+========================================= */
 
 .cta-section {
     padding: 90px 0;
-    background: linear-gradient(135deg, #3157d5, #203c9e);
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(45, 212, 191, 0.18),
+            transparent 55%
+        ),
+        linear-gradient(
+            135deg,
+            #0D3B49,
+            #0B2638
+        );
+
+    border-top: 1px solid var(--border);
     text-align: center;
 }
 
@@ -672,7 +768,7 @@ section {
 .cta-content p {
     max-width: 600px;
     margin: 0 auto 30px;
-    color: #e1e7ff;
+    color: #B6D1D8;
     font-size: 15px;
     line-height: 1.8;
 }
@@ -681,29 +777,32 @@ section {
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    background: #ffffff;
-    color: #3157d5;
+    background: var(--primary-light);
+    color: #06251F;
     padding: 16px 25px;
+    border: 1px solid var(--primary-light);
     border-radius: 8px;
     font-size: 14px;
     font-weight: 800;
-    transition: 0.3s;
+    transition: var(--transition);
 }
 
 .cta-btn:hover {
     transform: translateY(-4px);
-    background: #edf1ff;
+    background: #5EEAD4;
+    box-shadow: 0 10px 25px rgba(45, 212, 191, 0.2);
 }
 
 
-/* ==============================
-   FOOTER
-============================== */
+/* =========================================
+   12. FOOTER
+========================================= */
 
 .footer {
-    background: #111b35;
-    color: #ffffff;
+    background: #050F19;
+    color: var(--text);
     padding: 75px 0 0;
+    border-top: 1px solid var(--border);
 }
 
 .footer-content {
@@ -714,7 +813,7 @@ section {
 }
 
 .footer .logo {
-    color: #ffffff;
+    color: var(--text);
     margin-bottom: 20px;
 }
 
@@ -722,7 +821,7 @@ section {
 .footer-links p {
     font-size: 13px;
     line-height: 1.9;
-    color: #aeb9d0;
+    color: var(--text-muted);
 }
 
 .footer-links {
@@ -734,17 +833,18 @@ section {
 
 .footer-links h3 {
     font-size: 16px;
+    color: var(--text);
     margin-bottom: 10px;
 }
 
 .footer-links a {
-    color: #aeb9d0;
+    color: var(--text-muted);
     font-size: 13px;
-    transition: 0.3s;
+    transition: var(--transition);
 }
 
 .footer-links a:hover {
-    color: #ffffff;
+    color: var(--primary-light);
     padding-left: 5px;
 }
 
@@ -752,25 +852,109 @@ section {
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    color: #ffffff;
+    color: var(--primary-light);
     font-weight: 700;
 }
 
 .footer-bottom {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--border);
     padding: 23px 0;
     text-align: center;
 }
 
 .footer-bottom p {
-    color: #aeb9d0;
+    color: var(--text-muted);
     font-size: 12px;
 }
 
 
-/* ==============================
-   TABLET RESPONSIVENESS
-============================== */
+/* =========================================
+   13. THEME TOGGLE
+========================================= */
+
+.theme-toggle {
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--primary-light);
+    font-size: 17px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.theme-toggle:hover {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+    transform: rotate(15deg);
+}
+
+
+/* =========================================
+   14. DARK MODE COMPATIBILITY
+========================================= */
+
+body.dark-mode {
+    background: var(--background);
+    color: var(--text);
+}
+
+body.dark-mode .header,
+body.dark-mode .quick-access,
+body.dark-mode .about-section,
+body.dark-mode .how-section {
+    background: var(--background);
+}
+
+body.dark-mode .introduction,
+body.dark-mode .features-section {
+    background: var(--background-soft);
+}
+
+body.dark-mode .navbar-links a,
+body.dark-mode .login-btn {
+    color: var(--text-muted);
+}
+
+body.dark-mode .navbar-links a:hover,
+body.dark-mode .navbar-links a.active,
+body.dark-mode .login-btn:hover {
+    color: var(--primary-light);
+}
+
+body.dark-mode .quick-card,
+body.dark-mode .feature-card,
+body.dark-mode .step-card,
+body.dark-mode .floating-card {
+    background: var(--surface);
+    border-color: var(--border);
+}
+
+body.dark-mode .quick-card:hover,
+body.dark-mode .feature-card:hover,
+body.dark-mode .step-card:hover {
+    background: var(--surface-light);
+}
+
+body.dark-mode .theme-toggle {
+    background: var(--surface-light);
+    color: var(--primary-light);
+    border-color: var(--border);
+}
+
+body.dark-mode .navbar-links {
+    background: var(--background-soft);
+}
+
+
+/* =========================================
+   15. TABLET RESPONSIVENESS
+========================================= */
 
 @media (max-width: 1000px) {
 
@@ -801,9 +985,9 @@ section {
 }
 
 
-/* ==============================
-   MOBILE RESPONSIVENESS
-============================== */
+/* =========================================
+   16. MOBILE RESPONSIVENESS
+========================================= */
 
 @media (max-width: 768px) {
 
@@ -835,12 +1019,13 @@ section {
         top: 72px;
         left: 0;
         width: 100%;
-        background: #ffffff;
+        background: var(--background-soft);
         padding: 22px;
         flex-direction: column;
         align-items: flex-start;
         gap: 20px;
-        box-shadow: 0 12px 20px rgba(0, 0, 0, 0.08);
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
         border-radius: 0 0 12px 12px;
     }
 
@@ -855,7 +1040,7 @@ section {
 
     .header-buttons {
         margin-left: auto;
-        gap: 12px;
+        gap: 8px;
     }
 
     .register-btn {
@@ -865,6 +1050,12 @@ section {
 
     .login-btn {
         font-size: 12px;
+    }
+
+    .theme-toggle {
+        width: 36px;
+        height: 36px;
+        font-size: 15px;
     }
 
     .hero {
@@ -944,9 +1135,9 @@ section {
 }
 
 
-/* ==============================
-   SMALL MOBILE DEVICES
-============================== */
+/* =========================================
+   17. SMALL MOBILE DEVICES
+========================================= */
 
 @media (max-width: 480px) {
 
@@ -1036,157 +1227,4 @@ section {
         font-size: 28px;
     }
 
-}
-/* ============================= */
-/* DARK / LIGHT THEME BUTTON */
-/* ============================= */
-
-.theme-toggle {
-    width: 42px;
-    height: 42px;
-    border: 1px solid #dbe2f0;
-    border-radius: 50%;
-    background: #f1f5ff;
-    color: #3157d5;
-    font-size: 17px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: 0.3s ease;
-}
-
-.theme-toggle:hover {
-    background: #3157d5;
-    color: #ffffff;
-    transform: rotate(15deg);
-}
-
-.header-buttons {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-/* MOBILE RESPONSIVENESS */
-
-@media (max-width: 768px) {
-
-    .header-buttons {
-        gap: 8px;
-    }
-
-    .theme-toggle {
-        width: 36px;
-        height: 36px;
-        font-size: 15px;
-    }
-
-}
-/* ============================= */
-/* LEARNSPHERE DARK MODE */
-/* ============================= */
-
-body.dark-mode {
-    background: #111827;
-    color: #f1f5f9;
-}
-
-/* HEADER */
-
-body.dark-mode .header {
-    background: #1e293b;
-    border-bottom: 1px solid #334155;
-}
-
-body.dark-mode .navbar-links a,
-body.dark-mode .login-btn {
-    color: #f1f5f9;
-}
-
-/* HERO */
-
-body.dark-mode .hero {
-    background: #111827;
-}
-
-body.dark-mode .hero h1,
-body.dark-mode .hero h2,
-body.dark-mode .hero h3,
-body.dark-mode .hero p {
-    color: #f1f5f9;
-}
-
-/* SECTIONS */
-
-body.dark-mode .quick-access,
-body.dark-mode .introduction,
-body.dark-mode .about-section,
-body.dark-mode .features-section,
-body.dark-mode .how-section {
-    background: #111827;
-}
-
-body.dark-mode .section-heading h2,
-body.dark-mode .introduction h2,
-body.dark-mode .about-text h2,
-body.dark-mode .feature-card h3,
-body.dark-mode .step-card h3 {
-    color: #f1f5f9;
-}
-
-body.dark-mode .section-heading p,
-body.dark-mode .introduction p,
-body.dark-mode .about-text p,
-body.dark-mode .feature-card p,
-body.dark-mode .step-card p {
-    color: #cbd5e1;
-}
-
-/* CARDS */
-
-body.dark-mode .quick-card,
-body.dark-mode .feature-card,
-body.dark-mode .step-card,
-body.dark-mode .floating-card {
-    background: #1e293b;
-    border-color: #334155;
-}
-
-body.dark-mode .quick-card h3,
-body.dark-mode .quick-card p,
-body.dark-mode .floating-card h4,
-body.dark-mode .floating-card p {
-    color: #f1f5f9;
-}
-
-/* INSTRUCTOR */
-
-body.dark-mode .instructor-section {
-    background: #1e293b;
-}
-
-body.dark-mode .instructor-section h2,
-body.dark-mode .instructor-section p {
-    color: #f1f5f9;
-}
-
-/* FOOTER */
-
-body.dark-mode .footer {
-    background: #0f172a;
-}
-
-body.dark-mode .footer h3,
-body.dark-mode .footer p,
-body.dark-mode .footer a {
-    color: #cbd5e1;
-}
-
-/* THEME BUTTON */
-
-body.dark-mode .theme-toggle {
-    background: #334155;
-    color: #facc15;
-    border-color: #475569;
 }

@@ -1,3 +1,34 @@
+/* =========================================
+   LEARNSPHERE COURSE LEARNING SYSTEM
+   PREMIUM DARK NAVY & TEAL THEME
+========================================= */
+
+
+/* ROOT VARIABLES */
+
+:root {
+    --background: #071521;
+    --background-soft: #0B1D2B;
+
+    --surface: #102536;
+    --surface-light: #163448;
+    --surface-hover: #1B4054;
+
+    --primary: #0D9488;
+    --primary-light: #2DD4BF;
+    --primary-soft: rgba(13, 148, 136, 0.14);
+
+    --success: #22C55E;
+    --danger: #F87171;
+    --warning: #FBBF24;
+
+    --text: #F1F5F9;
+    --text-soft: #94A3B8;
+
+    --border: #244155;
+}
+
+
 /* GENERAL SETTINGS */
 
 * {
@@ -6,10 +37,15 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     font-family: Arial, sans-serif;
-    background-color: #f5f7fc;
-    color: #202b3c;
+    background-color: var(--background);
+    color: var(--text);
+    min-height: 100vh;
 }
 
 .hidden {
@@ -23,25 +59,33 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 15px;
+
     padding: 18px 6%;
-    background-color: white;
-    border-bottom: 1px solid #e5e9f2;
+
+    background-color: var(--background-soft);
+    border-bottom: 1px solid var(--border);
 }
 
 .logo {
     font-size: 25px;
     font-weight: bold;
-    color: #3157d5;
+    color: var(--primary-light);
 }
 
 .logo span {
-    color: #13a889;
+    color: var(--success);
 }
 
 .back-link {
     text-decoration: none;
-    color: #3157d5;
+    color: var(--primary-light);
     font-weight: bold;
+    transition: 0.3s;
+}
+
+.back-link:hover {
+    color: var(--text);
 }
 
 .back-link i {
@@ -52,9 +96,17 @@ body {
 /* COURSE BANNER */
 
 .course-banner {
-    background: linear-gradient(120deg, #3157d5, #193b9f);
-    color: white;
+    background: linear-gradient(
+        120deg,
+        #0B3445,
+        #0D5B5A,
+        #102536
+    );
+
+    color: var(--text);
     padding: 55px 8%;
+
+    border-bottom: 1px solid var(--border);
 }
 
 .course-banner-content {
@@ -63,9 +115,15 @@ body {
 
 .course-label {
     display: inline-block;
-    background-color: rgba(255, 255, 255, 0.15);
+
+    background-color: rgba(45, 212, 191, 0.12);
+    color: var(--primary-light);
+
     padding: 8px 14px;
     border-radius: 20px;
+
+    border: 1px solid rgba(45, 212, 191, 0.2);
+
     font-size: 12px;
     letter-spacing: 1px;
     margin-bottom: 18px;
@@ -74,12 +132,13 @@ body {
 .course-banner h1 {
     font-size: 36px;
     margin-bottom: 14px;
+    color: #FFFFFF;
 }
 
 .course-banner p {
     max-width: 650px;
     line-height: 1.7;
-    color: #e2e8ff;
+    color: #C4D8E2;
 }
 
 .course-information {
@@ -91,10 +150,12 @@ body {
 
 .course-information span {
     font-size: 14px;
+    color: #D5E7ED;
 }
 
 .course-information i {
     margin-right: 7px;
+    color: var(--primary-light);
 }
 
 
@@ -104,9 +165,11 @@ body {
     display: grid;
     grid-template-columns: 300px 1fr;
     gap: 25px;
+
     max-width: 1350px;
     margin: 35px auto;
     padding: 0 4%;
+
     align-items: start;
 }
 
@@ -114,42 +177,51 @@ body {
 /* SIDEBAR */
 
 .learning-sidebar {
-    background-color: white;
+    background-color: var(--surface);
     padding: 25px;
+
     border-radius: 12px;
-    border: 1px solid #e6eaf2;
+    border: 1px solid var(--border);
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
 }
 
 .learning-sidebar h3 {
     font-size: 19px;
     margin-bottom: 25px;
+    color: var(--text);
 }
 
 .learning-sidebar h4 {
     font-size: 15px;
     margin-top: 28px;
     margin-bottom: 15px;
+    color: var(--text);
 }
 
 
 /* PROGRESS */
 
 .progress-box {
-    background-color: #f5f7fc;
+    background-color: var(--background-soft);
     padding: 15px;
     border-radius: 8px;
+    border: 1px solid var(--border);
 }
 
 .progress-information {
     display: flex;
     justify-content: space-between;
+
     font-size: 13px;
     margin-bottom: 10px;
+
+    color: var(--text-soft);
 }
 
 .progress-bar {
     height: 8px;
-    background-color: #dce2f0;
+    background-color: var(--surface-light);
     border-radius: 20px;
     overflow: hidden;
 }
@@ -157,7 +229,13 @@ body {
 #progressFill {
     width: 0%;
     height: 100%;
-    background-color: #13a889;
+
+    background: linear-gradient(
+        90deg,
+        var(--primary),
+        var(--primary-light)
+    );
+
     border-radius: 20px;
     transition: width 0.4s ease;
 }
@@ -173,32 +251,40 @@ body {
 
 .lesson-item {
     width: 100%;
+
     display: flex;
     align-items: center;
     gap: 10px;
+
     padding: 13px;
-    border: 1px solid #e6eaf2;
+
+    border: 1px solid var(--border);
     border-radius: 8px;
-    background-color: white;
+
+    background-color: var(--background-soft);
+
     text-align: left;
     cursor: pointer;
+
     transition: 0.3s;
-    color: #354052;
+    color: var(--text-soft);
 }
 
 .lesson-item:hover {
-    background-color: #f0f4ff;
-    border-color: #3157d5;
+    background-color: var(--surface-light);
+    border-color: var(--primary);
+    color: var(--text);
 }
 
 .lesson-item.active {
-    background-color: #edf1ff;
-    border-color: #3157d5;
-    color: #3157d5;
+    background-color: var(--primary-soft);
+    border-color: var(--primary-light);
+    color: var(--primary-light);
 }
 
 .lesson-item i {
     font-size: 16px;
+    flex-shrink: 0;
 }
 
 .lesson-item span {
@@ -207,23 +293,32 @@ body {
 }
 
 .lesson-item.completed {
-    border-color: #13a889;
+    border-color: var(--success);
 }
 
 .lesson-item.completed .lesson-status {
-    color: #13a889;
+    color: var(--success);
 }
+
+
+/* QUIZ NAVIGATION BUTTON */
 
 .quiz-navigation-btn {
     width: 100%;
     padding: 13px;
-    background-color: #13a889;
-    color: white;
+
+    background-color: var(--primary);
+    color: #FFFFFF;
+
     border: none;
     border-radius: 8px;
+
     cursor: pointer;
+
     font-size: 14px;
     font-weight: bold;
+
+    transition: 0.3s;
 }
 
 .quiz-navigation-btn i {
@@ -231,18 +326,23 @@ body {
 }
 
 .quiz-navigation-btn:hover {
-    background-color: #0e9277;
+    background-color: var(--primary-light);
+    color: var(--background);
 }
 
 
 /* MAIN CONTENT */
 
 .learning-content {
-    background-color: white;
-    border: 1px solid #e6eaf2;
+    background-color: var(--surface);
+
+    border: 1px solid var(--border);
     border-radius: 12px;
+
     padding: 30px;
     min-height: 550px;
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
 }
 
 
@@ -255,32 +355,35 @@ body {
 
 .welcome-message i {
     font-size: 55px;
-    color: #3157d5;
+    color: var(--primary-light);
     margin-bottom: 20px;
 }
 
 .welcome-message h2 {
     margin-bottom: 12px;
     font-size: 25px;
+    color: var(--text);
 }
 
 .welcome-message p {
-    color: #788398;
-    line-height: 1.6;
+    color: var(--text-soft);
+    line-height: 1.7;
 }
 
 
 /* LESSON HEADING */
 
 .lesson-heading {
-    border-bottom: 1px solid #e6eaf2;
+    border-bottom: 1px solid var(--border);
+
     padding-bottom: 22px;
     margin-bottom: 25px;
 }
 
 .lesson-heading span,
 .quiz-heading span {
-    color: #13a889;
+    color: var(--primary-light);
+
     font-size: 12px;
     font-weight: bold;
     letter-spacing: 1px;
@@ -289,11 +392,12 @@ body {
 .lesson-heading h2 {
     font-size: 27px;
     margin: 12px 0;
+    color: var(--text);
 }
 
 .lesson-heading p {
-    color: #788398;
-    line-height: 1.6;
+    color: var(--text-soft);
+    line-height: 1.7;
 }
 
 
@@ -302,9 +406,12 @@ body {
 .lesson-text {
     font-size: 16px;
     line-height: 1.9;
-    color: #3f4b5e;
+
+    color: #CBD5E1;
+
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+
     margin-bottom: 30px;
 }
 
@@ -313,33 +420,42 @@ body {
 
 .video-area,
 .pdf-area {
-    background-color: #f5f7fc;
+    background-color: var(--background-soft);
+
     padding: 20px;
     border-radius: 9px;
+
     margin-bottom: 20px;
+
+    border: 1px solid var(--border);
 }
 
 .video-area h3,
 .pdf-area h3 {
     font-size: 17px;
     margin-bottom: 13px;
+    color: var(--text);
 }
 
 .video-area i {
-    color: #3157d5;
+    color: var(--primary-light);
 }
 
 .pdf-area i {
-    color: #e34b4b;
+    color: var(--danger);
 }
 
 .video-area a,
 .pdf-area a {
     display: inline-block;
+
     text-decoration: none;
-    color: #3157d5;
+    color: var(--primary-light);
+
     font-weight: bold;
     margin-top: 5px;
+
+    overflow-wrap: anywhere;
 }
 
 .video-area a:hover,
@@ -353,37 +469,46 @@ body {
 .lesson-navigation {
     display: flex;
     justify-content: space-between;
+
     gap: 12px;
     margin-top: 40px;
+
     flex-wrap: wrap;
 }
 
 .lesson-navigation button {
     padding: 13px 18px;
+
     border: none;
     border-radius: 7px;
+
     cursor: pointer;
+
     font-size: 13px;
     font-weight: bold;
+
+    transition: 0.3s;
 }
 
 #previousLessonBtn {
-    background-color: #edf1ff;
-    color: #3157d5;
+    background-color: var(--surface-light);
+    color: var(--text);
+    border: 1px solid var(--border);
 }
 
 #completeLessonBtn {
-    background-color: #13a889;
-    color: white;
+    background-color: var(--success);
+    color: #071521;
 }
 
 #nextLessonBtn {
-    background-color: #3157d5;
-    color: white;
+    background-color: var(--primary);
+    color: #FFFFFF;
 }
 
 .lesson-navigation button:hover {
     opacity: 0.85;
+    transform: translateY(-2px);
 }
 
 
@@ -396,16 +521,20 @@ body {
 .quiz-heading h2 {
     font-size: 28px;
     margin: 12px 0;
+    color: var(--text);
 }
 
 .quiz-heading p {
-    color: #788398;
-    line-height: 1.6;
+    color: var(--text-soft);
+    line-height: 1.7;
 }
 
 .quiz-question {
-    border: 1px solid #e6eaf2;
+    background-color: var(--background-soft);
+
+    border: 1px solid var(--border);
     border-radius: 10px;
+
     padding: 20px;
     margin-bottom: 20px;
 }
@@ -414,40 +543,69 @@ body {
     font-size: 16px;
     margin-bottom: 18px;
     line-height: 1.6;
+    color: var(--text);
 }
+
+
+/* QUIZ OPTIONS */
 
 .quiz-option {
     display: flex;
     align-items: center;
     gap: 10px;
+
     padding: 12px;
-    background-color: #f5f7fc;
+
+    background-color: var(--surface-light);
+    color: var(--text);
+
+    border: 1px solid var(--border);
     border-radius: 7px;
+
     margin-bottom: 10px;
+
     cursor: pointer;
+    transition: 0.25s;
 }
 
 .quiz-option:hover {
-    background-color: #edf1ff;
+    background-color: var(--primary-soft);
+    border-color: var(--primary);
 }
 
 .quiz-option input {
     cursor: pointer;
+    accent-color: var(--primary-light);
 }
 
+.quiz-option:has(input:checked) {
+    border-color: var(--primary-light);
+    background-color: rgba(13, 148, 136, 0.18);
+}
+
+
+/* SUBMIT QUIZ */
+
 #submitQuizBtn {
-    background-color: #3157d5;
-    color: white;
+    background-color: var(--primary);
+    color: #FFFFFF;
+
     border: none;
+
     padding: 14px 22px;
     border-radius: 7px;
+
     cursor: pointer;
+
     font-size: 14px;
     font-weight: bold;
+
+    transition: 0.3s;
 }
 
 #submitQuizBtn:hover {
-    background-color: #2447bd;
+    background-color: var(--primary-light);
+    color: var(--background);
 }
 
 
@@ -456,17 +614,20 @@ body {
 .quiz-result {
     margin-top: 25px;
     padding: 22px;
-    background-color: #eaf8f4;
-    border: 1px solid #b9e9d9;
+
+    background-color: rgba(34, 197, 94, 0.09);
+
+    border: 1px solid rgba(34, 197, 94, 0.3);
     border-radius: 9px;
 }
 
 .quiz-result h3 {
-    color: #0e9277;
+    color: var(--success);
     margin-bottom: 12px;
 }
 
 .quiz-result p {
+    color: var(--text);
     line-height: 1.7;
     margin-bottom: 7px;
 }
@@ -476,15 +637,400 @@ body {
 
 .course-footer {
     text-align: center;
+
     padding: 25px;
-    background-color: white;
-    border-top: 1px solid #e6eaf2;
-    color: #788398;
+
+    background-color: var(--background-soft);
+
+    border-top: 1px solid var(--border);
+
+    color: var(--text-soft);
     font-size: 13px;
 }
 
 
-/* TABLET RESPONSIVENESS */
+/* =========================================
+   COURSE REVIEWS AND RATINGS
+========================================= */
+
+.course-reviews {
+    padding: 40px 4% 60px;
+}
+
+.reviews-container {
+    max-width: 1250px;
+    margin: auto;
+}
+
+
+/* REVIEW HEADER */
+
+.reviews-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 25px;
+
+    background-color: var(--surface);
+
+    padding: 30px;
+
+    border: 1px solid var(--border);
+    border-radius: 12px;
+
+    margin-bottom: 25px;
+}
+
+.reviews-label {
+    color: var(--primary-light);
+
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.reviews-header h2 {
+    font-size: 26px;
+    margin: 12px 0;
+    color: var(--text);
+}
+
+.reviews-header p {
+    color: var(--text-soft);
+    line-height: 1.7;
+}
+
+
+/* RATING SUMMARY */
+
+.rating-summary {
+    min-width: 160px;
+
+    text-align: center;
+
+    background-color: var(--background-soft);
+
+    padding: 20px;
+    border-radius: 10px;
+
+    border: 1px solid var(--border);
+}
+
+.rating-summary h3 {
+    font-size: 38px;
+    color: var(--text);
+}
+
+.average-stars {
+    color: var(--warning);
+
+    font-size: 22px;
+    letter-spacing: 3px;
+
+    margin: 5px 0;
+}
+
+.rating-summary p {
+    font-size: 13px;
+    color: var(--text-soft);
+}
+
+
+/* REVIEW FORM */
+
+.review-form-card {
+    background-color: var(--surface);
+
+    padding: 30px;
+
+    border: 1px solid var(--border);
+    border-radius: 12px;
+
+    margin-bottom: 35px;
+}
+
+.review-form-card h3 {
+    font-size: 21px;
+    margin-bottom: 10px;
+    color: var(--text);
+}
+
+.review-form-card > p {
+    color: var(--text-soft);
+    margin-bottom: 15px;
+}
+
+
+/* STAR RATING */
+
+.star-rating {
+    display: flex;
+    gap: 7px;
+    margin-bottom: 8px;
+}
+
+.rating-star {
+    border: none;
+    background: none;
+
+    color: #526477;
+
+    font-size: 35px;
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.rating-star:hover,
+.rating-star.active {
+    color: var(--warning);
+    transform: scale(1.1);
+}
+
+#ratingText {
+    color: var(--text-soft);
+    font-size: 13px;
+    margin-bottom: 20px;
+}
+
+
+/* REVIEW TEXTAREA */
+
+.review-form-card label {
+    display: block;
+
+    color: var(--text);
+
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.review-form-card textarea {
+    width: 100%;
+
+    padding: 15px;
+
+    background-color: var(--background-soft);
+    color: var(--text);
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    resize: vertical;
+
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+
+    outline: none;
+    transition: 0.3s;
+}
+
+.review-form-card textarea::placeholder {
+    color: #71869A;
+}
+
+.review-form-card textarea:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.08);
+}
+
+
+/* REVIEW FORM FOOTER */
+
+.review-form-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 15px;
+    margin-top: 15px;
+}
+
+#reviewCharacterCount {
+    color: var(--text-soft);
+    font-size: 12px;
+}
+
+#submitReviewBtn {
+    background-color: var(--primary);
+    color: #FFFFFF;
+
+    border: none;
+
+    padding: 13px 20px;
+    border-radius: 7px;
+
+    cursor: pointer;
+    font-weight: bold;
+
+    transition: 0.3s;
+}
+
+#submitReviewBtn:hover {
+    background-color: var(--primary-light);
+    color: var(--background);
+}
+
+
+/* REVIEW MESSAGE */
+
+.review-message {
+    margin-top: 15px;
+
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.review-message.success {
+    color: var(--success);
+}
+
+.review-message.error {
+    color: var(--danger);
+}
+
+
+/* ALL REVIEWS */
+
+.all-reviews > h3 {
+    font-size: 22px;
+    margin-bottom: 20px;
+    color: var(--text);
+}
+
+#reviewsList {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+
+/* REVIEW CARD */
+
+.review-card {
+    background-color: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    padding: 22px;
+
+    transition: 0.3s;
+}
+
+.review-card:hover {
+    border-color: #356176;
+}
+
+.review-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 15px;
+    margin-bottom: 12px;
+}
+
+.review-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.review-avatar {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background-color: var(--primary-soft);
+    color: var(--primary-light);
+
+    border: 1px solid rgba(45, 212, 191, 0.2);
+    border-radius: 50%;
+
+    font-weight: bold;
+    font-size: 17px;
+
+    flex-shrink: 0;
+}
+
+.review-user h4 {
+    font-size: 15px;
+    margin-bottom: 5px;
+    color: var(--text);
+}
+
+.review-date {
+    color: var(--text-soft);
+    font-size: 12px;
+}
+
+.review-card-stars {
+    color: var(--warning);
+
+    font-size: 17px;
+    letter-spacing: 2px;
+}
+
+.review-card-text {
+    color: #CBD5E1;
+
+    font-size: 14px;
+    line-height: 1.8;
+
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+
+/* EDIT REVIEW BUTTON */
+
+.edit-review-btn {
+    margin-top: 15px;
+    padding: 8px 13px;
+
+    background-color: var(--primary-soft);
+    color: var(--primary-light);
+
+    border: 1px solid rgba(45, 212, 191, 0.2);
+    border-radius: 6px;
+
+    cursor: pointer;
+
+    font-weight: bold;
+    font-size: 12px;
+
+    transition: 0.3s;
+}
+
+.edit-review-btn:hover {
+    background-color: var(--primary);
+    color: #FFFFFF;
+}
+
+
+/* NO REVIEWS */
+
+.no-reviews {
+    background-color: var(--surface);
+
+    padding: 30px;
+
+    text-align: center;
+    color: var(--text-soft);
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+
+/* =========================================
+   TABLET RESPONSIVENESS
+========================================= */
 
 @media (max-width: 900px) {
 
@@ -499,7 +1045,9 @@ body {
 }
 
 
-/* MOBILE RESPONSIVENESS */
+/* =========================================
+   MOBILE RESPONSIVENESS
+========================================= */
 
 @media (max-width: 600px) {
 
@@ -545,313 +1093,6 @@ body {
         padding: 65px 10px;
     }
 
-}
-/* =====================================
-   COURSE REVIEWS AND RATINGS
-===================================== */
-
-.course-reviews {
-    padding: 40px 4% 60px;
-}
-
-.reviews-container {
-    max-width: 1250px;
-    margin: auto;
-}
-
-
-/* REVIEW HEADER */
-
-.reviews-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 25px;
-    background-color: white;
-    padding: 30px;
-    border: 1px solid #e6eaf2;
-    border-radius: 12px;
-    margin-bottom: 25px;
-}
-
-.reviews-label {
-    color: #13a889;
-    font-size: 12px;
-    font-weight: bold;
-    letter-spacing: 1px;
-}
-
-.reviews-header h2 {
-    font-size: 26px;
-    margin: 12px 0;
-}
-
-.reviews-header p {
-    color: #788398;
-    line-height: 1.6;
-}
-
-
-/* RATING SUMMARY */
-
-.rating-summary {
-    min-width: 160px;
-    text-align: center;
-    background-color: #f5f7fc;
-    padding: 20px;
-    border-radius: 10px;
-}
-
-.rating-summary h3 {
-    font-size: 38px;
-    color: #202b3c;
-}
-
-.average-stars {
-    color: #f5a623;
-    font-size: 22px;
-    letter-spacing: 3px;
-    margin: 5px 0;
-}
-
-.rating-summary p {
-    font-size: 13px;
-}
-
-
-/* REVIEW FORM */
-
-.review-form-card {
-    background-color: white;
-    padding: 30px;
-    border: 1px solid #e6eaf2;
-    border-radius: 12px;
-    margin-bottom: 35px;
-}
-
-.review-form-card h3 {
-    font-size: 21px;
-    margin-bottom: 10px;
-}
-
-.review-form-card > p {
-    color: #788398;
-    margin-bottom: 15px;
-}
-
-
-/* STAR RATING */
-
-.star-rating {
-    display: flex;
-    gap: 7px;
-    margin-bottom: 8px;
-}
-
-.rating-star {
-    border: none;
-    background: none;
-    color: #d5dbe5;
-    font-size: 35px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.rating-star:hover,
-.rating-star.active {
-    color: #f5a623;
-    transform: scale(1.1);
-}
-
-#ratingText {
-    color: #788398;
-    font-size: 13px;
-    margin-bottom: 20px;
-}
-
-
-/* REVIEW TEXTAREA */
-
-.review-form-card label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 10px;
-}
-
-.review-form-card textarea {
-    width: 100%;
-    padding: 15px;
-    border: 1px solid #dce2f0;
-    border-radius: 8px;
-    resize: vertical;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    line-height: 1.7;
-    outline: none;
-}
-
-.review-form-card textarea:focus {
-    border-color: #3157d5;
-}
-
-
-/* REVIEW FORM FOOTER */
-
-.review-form-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-    margin-top: 15px;
-}
-
-#reviewCharacterCount {
-    color: #788398;
-    font-size: 12px;
-}
-
-#submitReviewBtn {
-    background-color: #3157d5;
-    color: white;
-    border: none;
-    padding: 13px 20px;
-    border-radius: 7px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-#submitReviewBtn:hover {
-    background-color: #2447bd;
-}
-
-
-/* REVIEW MESSAGE */
-
-.review-message {
-    margin-top: 15px;
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-.review-message.success {
-    color: #0e9277;
-}
-
-.review-message.error {
-    color: #dc3545;
-}
-
-
-/* ALL REVIEWS */
-
-.all-reviews > h3 {
-    font-size: 22px;
-    margin-bottom: 20px;
-}
-
-#reviewsList {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-
-/* REVIEW CARD */
-
-.review-card {
-    background-color: white;
-    border: 1px solid #e6eaf2;
-    border-radius: 10px;
-    padding: 22px;
-}
-
-.review-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 12px;
-}
-
-.review-user {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.review-avatar {
-    width: 42px;
-    height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #edf1ff;
-    color: #3157d5;
-    border-radius: 50%;
-    font-weight: bold;
-    font-size: 17px;
-}
-
-.review-user h4 {
-    font-size: 15px;
-    margin-bottom: 5px;
-}
-
-.review-date {
-    color: #788398;
-    font-size: 12px;
-}
-
-.review-card-stars {
-    color: #f5a623;
-    font-size: 17px;
-    letter-spacing: 2px;
-}
-
-.review-card-text {
-    color: #3f4b5e;
-    font-size: 14px;
-    line-height: 1.8;
-    overflow-wrap: anywhere;
-    white-space: pre-wrap;
-}
-
-
-/* EDIT REVIEW BUTTON */
-
-.edit-review-btn {
-    margin-top: 15px;
-    padding: 8px 13px;
-    background-color: #edf1ff;
-    color: #3157d5;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 12px;
-}
-
-.edit-review-btn:hover {
-    background-color: #dce5ff;
-}
-
-
-/* NO REVIEWS */
-
-.no-reviews {
-    background-color: white;
-    padding: 30px;
-    text-align: center;
-    color: #788398;
-    border: 1px solid #e6eaf2;
-    border-radius: 10px;
-}
-
-
-/* MOBILE RESPONSIVENESS */
-
-@media (max-width: 600px) {
-
     .course-reviews {
         padding: 20px 4% 40px;
     }
@@ -886,6 +1127,39 @@ body {
     .review-card-header {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+}
+
+
+/* =========================================
+   SMALL MOBILE SCREENS
+========================================= */
+
+@media (max-width: 380px) {
+
+    .course-banner h1 {
+        font-size: 23px;
+    }
+
+    .learning-content {
+        padding: 15px;
+    }
+
+    .learning-sidebar {
+        padding: 18px;
+    }
+
+    .lesson-heading h2 {
+        font-size: 22px;
+    }
+
+    .quiz-heading h2 {
+        font-size: 23px;
+    }
+
+    .review-form-card {
+        padding: 16px;
     }
 
 }

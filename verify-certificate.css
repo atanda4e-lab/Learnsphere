@@ -1,214 +1,582 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  }
+/* ==========================================
+   LEARNSPHERE CERTIFICATE VERIFICATION
+   PREMIUM DARK NAVY + TEAL THEME
+========================================== */
 
-body {
-font-family: Arial, sans-serif;
-background: #f4f7fb;
-color: #1e293b;
+
+/* ==========================================
+   ROOT VARIABLES
+========================================== */
+
+:root {
+    --background: #071521;
+    --background-soft: #0B1D2B;
+
+    --surface: #102536;
+    --surface-light: #163448;
+
+    --primary: #0D9488;
+    --primary-hover: #0F766E;
+    --accent: #2DD4BF;
+
+    --text: #F1F5F9;
+    --text-soft: #CBD5E1;
+    --muted: #94A3B8;
+
+    --border: #244155;
+
+    --success: #22C55E;
+    --danger: #F87171;
+
+    --radius: 12px;
 }
 
+
+/* ==========================================
+   GLOBAL RESET
+========================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: Arial, sans-serif;
+
+    background: var(--background);
+
+    color: var(--text);
+
+    min-height: 100vh;
+
+    -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+    background: rgba(45, 212, 191, 0.25);
+    color: #FFFFFF;
+}
+
+
+/* ==========================================
+   HEADER
+========================================== */
+
 header {
-display: flex;
-justify-content: space-between;
-align-items: center;
-padding: 22px 7%;
-background: white;
-box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 22px 7%;
+
+    background: #0B1D2B;
+
+    border-bottom: 1px solid var(--border);
+
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 header h2 {
-font-size: 25px;
-color: #1746a2;
+    font-size: 25px;
+
+    color: #F1F5F9;
+
+    font-weight: 800;
 }
 
 header h2 span {
-color: #16a36a;
+    color: var(--accent);
 }
 
 header a {
-text-decoration: none;
-color: #1746a2;
-font-weight: bold;
+    text-decoration: none;
+
+    color: var(--accent);
+
+    font-weight: bold;
+
+    transition: 0.25s ease;
 }
+
+header a:hover {
+    color: #99F6E4;
+}
+
+
+/* ==========================================
+   MAIN
+========================================== */
 
 main {
-min-height: 90vh;
-display: flex;
-justify-content: center;
-align-items: center;
-padding: 40px 15px;
+    min-height: 90vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 40px 15px;
+
+    background:
+        radial-gradient(
+            circle at 50% 15%,
+            rgba(13, 148, 136, 0.08),
+            transparent 45%
+        ),
+        var(--background);
 }
+
+
+/* ==========================================
+   VERIFICATION CONTAINER
+========================================== */
 
 .verification-container {
-width: 100%;
-max-width: 550px;
-background: white;
-padding: 40px;
-border-radius: 15px;
-box-shadow: 0 10px 35px rgba(0, 0, 0, 0.07);
+    width: 100%;
+
+    max-width: 550px;
+
+    background: var(--surface);
+
+    padding: 40px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 15px;
+
+    box-shadow:
+        0 15px 45px rgba(0, 0, 0, 0.25);
+
+    position: relative;
+
+    overflow: hidden;
 }
+
+.verification-container::before {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 4px;
+
+    background: linear-gradient(
+        90deg,
+        #0D9488,
+        #2DD4BF
+    );
+}
+
+
+/* ==========================================
+   VERIFICATION ICON
+========================================== */
 
 .verification-icon {
-width: 75px;
-height: 75px;
-margin: auto auto 20px;
-border-radius: 50%;
-background: #e9f7ef;
-color: #16a36a;
-display: flex;
-align-items: center;
-justify-content: center;
-font-size: 32px;
+    width: 75px;
+    height: 75px;
+
+    margin: auto auto 20px;
+
+    border-radius: 50%;
+
+    background: rgba(13, 148, 136, 0.15);
+
+    border: 1px solid rgba(45, 212, 191, 0.2);
+
+    color: var(--accent);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 32px;
 }
 
+
+/* ==========================================
+   HEADING
+========================================== */
+
 h1 {
-text-align: center;
-font-size: 27px;
-margin-bottom: 12px;
+    text-align: center;
+
+    font-size: 27px;
+
+    color: var(--text);
+
+    margin-bottom: 12px;
 }
 
 .verification-container > p {
-text-align: center;
-color: #64748b;
-line-height: 1.6;
-margin-bottom: 30px;
+    text-align: center;
+
+    color: var(--muted);
+
+    line-height: 1.7;
+
+    margin-bottom: 30px;
 }
+
+
+/* ==========================================
+   FORM LABEL
+========================================== */
 
 form label {
-display: block;
-margin-bottom: 10px;
-font-weight: bold;
+    display: block;
+
+    margin-bottom: 10px;
+
+    font-weight: bold;
+
+    font-size: 14px;
+
+    color: var(--text-soft);
 }
 
+
+/* ==========================================
+   FORM INPUT
+========================================== */
+
 form input {
-width: 100%;
-padding: 15px;
-border: 1px solid #cbd5e1;
-border-radius: 8px;
-outline: none;
-font-size: 15px;
-margin-bottom: 18px;
+    width: 100%;
+
+    padding: 15px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 8px;
+
+    outline: none;
+
+    font-size: 15px;
+
+    margin-bottom: 18px;
+
+    background: #0B1D2B;
+
+    color: #F1F5F9;
+
+    caret-color: var(--accent);
+
+    transition: 0.25s ease;
+}
+
+form input::placeholder {
+    color: #71869A;
+}
+
+form input:hover {
+    border-color: #376078;
 }
 
 form input:focus {
-border-color: #1746a2;
+    border-color: var(--primary);
+
+    box-shadow:
+        0 0 0 4px rgba(13, 148, 136, 0.13);
 }
 
+
+/* ==========================================
+   FORM BUTTON
+========================================== */
+
 form button {
-width: 100%;
-padding: 15px;
-background: #1746a2;
-color: white;
-border: none;
-border-radius: 8px;
-font-size: 15px;
-font-weight: bold;
-cursor: pointer;
-transition: 0.3s;
+    width: 100%;
+
+    padding: 15px;
+
+    background: linear-gradient(
+        135deg,
+        #0D9488,
+        #0F766E
+    );
+
+    color: white;
+
+    border: none;
+
+    border-radius: 8px;
+
+    font-size: 15px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition: 0.3s ease;
 }
 
 form button:hover {
-background: #103578;
+    background: linear-gradient(
+        135deg,
+        #0F766E,
+        #115E59
+    );
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 8px 20px rgba(13, 148, 136, 0.2);
+}
+
+form button:active {
+    transform: scale(0.98);
 }
 
 form button:disabled {
-opacity: 0.6;
-cursor: not-allowed;
+    opacity: 0.6;
+
+    cursor: not-allowed;
+
+    transform: none;
+
+    box-shadow: none;
 }
 
+
+/* ==========================================
+   VERIFICATION MESSAGE
+========================================== */
+
 #verificationMessage {
-text-align: center;
-margin-top: 20px;
-font-size: 14px;
+    text-align: center;
+
+    margin-top: 20px;
+
+    font-size: 14px;
+
+    line-height: 1.6;
 }
 
 .error-message {
-color: #dc2626;
+    color: #F87171;
 }
 
 .success-message {
-color: #16a36a;
+    color: #4ADE80;
 }
+
+
+/* ==========================================
+   CERTIFICATE DETAILS
+========================================== */
 
 #certificateDetails {
-margin-top: 30px;
-padding: 25px;
-border: 1px solid #bbf7d0;
-background: #f0fdf4;
-border-radius: 10px;
+    margin-top: 30px;
+
+    padding: 25px;
+
+    border: 1px solid rgba(34, 197, 94, 0.25);
+
+    background: #0B2B29;
+
+    border-radius: 10px;
 }
 
+
+/* ==========================================
+   VERIFIED HEADING
+========================================== */
+
 .verified-heading {
-text-align: center;
-color: #15803d;
-margin-bottom: 10px;
+    text-align: center;
+
+    color: #4ADE80;
+
+    margin-bottom: 10px;
 }
 
 .verified-heading i {
-font-size: 35px;
-margin-bottom: 10px;
+    font-size: 35px;
+
+    margin-bottom: 10px;
 }
 
 .verified-heading h2 {
-font-size: 21px;
+    font-size: 21px;
+
+    color: #86EFAC;
 }
+
+
+/* ==========================================
+   VERIFIED DESCRIPTION
+========================================== */
 
 .verified-description {
-text-align: center;
-font-size: 13px;
-color: #64748b;
-margin-bottom: 20px;
+    text-align: center;
+
+    font-size: 13px;
+
+    color: #A7C9B5;
+
+    margin-bottom: 20px;
+
+    line-height: 1.6;
 }
 
+
+/* ==========================================
+   CERTIFICATE DETAIL ROWS
+========================================== */
+
 .detail-row {
-display: flex;
-justify-content: space-between;
-gap: 15px;
-padding: 13px 0;
-border-bottom: 1px solid #dcfce7;
-font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 13px 0;
+
+    border-bottom: 1px solid rgba(34, 197, 94, 0.18);
+
+    font-size: 14px;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
 }
 
 .detail-row span {
-color: #64748b;
+    color: #94A3B8;
 }
 
 .detail-row strong {
-text-align: right;
-overflow-wrap: anywhere;
+    text-align: right;
+
+    color: #F1F5F9;
+
+    overflow-wrap: anywhere;
 }
+
+
+/* ==========================================
+   HIDDEN ELEMENT
+========================================== */
 
 .hidden {
-display: none;
+    display: none !important;
 }
 
+
+/* ==========================================
+   FOOTER
+========================================== */
+
 footer {
-text-align: center;
-margin-top: 30px;
-color: #94a3b8;
-font-size: 12px;
+    text-align: center;
+
+    margin-top: 30px;
+
+    color: #647C8D;
+
+    font-size: 12px;
 }
+
+
+/* ==========================================
+   RESPONSIVE DESIGN
+========================================== */
 
 @media (max-width: 500px) {
 
-.verification-container {
-    padding: 25px 18px;
+    header {
+        padding: 18px 5%;
+    }
+
+    header h2 {
+        font-size: 21px;
+    }
+
+    header a {
+        font-size: 13px;
+    }
+
+    main {
+        padding: 30px 15px;
+
+        align-items: flex-start;
+    }
+
+    .verification-container {
+        padding: 30px 18px;
+    }
+
+    h1 {
+        font-size: 22px;
+    }
+
+    .verification-icon {
+        width: 65px;
+        height: 65px;
+
+        font-size: 27px;
+    }
+
+    .detail-row {
+        flex-direction: column;
+
+        gap: 5px;
+    }
+
+    .detail-row strong {
+        text-align: left;
+    }
+
 }
 
-h1 {
-    font-size: 22px;
+
+/* ==========================================
+   SMALL MOBILE
+========================================== */
+
+@media (max-width: 350px) {
+
+    header h2 {
+        font-size: 18px;
+    }
+
+    header a {
+        font-size: 12px;
+    }
+
+    .verification-container {
+        padding: 25px 14px;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+
 }
 
-.detail-row {
-    flex-direction: column;
-    gap: 5px;
-}
 
-.detail-row strong {
-    text-align: left;
-}
+/* ==========================================
+   ACCESSIBILITY
+========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+
+        transition-duration: 0.01ms !important;
+
+        animation-duration: 0.01ms !important;
+    }
 
 }

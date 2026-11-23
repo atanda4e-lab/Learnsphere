@@ -51,6 +51,7 @@ let battleMatches = [];
 
 let activeCourseId = "";
 let activeBattleQuizId = "";
+let activeBattleEditId = "";
 
 let dashboardInitialized = false;
 
@@ -535,17 +536,29 @@ function setupEventListeners() {
     );
 
 
-    // BATTLE EVENTS
+  // BATTLE EVENTS
 
-    $("battleQuizForm")?.addEventListener(
-        "submit",
-        createBattleQuiz
-    );
+$("battleQuizForm")?.addEventListener(
+    "submit",
+    createBattleQuiz
+);
 
-    $("battleQuestionForm")?.addEventListener(
-        "submit",
-        saveBattleQuestion
-    );
+$("battleQuestionForm")?.addEventListener(
+    "submit",
+    saveBattleQuestion
+);
+
+$("battleQuizForm")?.addEventListener("reset", () => {
+
+    activeBattleEditId = "";
+
+    setTimeout(() => {
+
+        updateBattleFormButton();
+
+    }, 0);
+
+});
 
 
     // ANNOUNCEMENTS
@@ -2836,26 +2849,57 @@ async function deleteQuestion(id) {
 }
 
 
+
+
 // ======================================================
 // 18. BATTLE ARENA COMPETITIONS
+// ======================================================
+
+
+// ======================================================
+// UPDATE COMPETITION FORM BUTTON
+// ======================================================
+
+function updateBattleFormButton() {
+
+    const form = $("battleQuizForm");
+
+    if (!form) return;
+
+    const button = form.querySelector('button[type="submit"]');
+
+    if (!button) return;
+
+    button.textContent = activeBattleEditId
+        ? "Update Competition"
+        : "Create Competition";
+
+}
+
+
+// ======================================================
+// CREATE OR UPDATE COMPETITION
 // ======================================================
 
 async function createBattleQuiz(event) {
 
     event.preventDefault();
 
-
     const opening = value("battleOpeningDate");
 
     const closing = value("battleClosingDate");
 
+    const questionLimit =
+        Number(value("battleQuestionLimit")) || 10;
+
+    const duration =
+        Number(value("battleDuration")) || 60;
+
 
     if (
-
         opening &&
         closing &&
         new Date(closing) <= new Date(opening)
-
     ) {
 
         alert("Closing date must be later than opening date.");
@@ -2871,21 +2915,15 @@ async function createBattleQuiz(event) {
 
         description: value("battleQuizDescription"),
 
-        questionLimit: Number(value("battleQuestionLimit")) || 10,
+        questionLimit: questionLimit,
 
-        durationSeconds: Number(value("battleDuration")) || 60,
+        durationSeconds: duration,
 
         openingDate: opening,
 
         closingDate: closing,
 
-        published: false,
-
-        status: "draft",
-
-        createdBy: currentAdmin.uid,
-
-        createdAt: serverTimestamp()
+        updatedAt: serverTimestamp()
 
     };
 
@@ -2901,20 +2939,62 @@ async function createBattleQuiz(event) {
 
     try {
 
-        await addDoc(
-            collection(db, "battleQuizzes"),
-            data
-        );
+        // UPDATE EXISTING COMPETITION
+
+        if (activeBattleEditId) {
+
+            await updateDoc(
+
+                doc(db, "battleQuizzes", activeBattleEditId),
+
+                data
+
+            );
+
+
+            message(
+                "battleAdminMessage",
+                "Competition updated successfully."
+            );
+
+
+            activeBattleEditId = "";
+
+        }
+
+        // CREATE NEW COMPETITION
+
+        else {
+
+            data.published = false;
+
+            data.status = "draft";
+
+            data.createdBy = currentAdmin.uid;
+
+            data.createdAt = serverTimestamp();
+
+
+            await addDoc(
+
+                collection(db, "battleQuizzes"),
+
+                data
+
+            );
+
+
+            message(
+                "battleAdminMessage",
+                "Competition created successfully."
+            );
+
+        }
 
 
         $("battleQuizForm")?.reset();
 
-
-        message(
-            "battleAdminMessage",
-            "Competition created successfully."
-        );
-
+        updateBattleFormButton();
 
         await refreshData();
 
@@ -2927,6 +3007,109 @@ async function createBattleQuiz(event) {
 
 }
 
+
+
+// ======================================================
+// EDIT COMPETITION
+// ======================================================
+
+function editBattleQuiz(id) {
+
+    const battle = findBattle(id);
+
+    if (!battle) {
+
+        alert("Competition not found.");
+
+        return;
+
+    }
+
+
+    activeBattleEditId = id;
+
+
+    setValue(
+        "battleQuizTitle",
+        battle.title || ""
+    );
+
+
+    setValue(
+        "battleQuizDescription",
+        battle.description || ""
+    );
+
+
+    setValue(
+        "battleQuestionLimit",
+        battle.questionLimit || 10
+    );
+
+
+    setValue(
+        "battleDuration",
+        battle.durationSeconds || 60
+    );
+
+
+    setValue(
+        "battleOpeningDate",
+        battle.openingDate || ""
+    );
+
+
+    setValue(
+        "battleClosingDate",
+        battle.closingDate || ""
+    );
+
+
+    updateBattleFormButton();
+
+
+    message(
+        "battleAdminMessage",
+        "Editing competition: " + battle.title
+    );
+
+
+    $("battleQuizForm")?.scrollIntoView({
+
+        behavior: "smooth",
+
+        block: "center"
+
+    });
+
+}
+
+
+
+// ======================================================
+// CANCEL COMPETITION EDITING
+// ======================================================
+
+function cancelBattleQuizEdit() {
+
+    activeBattleEditId = "";
+
+    $("battleQuizForm")?.reset();
+
+    updateBattleFormButton();
+
+    message(
+        "battleAdminMessage",
+        "Competition editing cancelled."
+    );
+
+}
+
+
+
+// ======================================================
+// RENDER COMPETITIONS
+// ======================================================
 
 function renderBattleQuizzes() {
 
@@ -2952,34 +3135,63 @@ function renderBattleQuizzes() {
 
             <p>${escapeHTML(battle.description)}</p>
 
-            <p>Questions: ${Number(battle.questionLimit || 0)}</p>
+            <p>
+                Questions:
+                ${Number(battle.questionLimit || 0)}
+            </p>
 
-            <p>Duration: ${Number(battle.durationSeconds || 0)} seconds</p>
+            <p>
+                Duration:
+                ${Number(battle.durationSeconds || 0)} seconds
+            </p>
 
-            <p>Status: ${battle.published ? "Published" : "Unpublished"}</p>
+            <p>
+                Status:
+                ${battle.published ? "Published" : "Unpublished"}
+            </p>
+
 
             <button
                 type="button"
                 class="secondary-btn"
                 data-action="select-battle"
                 data-id="${escapeHTML(battle.id)}">
+
                 Manage Questions
+
             </button>
+
+
+            <button
+                type="button"
+                class="primary-btn"
+                data-action="edit-battle"
+                data-id="${escapeHTML(battle.id)}">
+
+                Edit Competition
+
+            </button>
+
 
             <button
                 type="button"
                 class="primary-btn"
                 data-action="toggle-battle"
                 data-id="${escapeHTML(battle.id)}">
+
                 ${battle.published ? "Unpublish" : "Publish"}
+
             </button>
+
 
             <button
                 type="button"
                 class="danger-btn"
                 data-action="delete-battle"
                 data-id="${escapeHTML(battle.id)}">
+
                 Delete
+
             </button>
 
         </div>
@@ -2988,6 +3200,11 @@ function renderBattleQuizzes() {
 
 }
 
+
+
+// ======================================================
+// PUBLISH / UNPUBLISH COMPETITION
+// ======================================================
 
 async function toggleBattle(id) {
 
@@ -3006,7 +3223,9 @@ async function toggleBattle(id) {
 
                 published: !battle.published,
 
-                status: battle.published ? "draft" : "published",
+                status: battle.published
+                    ? "draft"
+                    : "published",
 
                 updatedAt: serverTimestamp()
 
@@ -3027,6 +3246,11 @@ async function toggleBattle(id) {
 }
 
 
+
+// ======================================================
+// DELETE COMPETITION
+// ======================================================
+
 async function deleteBattle(id) {
 
     if (!confirm("Delete this competition?")) return;
@@ -3035,7 +3259,9 @@ async function deleteBattle(id) {
     try {
 
         await deleteDoc(
+
             doc(db, "battleQuizzes", id)
+
         );
 
 
@@ -3050,6 +3276,17 @@ async function deleteBattle(id) {
         }
 
 
+        if (activeBattleEditId === id) {
+
+            activeBattleEditId = "";
+
+            $("battleQuizForm")?.reset();
+
+            updateBattleFormButton();
+
+        }
+
+
         await refreshData();
 
 
@@ -3060,8 +3297,6 @@ async function deleteBattle(id) {
     }
 
 }
-
-
 // ======================================================
 // 19. BATTLE QUESTIONS
 // ======================================================
@@ -4284,6 +4519,12 @@ async function handleDynamicButtons(event) {
             selectBattle(id);
 
             break;
+
+            case "edit-battle":
+
+    editBattleQuiz(id);
+
+    break;
 
 
         case "toggle-battle":

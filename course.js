@@ -878,6 +878,7 @@ async function loadCourse() {
         console.log("Lesson quiz settings:", lessonQuizSettings);
 
         console.log("Quiz questions:", courseQuizzes);
+        await checkCourseCompletionAndIssueCertificate();
 
     }
 
@@ -2606,33 +2607,33 @@ async function checkCourseCompletionAndIssueCertificate() {
 
             )[0];
 
-            transaction.set(certificateReference, {
+           transaction.set(certificateReference, {
 
-                certificateId: certificateId,
+    certificateId: certificateId,
 
-                studentId: currentStudent.uid,
+    studentId: currentStudent.uid,
 
-                studentName: currentStudent.fullName,
+    studentName: currentStudent.fullName,
 
-                courseId: currentCourse.id,
+    courseId: currentCourse.id,
 
-                courseTitle: currentCourse.title,
+    courseTitle: currentCourse.title,
 
-                score: bestResult.score,
+    score: Number(bestResult.score) || 0,
 
-                totalMarks: bestResult.totalMarks,
+    totalMarks: Number(bestResult.totalMarks) || 0,
 
-                totalQuestions: bestResult.totalQuestions || null,
+    totalQuestions: Number(bestResult.totalQuestions) || null,
 
-                percentage: bestResult.percentage,
+    percentage: Number(bestResult.percentage) || 0,
 
-                founderName: CERTIFICATE_FOUNDER_NAME,
+    founderName: CERTIFICATE_FOUNDER_NAME,
 
-                issuedAt: serverTimestamp(),
+    issuedAt: serverTimestamp(),
 
-                createdAt: serverTimestamp()
+    createdAt: serverTimestamp()
 
-            });
+});
             transaction.set(verificationReference, {
     certificateId: certificateId,
     studentName: currentStudent.fullName,
@@ -2674,12 +2675,18 @@ async function checkCourseCompletionAndIssueCertificate() {
 
     }
 
-    catch (error) {
+   catch (error) {
 
-        console.error("Certificate issue error:", error);
+    console.error("Certificate issue error:", error);
 
-    }
+    alert(
+        "Certificate Error: " +
+        error.code +
+        "\n" +
+        error.message
+    );
 
+}
 }
 
 

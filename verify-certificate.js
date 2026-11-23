@@ -1,3 +1,13 @@
+// ================================================
+// LEARNSPHERE
+// PUBLIC CERTIFICATE VERIFICATION SYSTEM
+// ================================================
+
+
+// ================================================
+// FIREBASE IMPORTS
+// ================================================
+
 import { db } from "./firebase.js";
 
 import {
@@ -5,6 +15,10 @@ import {
     getDocFromServer
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
+
+// ================================================
+// DOM ELEMENTS
+// ================================================
 
 const verificationForm = document.getElementById("verificationForm");
 
@@ -27,11 +41,48 @@ const displayCertificateId = document.getElementById("displayCertificateId");
 const issueDate = document.getElementById("issueDate");
 
 
-// =====================================
+// ================================================
+// COLLECTION NAME
+// ================================================
+
+const CERTIFICATE_COLLECTION = "certificateVerifications";
+
+
+// ================================================
+// CHECK REQUIRED HTML ELEMENTS
+// ================================================
+
+const requiredElements = [
+    verificationForm,
+    certificateInput,
+    verifyButton,
+    verificationMessage,
+    certificateDetails,
+    studentName,
+    courseTitle,
+    percentage,
+    displayCertificateId,
+    issueDate
+];
+
+if (requiredElements.some(element => !element)) {
+
+    console.error(
+        "Certificate verification error: Required HTML elements are missing."
+    );
+
+}
+
+
+// ================================================
 // SHOW MESSAGE
-// =====================================
+// ================================================
 
 function showMessage(message, type = "") {
+
+    if (!verificationMessage) {
+        return;
+    }
 
     verificationMessage.textContent = message;
 
@@ -40,9 +91,34 @@ function showMessage(message, type = "") {
 }
 
 
-// =====================================
+// ================================================
+// RESET CERTIFICATE DETAILS
+// ================================================
+
+function resetCertificateDetails() {
+
+    if (!certificateDetails) {
+        return;
+    }
+
+    certificateDetails.classList.add("hidden");
+
+    studentName.textContent = "";
+
+    courseTitle.textContent = "";
+
+    percentage.textContent = "";
+
+    displayCertificateId.textContent = "";
+
+    issueDate.textContent = "";
+
+}
+
+
+// ================================================
 // FORMAT DATE
-// =====================================
+// ================================================
 
 function formatIssueDate(timestamp) {
 
@@ -52,24 +128,55 @@ function formatIssueDate(timestamp) {
 
     let date;
 
-    if (typeof timestamp.toDate === "function") {
+    try {
 
-        date = timestamp.toDate();
+        // Firestore Timestamp
+        if (typeof timestamp.toDate === "function") {
 
-    } else {
+            date = timestamp.toDate();
 
-        date = new Date(timestamp);
+        }
+
+        // Timestamp stored as seconds
+        else if (
+            typeof timestamp === "object" &&
+            timestamp.seconds !== undefined
+        ) {
+
+            date = new Date(timestamp.seconds * 1000);
+
+        }
+
+        // JavaScript Date or date string
+        else {
+
+            date = new Date(timestamp);
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Date formatting error:",
+            error
+        );
+
+        return "Not available";
 
     }
 
     if (isNaN(date.getTime())) {
+
         return "Not available";
+
     }
 
     return date.toLocaleDateString("en-GB", {
 
         day: "numeric",
+
         month: "long",
+
         year: "numeric"
 
     });
@@ -77,80 +184,304 @@ function formatIssueDate(timestamp) {
 }
 
 
-// =====================================
-// DISPLAY CERTIFICATE
-// =====================================
+// ================================================
+// FORMAT PERCENTAGE
+// ================================================
 
-function displayCertificate(certificate) {
+function formatPercentage(value) {
+
+    if (
+        value === undefined ||
+        value === null ||
+        value === ""
+    ) {
+
+        return "Not available";
+
+    }
+
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) {
+
+        return "Not available";
+
+    }
+
+    return `${number}%`;
+
+}
+
+
+// ================================================
+// CHECK CERTIFICATE REVOCATION
+// ================================================
+
+function isCertificateRevoked(certificate) {
+
+    const status = String(
+        certificate.status || ""
+    ).toLowerCase();
+
+    return (
+
+        certificate.revoked === true ||
+
+        certificate.isRevoked === true ||
+
+        status === "revoked" ||
+
+        status === "cancelled" ||
+
+        status === "canceled"
+
+    );
+
+}
+
+
+// ================================================
+// DISPLAY CERTIFICATE
+// ================================================
+
+function displayCertificate(certificate, certificateId) {
 
     studentName.textContent =
-        certificate.studentName || "Not available";
+
+        certificate.studentName ||
+
+        certificate.fullName ||
+
+        certificate.name ||
+
+        "Not available";
+
 
     courseTitle.textContent =
-        certificate.courseTitle || "Not available";
 
-    percentage.textContent =
-        certificate.percentage !== undefined
-            ? certificate.percentage + "%"
-            : "Not available";
+        certificate.courseTitle ||
+
+        certificate.courseName ||
+
+        certificate.title ||
+
+        "Not available";
+
+
+    percentage.textContent = formatPercentage(
+
+        certificate.percentage ??
+
+        certificate.score ??
+
+        certificate.finalScore
+
+    );
+
 
     displayCertificateId.textContent =
-        certificate.certificateId || "Not available";
 
-    issueDate.textContent =
-        formatIssueDate(certificate.issuedAt);
+        certificate.certificateId ||
+
+        certificateId;
+
+
+    issueDate.textContent = formatIssueDate(
+
+        certificate.issuedAt ||
+
+        certificate.issueDate ||
+
+        certificate.createdAt ||
+
+        certificate.generatedAt
+
+    );
+
 
     certificateDetails.classList.remove("hidden");
 
 }
 
 
-// =====================================
+// ================================================
+// GET CERTIFICATE FROM FIRESTORE
+// ================================================
+
+async function findCertificate(certificateId) {
+
+    console.log(
+        "Checking certificate collection:",
+        CERTIFICATE_COLLECTION
+    );
+
+
+    // The certificate ID must also be the document ID.
+    const certificateReference = doc(
+
+        db,
+
+        CERTIFICATE_COLLECTION,
+
+        certificateId
+
+    );
+
+
+    console.log(
+        "Firestore document path:",
+        certificateReference.path
+    );
+
+
+    // Only retrieve this exact document.
+    // No public collection queries are performed.
+    const certificateSnapshot = await getDocFromServer(
+        certificateReference
+    );
+
+
+    console.log(
+        "Certificate document exists:",
+        certificateSnapshot.exists()
+    );
+
+
+    if (!certificateSnapshot.exists()) {
+
+        return null;
+
+    }
+
+
+    const certificate = certificateSnapshot.data();
+
+
+    console.log(
+        "Retrieved certificate:",
+        certificate
+    );
+
+
+    // Confirm the stored ID matches the requested ID.
+    if (
+        certificate.certificateId &&
+        certificate.certificateId !== certificateId
+    ) {
+
+        throw new Error(
+            "The stored certificate ID does not match the requested ID."
+        );
+
+    }
+
+
+    return {
+
+        ...certificate,
+
+        certificateId:
+            certificate.certificateId || certificateId
+
+    };
+
+}
+
+
+// ================================================
 // VERIFY CERTIFICATE
-// =====================================
+// ================================================
 
 async function verifyCertificate(certificateId) {
 
-    certificateDetails.classList.add("hidden");
+    resetCertificateDetails();
 
     showMessage("");
+
+
+    // ============================================
+    // VALIDATE INPUT
+    // ============================================
 
     if (!certificateId) {
 
         showMessage(
+
             "Please enter a Certificate ID.",
+
             "error-message"
+
         );
 
         return;
 
     }
 
+
+    // ============================================
+    // PREVENT EMPTY SPACES
+    // ============================================
+
+    certificateId = certificateId.trim();
+
+
+    // ============================================
+    // LOADING STATE
+    // ============================================
+
     verifyButton.disabled = true;
 
-    verifyButton.textContent = "Verifying...";
+    verifyButton.innerHTML =
+
+        '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
 
 
     try {
 
-        // Search the original certificates collection
-       const certificateReference = doc(
-    db,
-    "certificateVerifications",
-    certificateId
-);
-const certificateDocument = await getDocFromServer(
-    certificateReference
-);
-console.log("Certificate ID:", certificateId);
-console.log("Firestore path:", certificateReference.path);
-console.log("Document exists:", certificateDocument.exists());
-console.log("Document data:", certificateDocument.data());
-        if (!certificateDocument.exists()) {
+        console.log(
+            "================================="
+        );
+
+        console.log(
+            "LEARNSPHERE CERTIFICATE CHECK"
+        );
+
+        console.log(
+            "Certificate ID:",
+            certificateId
+        );
+
+        console.log(
+            "================================="
+        );
+
+
+        // ========================================
+        // GET CERTIFICATE
+        // ========================================
+
+        const certificate = await findCertificate(
+            certificateId
+        );
+
+
+        // ========================================
+        // CERTIFICATE NOT FOUND
+        // ========================================
+
+        if (!certificate) {
 
             showMessage(
-                "Certificate not found. Please check the ID and try again.",
+
+                "Certificate not found. Please check the Certificate ID and try again.",
+
                 "error-message"
+
+            );
+
+            console.warn(
+                "No public verification record exists for:",
+                certificateId
             );
 
             return;
@@ -158,14 +489,18 @@ console.log("Document data:", certificateDocument.data());
         }
 
 
-        const certificate = certificateDocument.data();
+        // ========================================
+        // CHECK REVOCATION
+        // ========================================
 
-
-        if (certificate.certificateId !== certificateId) {
+        if (isCertificateRevoked(certificate)) {
 
             showMessage(
-                "This certificate could not be verified.",
+
+                "This certificate has been revoked and is no longer valid.",
+
                 "error-message"
+
             );
 
             return;
@@ -173,26 +508,31 @@ console.log("Document data:", certificateDocument.data());
         }
 
 
-        if (
-            typeof certificate.percentage !== "number" ||
-            certificate.percentage < 70
-        ) {
+        // ========================================
+        // DISPLAY CERTIFICATE
+        // ========================================
 
-            showMessage(
-                "This certificate could not be verified.",
-                "error-message"
-            );
-
-            return;
-
-        }
+        displayCertificate(
+            certificate,
+            certificateId
+        );
 
 
-        displayCertificate(certificate);
+        // ========================================
+        // SUCCESS MESSAGE
+        // ========================================
 
         showMessage(
+
             "This is a valid LearnSphere certificate.",
+
             "success-message"
+
+        );
+
+
+        console.log(
+            "Certificate verification successful."
         );
 
 
@@ -203,16 +543,76 @@ console.log("Document data:", certificateDocument.data());
             error
         );
 
-        showMessage(
-            "Verification failed. Please try again.",
-            "error-message"
-        );
+
+        // ========================================
+        // PERMISSION ERROR
+        // ========================================
+
+        if (
+            error.code === "permission-denied" ||
+            error.code === "unauthenticated"
+        ) {
+
+            showMessage(
+
+                "Certificate verification is currently unavailable because Firestore access was denied.",
+
+                "error-message"
+
+            );
+
+        }
+
+
+        // ========================================
+        // NETWORK ERROR
+        // ========================================
+
+        else if (
+
+            error.code === "unavailable" ||
+
+            error.code === "deadline-exceeded"
+
+        ) {
+
+            showMessage(
+
+                "Connection problem. Please check your internet connection and try again.",
+
+                "error-message"
+
+            );
+
+        }
+
+
+        // ========================================
+        // OTHER ERRORS
+        // ========================================
+
+        else {
+
+            showMessage(
+
+                "An error occurred while verifying this certificate. Please try again.",
+
+                "error-message"
+
+            );
+
+        }
 
     } finally {
+
+        // ========================================
+        // RESTORE BUTTON
+        // ========================================
 
         verifyButton.disabled = false;
 
         verifyButton.innerHTML =
+
             '<i class="fa-solid fa-shield-check"></i> Verify Certificate';
 
     }
@@ -220,37 +620,51 @@ console.log("Document data:", certificateDocument.data());
 }
 
 
-// =====================================
+// ================================================
 // FORM SUBMISSION
-// =====================================
+// ================================================
 
-verificationForm.addEventListener("submit", function (event) {
+if (verificationForm) {
 
-    event.preventDefault();
+    verificationForm.addEventListener(
+        "submit",
+        function (event) {
 
-    const certificateId = certificateInput.value.trim();
+            event.preventDefault();
 
-    verifyCertificate(certificateId);
+            const certificateId = certificateInput.value.trim();
 
-});
+            verifyCertificate(certificateId);
+
+        }
+    );
+
+}
 
 
-// =====================================
+// ================================================
 // INPUT CHANGE
-// =====================================
+// ================================================
 
-certificateInput.addEventListener("input", function () {
+if (certificateInput) {
 
-    certificateDetails.classList.add("hidden");
+    certificateInput.addEventListener(
+        "input",
+        function () {
 
-    showMessage("");
+            resetCertificateDetails();
 
-});
+            showMessage("");
+
+        }
+    );
+
+}
 
 
-// =====================================
-// VERIFY FROM URL
-// =====================================
+// ================================================
+// AUTOMATIC VERIFICATION FROM URL
+// ================================================
 
 const urlParameters = new URLSearchParams(
     window.location.search
@@ -258,10 +672,18 @@ const urlParameters = new URLSearchParams(
 
 const certificateFromURL = urlParameters.get("id");
 
-if (certificateFromURL) {
 
-    certificateInput.value = certificateFromURL.trim();
+if (certificateFromURL && certificateInput) {
 
-    verifyCertificate(certificateFromURL.trim());
+    const certificateId = certificateFromURL.trim();
+
+    certificateInput.value = certificateId;
+
+    verifyCertificate(certificateId);
 
 }
+
+
+// ================================================
+// END OF LEARNSPHERE CERTIFICATE VERIFICATION
+// ================================================

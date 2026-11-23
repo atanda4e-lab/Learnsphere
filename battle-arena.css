@@ -1,20 +1,26 @@
-
 /* =========================================
    LEARNSPHERE BATTLE ARENA
-   COMPLETE RESPONSIVE DESIGN
+   PREMIUM DARK NAVY + TEAL THEME
 ========================================= */
 
 :root {
-    --background: #080f1e;
-    --surface: #111d31;
-    --surface-light: #192943;
-    --primary: #6366f1;
-    --primary-hover: #4f46e5;
-    --success: #22c55e;
-    --danger: #ef4444;
-    --text: #f8fafc;
-    --muted: #94a3b8;
-    --border: #26364f;
+    --background: #071521;
+    --surface: #102536;
+    --surface-light: #163448;
+    --surface-hover: #1B4055;
+
+    --primary: #0D9488;
+    --primary-hover: #0F766E;
+    --accent: #2DD4BF;
+
+    --success: #22C55E;
+    --danger: #F87171;
+    --warning: #FBBF24;
+
+    --text: #F1F5F9;
+    --muted: #94A3B8;
+
+    --border: #244155;
 }
 
 * {
@@ -24,10 +30,11 @@
 }
 
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'DM Sans', Arial, sans-serif;
     background: var(--background);
     color: var(--text);
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
 }
 
 button,
@@ -38,7 +45,7 @@ input {
 button {
     cursor: pointer;
     border: none;
-    transition: 0.2s ease;
+    transition: 0.25s ease;
 }
 
 button:disabled {
@@ -51,23 +58,30 @@ button:disabled {
     min-height: 100vh;
 }
 
-/* HEADER */
+/* =========================================
+   HEADER
+========================================= */
 
 .arena-header {
     min-height: 75px;
     padding: 15px 5%;
-    background: #0b1425;
+
+    background: #0B1D2B;
+
     border-bottom: 1px solid var(--border);
 
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 20px;
+
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
 
 .brand h1 {
     font-size: 25px;
-    color: #818cf8;
+    font-weight: 800;
+    color: var(--accent);
 }
 
 .brand span {
@@ -85,16 +99,32 @@ button:disabled {
 #studentName {
     color: var(--muted);
     font-size: 14px;
+    font-weight: 600;
 }
 
 #backDashboardBtn {
-    padding: 10px 16px;
+    padding: 11px 17px;
+
     background: var(--surface-light);
-    color: white;
-    border-radius: 8px;
+
+    color: var(--text);
+
+    border: 1px solid var(--border);
+
+    border-radius: 9px;
+
+    font-weight: 700;
 }
 
-/* MAIN */
+#backDashboardBtn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+/* =========================================
+   MAIN
+========================================= */
 
 .arena-main {
     width: 90%;
@@ -102,54 +132,90 @@ button:disabled {
     margin: 35px auto;
 }
 
+/* =========================================
+   WELCOME SECTION
+========================================= */
+
 .welcome-section {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 25px;
-    padding: 30px;
-    background: linear-gradient(135deg, #172554, #312e81);
+
+    padding: 32px;
+
+    background:
+        radial-gradient(
+            circle at 90% 10%,
+            rgba(45, 212, 191, 0.15),
+            transparent 35%
+        ),
+        linear-gradient(
+            120deg,
+            #102B40,
+            #123B50 65%,
+            #115E59
+        );
+
+    border: 1px solid #245568;
+
     border-radius: 16px;
+
     margin-bottom: 25px;
 }
 
 .eyebrow {
-    color: #a5b4fc;
+    color: var(--accent);
+
     font-size: 12px;
-    font-weight: bold;
+    font-weight: 800;
+
     letter-spacing: 2px;
+
     margin-bottom: 12px;
 }
 
 .welcome-section h2 {
     font-size: 28px;
+    font-weight: 800;
     margin-bottom: 10px;
 }
 
 .welcome-section p {
-    color: #cbd5e1;
-    line-height: 1.6;
+    color: #C1D5DF;
+    line-height: 1.7;
+    font-size: 14px;
 }
 
 .student-level {
-    min-width: 110px;
+    min-width: 115px;
+
     text-align: center;
-    padding: 18px;
-    background: #ffffff15;
+
+    padding: 19px;
+
+    background: rgba(255,255,255,0.08);
+
+    border: 1px solid rgba(255,255,255,0.12);
+
     border-radius: 12px;
 }
 
 .student-level span {
-    color: #c7d2fe;
+    color: #99F6E4;
     font-size: 11px;
+    font-weight: 700;
 }
 
 .student-level h2 {
     font-size: 35px;
     margin-top: 8px;
+    color: var(--accent);
 }
 
-/* STATISTICS */
+/* =========================================
+   STATISTICS
+========================================= */
 
 .stats-grid {
     display: grid;
@@ -159,56 +225,84 @@ button:disabled {
 }
 
 .stat-card {
-    padding: 23px;
+    padding: 24px;
+
     background: var(--surface);
+
     border: 1px solid var(--border);
-    border-radius: 12px;
+
+    border-radius: 13px;
+
+    transition: 0.25s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--primary);
+    background: var(--surface-light);
 }
 
 .stat-card span {
     color: var(--muted);
     font-size: 13px;
+    font-weight: 600;
 }
 
 .stat-card h2 {
     font-size: 30px;
     margin-top: 12px;
-    color: #a5b4fc;
+    color: var(--accent);
+    font-weight: 800;
 }
 
-/* GENERAL CARDS */
+/* =========================================
+   GENERAL CARDS
+========================================= */
 
 .arena-card {
-    padding: 25px;
+    padding: 26px;
+
     background: var(--surface);
+
     border: 1px solid var(--border);
+
     border-radius: 14px;
+
     margin-bottom: 25px;
 }
 
 .section-heading {
-    margin-bottom: 22px;
+    margin-bottom: 23px;
 }
 
 .section-heading h2 {
     font-size: 21px;
+    font-weight: 800;
+    color: var(--text);
     margin-bottom: 8px;
 }
 
 .section-heading p {
     font-size: 13px;
     color: var(--muted);
-    line-height: 1.6;
+    line-height: 1.7;
 }
 
-/* BUTTONS */
+/* =========================================
+   BUTTONS
+========================================= */
 
 .primary-btn,
 .danger-btn {
     padding: 13px 20px;
+
     color: white;
-    border-radius: 8px;
-    font-weight: bold;
+
+    border-radius: 9px;
+
+    font-weight: 700;
+
+    font-size: 13px;
 }
 
 .primary-btn {
@@ -217,14 +311,17 @@ button:disabled {
 
 .primary-btn:hover {
     background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(13,148,136,0.2);
 }
 
 .danger-btn {
-    background: var(--danger);
+    background: #DC2626;
 }
 
 .danger-btn:hover {
-    background: #dc2626;
+    background: #B91C1C;
+    transform: translateY(-2px);
 }
 
 .match-options {
@@ -233,58 +330,77 @@ button:disabled {
     flex-wrap: wrap;
 }
 
-/* MATCH STATUS */
+/* =========================================
+   MATCH STATUS
+========================================= */
 
 .match-status {
     display: flex;
     align-items: flex-start;
     gap: 15px;
+
     margin-top: 25px;
-    padding: 18px;
-    background: #0b1425;
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    padding: 19px;
+
+    background: #102F2D;
+
+    border: 1px solid #1D5B50;
+
+    border-radius: 11px;
 }
 
 .status-dot {
     width: 12px;
     height: 12px;
+
     flex-shrink: 0;
+
     margin-top: 5px;
+
     border-radius: 50%;
+
     background: var(--success);
 }
 
 .match-status h3 {
     font-size: 15px;
+    color: #A7F3D0;
     margin-bottom: 7px;
 }
 
 .match-status p {
-    color: var(--muted);
+    color: #B6C9C5;
     font-size: 13px;
-    line-height: 1.5;
+    line-height: 1.6;
 }
+
+/* OPPONENT */
 
 .opponent-box {
     margin-top: 20px;
-    padding: 20px;
-    background: #123323;
-    border: 1px solid #166534;
-    border-radius: 10px;
+    padding: 21px;
+
+    background: #102F2D;
+
+    border: 1px solid #1D5B50;
+
+    border-radius: 11px;
 }
 
 .opponent-box h3 {
-    color: #86efac;
+    color: #6EE7B7;
     margin-bottom: 10px;
 }
 
 .opponent-box p {
     margin-bottom: 18px;
-    color: #dcfce7;
+    color: #D1FAE5;
+    line-height: 1.6;
 }
 
-/* CHALLENGE */
+/* =========================================
+   CHALLENGE
+========================================= */
 
 .challenge-form {
     display: flex;
@@ -294,16 +410,29 @@ button:disabled {
 .challenge-form input {
     flex: 1;
     min-width: 0;
-    padding: 13px;
-    background: #0b1425;
+
+    padding: 14px;
+
+    background: #091B29;
+
     border: 1px solid var(--border);
-    color: white;
-    border-radius: 8px;
+
+    color: var(--text);
+
+    border-radius: 9px;
+
     outline: none;
+
+    transition: 0.25s ease;
+}
+
+.challenge-form input::placeholder {
+    color: #71879A;
 }
 
 .challenge-form input:focus {
-    border-color: var(--primary);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(45,212,191,0.09);
 }
 
 #challengeStatus {
@@ -312,38 +441,54 @@ button:disabled {
     color: var(--muted);
 }
 
-/* COMPETITIONS */
+/* =========================================
+   COMPETITIONS
+========================================= */
 
 .competitions-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
+    gap: 16px;
 }
 
 .competition-card {
-    padding: 20px;
-    background: #0b1425;
+    padding: 21px;
+
+    background: #0B1D2B;
+
     border: 1px solid var(--border);
-    border-radius: 10px;
+
+    border-radius: 11px;
+
+    transition: 0.25s ease;
+}
+
+.competition-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-3px);
+    background: var(--surface-light);
 }
 
 .competition-card h3 {
     font-size: 17px;
+    color: var(--text);
     margin-bottom: 10px;
 }
 
 .competition-card p {
     color: var(--muted);
     font-size: 13px;
-    margin-bottom: 15px;
-    line-height: 1.6;
+    margin-bottom: 17px;
+    line-height: 1.7;
 }
 
 .competition-card button {
     width: 100%;
 }
 
-/* HISTORY AND LEADERBOARD */
+/* =========================================
+   HISTORY AND LEADERBOARD
+========================================= */
 
 .history-item,
 .leaderboard-item {
@@ -351,7 +496,9 @@ button:disabled {
     justify-content: space-between;
     align-items: center;
     gap: 15px;
-    padding: 16px 0;
+
+    padding: 17px 0;
+
     border-bottom: 1px solid var(--border);
 }
 
@@ -368,31 +515,46 @@ button:disabled {
 }
 
 .win-label {
-    color: #4ade80;
-    font-weight: bold;
+    color: #4ADE80;
+    font-weight: 800;
 }
 
 .loss-label {
-    color: #f87171;
-    font-weight: bold;
+    color: #F87171;
+    font-weight: 800;
 }
 
-/* NOTIFICATION */
+/* =========================================
+   NOTIFICATION
+========================================= */
 
 .notification {
     position: fixed;
+
     bottom: 25px;
     right: 25px;
+
     max-width: 350px;
-    padding: 15px 20px;
-    background: #1e293b;
-    border: 1px solid var(--border);
+
+    padding: 16px 20px;
+
+    background: #163448;
+
+    border: 1px solid #31576B;
+
     color: white;
+
     border-radius: 10px;
+
+    box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+
     opacity: 0;
     visibility: hidden;
+
     transform: translateY(15px);
+
     transition: 0.3s ease;
+
     z-index: 1000;
 }
 
@@ -406,7 +568,76 @@ button:disabled {
     display: none !important;
 }
 
-/* RESPONSIVE */
+/* =========================================
+   PREMIUM BATTLE LEADERBOARD
+========================================= */
+
+#leaderboardContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.leaderboard-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+
+    padding: 18px;
+
+    background: #0B1D2B;
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px;
+
+    transition: 0.25s ease;
+}
+
+.leaderboard-item:hover {
+    transform: translateY(-3px);
+    border-color: var(--primary);
+    background: var(--surface-light);
+}
+
+.leaderboard-item strong {
+    font-size: 14px;
+    color: var(--text);
+}
+
+.leaderboard-item p {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.leaderboard-item > strong:last-child {
+    color: var(--accent);
+    font-size: 15px;
+    white-space: nowrap;
+}
+
+.leaderboard-item:first-child {
+    border-color: #A98236;
+    background: linear-gradient(100deg, #382D17, #102536);
+}
+
+.leaderboard-item:first-child > strong:last-child {
+    color: #FACC15;
+}
+
+.leaderboard-item:nth-child(2) {
+    border-color: #64748B;
+}
+
+.leaderboard-item:nth-child(3) {
+    border-color: #A16207;
+}
+
+/* =========================================
+   RESPONSIVE TABLET
+========================================= */
 
 @media (max-width: 850px) {
 
@@ -414,13 +645,27 @@ button:disabled {
         grid-template-columns: repeat(2, 1fr);
     }
 
+    .arena-main {
+        width: 92%;
+    }
+
 }
+
+/* =========================================
+   RESPONSIVE MOBILE
+========================================= */
 
 @media (max-width: 600px) {
 
     .arena-header {
         align-items: flex-start;
         flex-direction: column;
+        padding: 18px 5%;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
     }
 
     .arena-main {
@@ -431,7 +676,7 @@ button:disabled {
     .welcome-section {
         flex-direction: column;
         align-items: flex-start;
-        padding: 22px;
+        padding: 23px;
     }
 
     .welcome-section h2 {
@@ -482,66 +727,60 @@ button:disabled {
         max-width: none;
     }
 
-}
-/* =========================================
-   PREMIUM BATTLE LEADERBOARD
-========================================= */
-
-#leaderboardContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.leaderboard-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-    padding: 18px;
-    background: #0b1425;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    transition: 0.25s ease;
-}
-
-.leaderboard-item:hover {
-    transform: translateY(-3px);
-    border-color: var(--primary);
-    background: #172554;
-}
-
-.leaderboard-item strong {
-    font-size: 14px;
-}
-
-.leaderboard-item p {
-    margin-top: 6px;
-    color: var(--muted);
-    font-size: 12px;
-}
-
-.leaderboard-item > strong:last-child {
-    color: #facc15;
-    font-size: 15px;
-    white-space: nowrap;
-}
-
-.leaderboard-item:first-child {
-    border-color: #eab308;
-    background: linear-gradient(100deg, #422006, #172033);
-}
-
-.leaderboard-item:nth-child(2) {
-    border-color: #94a3b8;
-}
-
-.leaderboard-item:nth-child(3) {
-    border-color: #b45309;
-}
-
-@media (max-width: 600px) {
     .leaderboard-item {
         padding: 15px;
     }
+
+}
+
+/* =========================================
+   SMALL MOBILE
+========================================= */
+
+@media (max-width: 380px) {
+
+    .brand h1 {
+        font-size: 22px;
+    }
+
+    .welcome-section {
+        padding: 19px;
+    }
+
+    .welcome-section h2 {
+        font-size: 21px;
+    }
+
+    .stat-card {
+        padding: 14px;
+    }
+
+    .stat-card h2 {
+        font-size: 22px;
+    }
+
+    .arena-card {
+        padding: 16px;
+    }
+
+    .section-heading h2 {
+        font-size: 19px;
+    }
+
+}
+
+/* =========================================
+   ACCESSIBILITY
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
 }
