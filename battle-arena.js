@@ -1,13 +1,16 @@
-/* =====================================================
+/* =========================================================
    LEARNSPHERE BATTLE ARENA
-   COMPLETE FIREBASE ARENA ENGINE
+   Complete student-side Firebase engine
    Firebase SDK 12.2.1
-===================================================== */
+
+   Competition battles always use questionLimit and
+   durationSeconds saved by the administrator in battleQuizzes.
+========================================================= */
 
 
-/* =====================================================
+/* =========================================================
    1. FIREBASE IMPORTS
-===================================================== */
+========================================================= */
 
 import { auth, db } from "./firebase.js";
 
@@ -32,94 +35,56 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 
-/* =====================================================
-   2. GLOBAL VARIABLES
-===================================================== */
+/* =========================================================
+   2. GLOBAL STATE
+========================================================= */
 
 let currentStudent = null;
-
 let currentBattleId = null;
-
 let currentCompetitionId = "random";
 
 let queueUnsubscribe = null;
+let incomingChallengesUnsubscribe = null;
+let outgoingChallengesUnsubscribe = null;
 
 let matchmakingInProgress = false;
-
 let opponentSearchInProgress = false;
-
 let notificationTimer = null;
 
 let availableCompetitions = [];
 
-// Prevent the same accepted challenge from being processed
-// repeatedly by the Firestore listener.
-
-const processedAcceptedChallenges = new Set();
+const processingChallenges = new Set();
 
 
-/* =====================================================
+/* =========================================================
    3. HTML ELEMENTS
-===================================================== */
+========================================================= */
 
-const studentName =
-    document.getElementById("studentName");
+const studentName = document.getElementById("studentName");
+const studentLevel = document.getElementById("studentLevel");
 
-const studentLevel =
-    document.getElementById("studentLevel");
+const totalBattles = document.getElementById("totalBattles");
+const totalWins = document.getElementById("totalWins");
+const totalLosses = document.getElementById("totalLosses");
+const totalXP = document.getElementById("totalXP");
 
-const totalBattles =
-    document.getElementById("totalBattles");
+const randomMatchBtn = document.getElementById("randomMatchBtn");
+const cancelMatchBtn = document.getElementById("cancelMatchBtn");
 
-const totalWins =
-    document.getElementById("totalWins");
+const matchmakingStatus = document.getElementById("matchmakingStatus");
+const matchStatusTitle = document.getElementById("matchStatusTitle");
+const matchStatusMessage = document.getElementById("matchStatusMessage");
 
-const totalLosses =
-    document.getElementById("totalLosses");
+const matchedOpponentBox = document.getElementById("matchedOpponentBox");
+const matchedOpponentName = document.getElementById("matchedOpponentName");
+const enterBattleBtn = document.getElementById("enterBattleBtn");
 
-const totalXP =
-    document.getElementById("totalXP");
-
-
-const randomMatchBtn =
-    document.getElementById("randomMatchBtn");
-
-const cancelMatchBtn =
-    document.getElementById("cancelMatchBtn");
-
-
-const matchmakingStatus =
-    document.getElementById("matchmakingStatus");
-
-const matchStatusTitle =
-    document.getElementById("matchStatusTitle");
-
-const matchStatusMessage =
-    document.getElementById("matchStatusMessage");
-
-
-const matchedOpponentBox =
-    document.getElementById("matchedOpponentBox");
-
-const matchedOpponentName =
-    document.getElementById("matchedOpponentName");
-
-const enterBattleBtn =
-    document.getElementById("enterBattleBtn");
-
-
-const challengeStudentId =
-    document.getElementById("challengeStudentId");
-
-const sendChallengeBtn =
-    document.getElementById("sendChallengeBtn");
-
-const challengeStatus =
-    document.getElementById("challengeStatus");
+const challengeStudentId = document.getElementById("challengeStudentId");
+const sendChallengeBtn = document.getElementById("sendChallengeBtn");
+const challengeStatus = document.getElementById("challengeStatus");
 
 const incomingChallengesContainer =
     document.getElementById("incomingChallengesContainer");
-
 
 const competitionsContainer =
     document.getElementById("competitionsContainer");
@@ -130,297 +95,280 @@ const battleHistoryContainer =
 const leaderboardContainer =
     document.getElementById("leaderboardContainer");
 
-
-const notification =
-    document.getElementById("notification");
-
-const backDashboardBtn =
-    document.getElementById("backDashboardBtn");
+const notification = document.getElementById("notification");
+const backDashboardBtn = document.getElementById("backDashboardBtn");
 
 
-/* =====================================================
-   4. GENERAL FUNCTIONS
-===================================================== */
+/* =========================================================
+   4. GENERAL HELPERS
+========================================================= */
 
 function showNotification(message) {
-
-    if (!notification) return;
+    if (!notification) {
+        console.log(message);
+        return;
+    }
 
     notification.textContent = message;
-
     notification.classList.add("show");
 
     clearTimeout(notificationTimer);
 
     notificationTimer = setTimeout(() => {
-
         notification.classList.remove("show");
-
     }, 4000);
-
-}
-
-
-function normalize(value) {
-
-    return String(value || "")
-        .trim()
-        .toLowerCase();
-
 }
 
 
 function escapeHTML(value) {
-
     return String(value ?? "").replace(/[&<>"']/g, character => {
-
         const entities = {
-
             "&": "&amp;",
             "<": "&lt;",
             ">": "&gt;",
             '"': "&quot;",
             "'": "&#039;"
-
         };
 
         return entities[character];
-
     });
+}
 
+
+function normalize(value) {
+    return String(value ?? "").trim().toLowerCase();
 }
 
 
 function setMatchStatus(title, message) {
-
     if (matchStatusTitle) {
-
         matchStatusTitle.textContent = title;
-
     }
 
     if (matchStatusMessage) {
-
         matchStatusMessage.textContent = message;
-
     }
 
+    if (matchmakingStatus) {
+        matchmakingStatus.hidden = false;
+    }
 }
 
 
 function setMatchButtons(searching) {
-
     if (randomMatchBtn) {
-
         randomMatchBtn.disabled = searching;
-
     }
 
     if (cancelMatchBtn) {
-
         cancelMatchBtn.hidden = !searching;
-
     }
-
 }
 
 
 function getCompetition(competitionId) {
-
-    return availableCompetitions.find(item =>
-        item.id === competitionId
-    );
-
+    return availableCompetitions.find(item => item.id === competitionId);
 }
 
 
 function getCompetitionTitle(competitionId) {
-
     const competition = getCompetition(competitionId);
 
     return competition?.title ||
         competition?.courseTitle ||
         "Battle Competition";
-
 }
 
 
-/* =====================================================
-   5. AUTHENTICATION
-===================================================== */
+/*
+   Random battles and direct challenges do not have a selected
+   competition document of their own. In those cases, use the
+   settings from the first published competition configured by
+   the administrator. Never replace an admin-entered competition
+   duration with a hardcoded 60-second value.
+*/
+
+function getBattleSettings(competitionId = "random") {
+    let settingsCompetition = null;
+
+    if (competitionId && competitionId !== "random") {
+        settingsCompetition = getCompetition(competitionId);
+    } else {
+        settingsCompetition = availableCompetitions[0] || null;
+    }
+
+    if (!settingsCompetition) {
+        throw new Error(
+            "No published competition settings are available. Ask the administrator to publish a competition first."
+        );
+    }
+
+    const questionLimit = Number(settingsCompetition.questionLimit);
+    const durationSeconds = Number(settingsCompetition.durationSeconds);
+
+    if (!Number.isInteger(questionLimit) || questionLimit < 1) {
+        throw new Error(
+            "The administrator has not configured a valid question limit for this competition."
+        );
+    }
+
+    if (!Number.isInteger(durationSeconds) || durationSeconds < 1) {
+        throw new Error(
+            "The administrator has not configured a valid battle duration for this competition."
+        );
+    }
+
+    return {
+        questionLimit,
+        durationSeconds,
+        settingsCompetitionId: settingsCompetition.id
+    };
+}
+
+
+function showEnterBattleButton() {
+    if (!currentBattleId) return;
+
+    if (matchedOpponentBox) {
+        matchedOpponentBox.hidden = false;
+    }
+
+    setMatchStatus(
+        "Opponent Found!",
+        "Your battle room is ready. Enter the battle."
+    );
+
+    setMatchButtons(false);
+}
+
+
+function setMatchedOpponent(name) {
+    if (matchedOpponentName) {
+        matchedOpponentName.textContent = "Matched with " + (name || "Student");
+    }
+}
+
+
+function getTimestampValue(timestamp) {
+    if (timestamp?.toMillis) {
+        return timestamp.toMillis();
+    }
+
+    if (typeof timestamp === "number") {
+        return timestamp;
+    }
+
+    return 0;
+}
+
+
+/* =========================================================
+   5. AUTHENTICATION AND INITIALIZATION
+========================================================= */
 
 onAuthStateChanged(auth, async user => {
-
     if (!user) {
-
         window.location.href = "auth.html";
-
         return;
-
     }
 
     try {
-
         await loadStudentProfile(user.uid);
-
         await loadCompetitions();
 
-        await loadStudentStats();
-
-        await loadBattleHistory();
-
-        await loadLeaderboard();
-
-
-        // LISTEN TO STUDENT QUEUE
+        await Promise.all([
+            loadStudentStats(),
+            loadBattleHistory(),
+            loadLeaderboard()
+        ]);
 
         listenToOwnQueue();
-
-
-        // LISTEN TO INCOMING CHALLENGES
-
         listenToIncomingChallenges();
-
-
-        // LISTEN TO OUTGOING CHALLENGES
-
         listenToOutgoingChallenges();
-
-
-        // RECOVER PREVIOUS BATTLE
 
         await recoverExistingBattle();
 
-
     } catch (error) {
-
-        console.error(
-            "Arena initialization error:",
-            error
-        );
+        console.error("Battle Arena initialization error:", error);
 
         showNotification(
             "Unable to load Battle Arena: " + error.message
         );
-
     }
-
 });
 
 
-/* =====================================================
-   6. LOAD STUDENT PROFILE
-===================================================== */
+/* =========================================================
+   6. STUDENT PROFILE
+========================================================= */
 
 async function loadStudentProfile(uid) {
-
-    const studentRef = doc(
-        db,
-        "students",
-        uid
-    );
-
+    const studentRef = doc(db, "students", uid);
     const studentSnap = await getDoc(studentRef);
 
     if (!studentSnap.exists()) {
-
         throw new Error(
             "Student profile was not found. Please contact the administrator."
         );
-
     }
 
     currentStudent = {
-
-        uid: uid,
-
+        uid,
         ...studentSnap.data()
-
     };
-
 
     if (
         currentStudent.role &&
         currentStudent.role !== "student"
     ) {
-
         throw new Error(
             "Only student accounts can enter the Battle Arena."
         );
-
     }
-
 
     if (studentName) {
-
         studentName.textContent =
             currentStudent.fullName || "Student";
-
     }
-
 
     if (studentLevel) {
-
         studentLevel.textContent =
             currentStudent.level || "--";
-
     }
-
 }
 
 
-/* =====================================================
-   7. LOAD AVAILABLE COMPETITIONS
-===================================================== */
+/* =========================================================
+   7. LOAD PUBLISHED COMPETITIONS
+========================================================= */
 
 async function loadCompetitions() {
-
     if (!competitionsContainer) return;
 
     competitionsContainer.innerHTML =
         "<p>Loading competitions...</p>";
 
-
-    const competitionsRef = collection(
-        db,
-        "battleQuizzes"
-    );
-
-
     const competitionsQuery = query(
-        competitionsRef,
+        collection(db, "battleQuizzes"),
         where("published", "==", true),
-        limit(30)
+        limit(50)
     );
 
-
-    const snapshot = await getDocs(
-        competitionsQuery
-    );
-
+    const snapshot = await getDocs(competitionsQuery);
 
     availableCompetitions = snapshot.docs.map(item => ({
-
         id: item.id,
-
         ...item.data()
-
     }));
 
-
     if (availableCompetitions.length === 0) {
-
         competitionsContainer.innerHTML =
             "<p>No published competitions are available yet.</p>";
-
         return;
-
     }
-
 
     competitionsContainer.innerHTML =
         availableCompetitions.map(item => {
-
             const title = escapeHTML(
                 item.title || item.courseTitle || "Competition"
             );
@@ -430,85 +378,59 @@ async function loadCompetitions() {
                 "Test your knowledge against another student."
             );
 
-
             return `
-
                 <div class="competition-card">
-
                     <h3>${title}</h3>
-
                     <p>${description}</p>
-
                     <button
                         class="primary-btn competition-match-btn"
                         data-competition="${escapeHTML(item.id)}"
                     >
                         Join Competition
                     </button>
-
                 </div>
-
             `;
-
         }).join("");
 
-
-    document.querySelectorAll(".competition-match-btn")
+    competitionsContainer
+        .querySelectorAll(".competition-match-btn")
         .forEach(button => {
-
             button.addEventListener("click", () => {
-
-                const competitionId =
-                    button.dataset.competition;
-
-                startMatchmaking(competitionId);
-
+                startMatchmaking(button.dataset.competition);
             });
-
         });
-
 }
 
 
-/* =====================================================
-   8. START RANDOM MATCH
-===================================================== */
+/* =========================================================
+   8. RANDOM MATCH BUTTON
+========================================================= */
 
 async function startRandomMatch() {
-
     await startMatchmaking("random");
-
 }
 
 
-/* =====================================================
+/* =========================================================
    9. START MATCHMAKING
-===================================================== */
+========================================================= */
 
 async function startMatchmaking(competitionId = "random") {
-
     if (!currentStudent) {
-
-        showNotification(
-            "Student profile is not ready."
-        );
-
+        showNotification("Student profile is not ready.");
         return;
-
     }
-
 
     if (matchmakingInProgress) return;
 
-
     matchmakingInProgress = true;
-
     currentCompetitionId = competitionId;
 
     setMatchButtons(true);
 
-
     try {
+        // Validate the configured battle settings before joining.
+        const battleSettings = getBattleSettings(competitionId);
 
         const ownQueueRef = doc(
             db,
@@ -516,23 +438,12 @@ async function startMatchmaking(competitionId = "random") {
             currentStudent.uid
         );
 
-
-        const ownQueueSnap = await getDoc(
-            ownQueueRef
-        );
-
-
-        /* =====================================
-           CHECK PREVIOUS QUEUE
-        ===================================== */
+        const ownQueueSnap = await getDoc(ownQueueRef);
 
         if (ownQueueSnap.exists()) {
-
             const oldData = ownQueueSnap.data();
 
-
-            // Do not replace an active direct challenge.
-
+            // Do not overwrite an active direct challenge.
             if (
                 oldData.challengeId &&
                 (
@@ -540,173 +451,114 @@ async function startMatchmaking(competitionId = "random") {
                     oldData.status === "matched"
                 )
             ) {
+                if (
+                    oldData.status === "matched" &&
+                    oldData.matchedBattleId
+                ) {
+                    currentBattleId = oldData.matchedBattleId;
+                    setMatchedOpponent(oldData.opponentName);
+                    showEnterBattleButton();
+                } else {
+                    setMatchStatus(
+                        "Direct Challenge Active",
+                        "You already have an active direct challenge."
+                    );
+                }
 
                 showNotification(
                     "You already have an active direct challenge."
                 );
-
                 return;
-
             }
 
-
-            // CHECK PREVIOUS MATCHED BATTLE
-
+            // Recover an existing active battle.
             if (
                 oldData.status === "matched" &&
                 oldData.matchedBattleId
             ) {
-
-                const oldBattleRef = doc(
-                    db,
-                    "battles",
-                    oldData.matchedBattleId
-                );
-
-
                 const oldBattleSnap = await getDoc(
-                    oldBattleRef
+                    doc(db, "battles", oldData.matchedBattleId)
                 );
-
 
                 if (
                     oldBattleSnap.exists() &&
                     oldBattleSnap.data().status !== "completed"
                 ) {
-
-                    currentBattleId =
-                        oldData.matchedBattleId;
-
+                    currentBattleId = oldData.matchedBattleId;
+                    setMatchedOpponent(oldData.opponentName);
                     showEnterBattleButton();
-
-                    showNotification(
-                        "You already have an active battle."
-                    );
-
+                    showNotification("You already have an active battle.");
                     return;
-
                 }
-
 
                 await updateDoc(ownQueueRef, {
-
                     status: "cancelled",
-
                     matchedBattleId: null,
-
                     opponentName: null,
-
                     cancelledAt: serverTimestamp()
-
                 });
-
-
-                currentBattleId = null;
-
-
-                if (matchedOpponentBox) {
-
-                    matchedOpponentBox.hidden = true;
-
-                }
-
             }
 
-
-            // ALREADY WAITING FOR AN OPPONENT
-
+            // Reuse an existing queue if it is already waiting
+            // for the same matchmaking type.
             else if (oldData.status === "waiting") {
-
                 if (
                     normalize(oldData.competitionId) ===
                     normalize(competitionId)
                 ) {
-
                     setMatchStatus(
                         "Searching for Opponent",
                         "You are already in the queue. Searching for another student..."
                     );
 
-
                     await findAvailableOpponent(
-                        competitionId
+                        competitionId,
+                        battleSettings
                     );
-
                     return;
-
-                } else {
-
-                    await updateDoc(ownQueueRef, {
-
-                        status: "cancelled",
-
-                        cancelledAt: serverTimestamp()
-
-                    });
-
                 }
 
+                await updateDoc(ownQueueRef, {
+                    status: "cancelled",
+                    cancelledAt: serverTimestamp()
+                });
             }
-
         }
 
-
-        /* =====================================
-           CREATE NEW MATCHMAKING REQUEST
-        ===================================== */
-
         await setDoc(ownQueueRef, {
-
             studentId: currentStudent.uid,
-
-            fullName:
-                currentStudent.fullName || "Student",
-
-            department:
-                currentStudent.department || "",
-
-            level:
-                currentStudent.level || "",
-
-            competitionId: competitionId,
-
+            fullName: currentStudent.fullName || "Student",
+            department: currentStudent.department || "",
+            level: currentStudent.level || "",
+            competitionId,
             status: "waiting",
-
             createdAt: serverTimestamp(),
-
+            updatedAt: serverTimestamp(),
             matchedBattleId: null,
-
-            opponentName: null
-
+            opponentName: null,
+            challengeId: null
         });
-
 
         currentBattleId = null;
 
+        if (matchedOpponentBox) {
+            matchedOpponentBox.hidden = true;
+        }
 
         setMatchStatus(
             "Searching for Opponent",
-            "Your new matchmaking request is active."
+            "Your matchmaking request is active. Waiting for another student..."
         );
-
 
         await findAvailableOpponent(
-            competitionId
+            competitionId,
+            battleSettings
         );
-
 
     } catch (error) {
+        console.error("Matchmaking error:", error);
 
-        console.error(
-            "Matchmaking error:",
-            error
-        );
-
-
-        showNotification(
-            "Matchmaking failed: " + error.message
-        );
-
+        showNotification("Matchmaking failed: " + error.message);
 
         setMatchStatus(
             "Matchmaking Failed",
@@ -714,75 +566,54 @@ async function startMatchmaking(competitionId = "random") {
         );
 
     } finally {
-
         matchmakingInProgress = false;
 
-
+        // Keep the cancel button visible while the queue is waiting.
         if (!currentBattleId) {
+            const queueSnap = await getDoc(
+                doc(db, "battleQueue", currentStudent.uid)
+            ).catch(() => null);
 
-            setMatchButtons(false);
+            const stillWaiting =
+                queueSnap?.exists() &&
+                queueSnap.data().status === "waiting" &&
+                !queueSnap.data().challengeId;
 
+            setMatchButtons(Boolean(stillWaiting));
         }
-
     }
-
 }
 
 
-/* =====================================================
-   10. FIND AVAILABLE OPPONENT
-===================================================== */
+/* =========================================================
+   10. FIND AN AVAILABLE OPPONENT
+========================================================= */
 
-async function findAvailableOpponent(competitionId) {
-
+async function findAvailableOpponent(
+    competitionId,
+    battleSettings
+) {
     if (opponentSearchInProgress) return;
 
     opponentSearchInProgress = true;
 
-
     try {
-
-        const queueRef = collection(
-            db,
-            "battleQueue"
-        );
-
-
         const waitingQuery = query(
-            queueRef,
+            collection(db, "battleQueue"),
             where("status", "==", "waiting"),
-            limit(50)
+            limit(100)
         );
 
-
-        const queueSnapshot = await getDocs(
-            waitingQuery
-        );
-
-
-        let opponentFound = false;
-
+        const queueSnapshot = await getDocs(waitingQuery);
 
         for (const opponentDocument of queueSnapshot.docs) {
-
             const opponentId = opponentDocument.id;
+            const opponentData = opponentDocument.data();
 
-            const opponentData =
-                opponentDocument.data();
+            if (opponentId === currentStudent.uid) continue;
 
-
-            if (opponentId === currentStudent.uid) {
-                continue;
-            }
-
-
-            // NEVER MATCH DIRECT CHALLENGE QUEUES
-            // THROUGH RANDOM MATCHMAKING.
-
-            if (opponentData.challengeId) {
-                continue;
-            }
-
+            // Direct challenge queues must never enter normal matchmaking.
+            if (opponentData.challengeId) continue;
 
             if (
                 normalize(opponentData.competitionId) !==
@@ -791,11 +622,7 @@ async function findAvailableOpponent(competitionId) {
                 continue;
             }
 
-
-            if (!opponentData.studentId) {
-                continue;
-            }
-
+            if (!opponentData.studentId) continue;
 
             const ownQueueRef = doc(
                 db,
@@ -803,255 +630,150 @@ async function findAvailableOpponent(competitionId) {
                 currentStudent.uid
             );
 
-
             const opponentQueueRef = doc(
                 db,
                 "battleQueue",
                 opponentId
             );
 
-
-            const battleRef = doc(
-                collection(db, "battles")
-            );
-
+            const battleRef = doc(collection(db, "battles"));
 
             try {
+                await runTransaction(db, async transaction => {
+                    const ownSnap =
+                        await transaction.get(ownQueueRef);
 
-                await runTransaction(
-                    db,
-                    async transaction => {
+                    const opponentSnap =
+                        await transaction.get(opponentQueueRef);
 
-                        const ownSnap =
-                            await transaction.get(ownQueueRef);
-
-
-                        const opponentSnap =
-                            await transaction.get(opponentQueueRef);
-
-
-                        if (
-                            !ownSnap.exists() ||
-                            !opponentSnap.exists()
-                        ) {
-
-                            throw new Error(
-                                "Queue entry no longer exists."
-                            );
-
-                        }
-
-
-                        const ownData = ownSnap.data();
-
-                        const opponentCurrent =
-                            opponentSnap.data();
-
-
-                        if (
-                            ownData.status !== "waiting" ||
-                            opponentCurrent.status !== "waiting"
-                        ) {
-
-                            throw new Error(
-                                "One student has already been matched."
-                            );
-
-                        }
-
-
-                        if (
-                            ownData.challengeId ||
-                            opponentCurrent.challengeId
-                        ) {
-
-                            throw new Error(
-                                "Direct challenge queues cannot enter random matchmaking."
-                            );
-
-                        }
-
-
-                        if (
-                            normalize(ownData.competitionId) !==
-                            normalize(opponentCurrent.competitionId)
-                        ) {
-
-                            throw new Error(
-                                "Competition mismatch."
-                            );
-
-                        }
-
-
-                        const competition =
-                            getCompetition(competitionId);
-
-
-                        const battleData = {
-
-                            player1Id:
-                                currentStudent.uid,
-
-                            player2Id:
-                                opponentId,
-
-                            player1Name:
-                                currentStudent.fullName || "Student",
-
-                            player2Name:
-                                opponentCurrent.fullName || "Student",
-
-                            competitionId:
-                                competitionId === "random"
-                                    ? null
-                                    : competitionId,
-
-                            competitionTitle:
-                                competitionId === "random"
-                                    ? "Random Battle"
-                                    : getCompetitionTitle(competitionId),
-
-                            questionLimit:
-                                Number(
-                                    competition?.questionLimit || 10
-                                ),
-
-                            durationSeconds:
-                                Number(
-                                    competition?.durationSeconds || 60
-                                ),
-
-                            status: "waiting",
-
-                            createdAt: serverTimestamp(),
-
-                            player1Score: 0,
-
-                            player2Score: 0,
-
-                            player1Answers: {},
-
-                            player2Answers: {}
-
-                        };
-
-
-                        transaction.set(
-                            battleRef,
-                            battleData
-                        );
-
-
-                        transaction.update(
-                            ownQueueRef,
-                            {
-
-                                status: "matched",
-
-                                matchedBattleId: battleRef.id,
-
-                                opponentName:
-                                    opponentCurrent.fullName || "Student"
-
-                            }
-                        );
-
-
-                        transaction.update(
-                            opponentQueueRef,
-                            {
-
-                                status: "matched",
-
-                                matchedBattleId: battleRef.id,
-
-                                opponentName:
-                                    currentStudent.fullName || "Student"
-
-                            }
-                        );
-
+                    if (!ownSnap.exists() || !opponentSnap.exists()) {
+                        throw new Error("Queue entry no longer exists.");
                     }
-                );
 
+                    const ownData = ownSnap.data();
+                    const opponentCurrent = opponentSnap.data();
+
+                    if (
+                        ownData.status !== "waiting" ||
+                        opponentCurrent.status !== "waiting"
+                    ) {
+                        throw new Error(
+                            "One student has already been matched."
+                        );
+                    }
+
+                    if (
+                        ownData.challengeId ||
+                        opponentCurrent.challengeId
+                    ) {
+                        throw new Error(
+                            "Direct challenge queues cannot enter normal matchmaking."
+                        );
+                    }
+
+                    if (
+                        normalize(ownData.competitionId) !==
+                        normalize(opponentCurrent.competitionId)
+                    ) {
+                        throw new Error("Competition mismatch.");
+                    }
+
+                    const battleData = {
+                        player1Id: currentStudent.uid,
+                        player2Id: opponentId,
+
+                        player1Name:
+                            currentStudent.fullName || "Student",
+
+                        player2Name:
+                            opponentCurrent.fullName || "Student",
+
+                        competitionId:
+                            competitionId === "random"
+                                ? null
+                                : competitionId,
+
+                        competitionTitle:
+                            competitionId === "random"
+                                ? "Random Battle"
+                                : getCompetitionTitle(competitionId),
+
+                        questionLimit: battleSettings.questionLimit,
+                        durationSeconds: battleSettings.durationSeconds,
+
+                        status: "waiting",
+                        createdAt: serverTimestamp(),
+
+                        player1Score: 0,
+                        player2Score: 0,
+                        player1Answers: {},
+                        player2Answers: {}
+                    };
+
+                    transaction.set(battleRef, battleData);
+
+                    transaction.update(ownQueueRef, {
+                        status: "matched",
+                        matchedBattleId: battleRef.id,
+                        opponentName:
+                            opponentCurrent.fullName || "Student",
+                        updatedAt: serverTimestamp()
+                    });
+
+                    transaction.update(opponentQueueRef, {
+                        status: "matched",
+                        matchedBattleId: battleRef.id,
+                        opponentName:
+                            currentStudent.fullName || "Student",
+                        updatedAt: serverTimestamp()
+                    });
+                });
 
                 currentBattleId = battleRef.id;
 
-                opponentFound = true;
-
-
-                if (matchedOpponentName) {
-
-                    matchedOpponentName.textContent =
-                        "Matched with " +
-                        (opponentData.fullName || "Student");
-
-                }
-
+                setMatchedOpponent(
+                    opponentData.fullName || "Student"
+                );
 
                 showEnterBattleButton();
+                showNotification("Opponent found!");
 
-                showNotification(
-                    "Opponent found!"
-                );
-
-
-                break;
-
+                return;
 
             } catch (error) {
-
-                if (error.code === "resource-exhausted") {
-
-                    throw error;
-
-                }
-
-
-                console.error(
-                    "Opponent matching failed:",
-                    error
+                // Another student may have claimed this queue first.
+                // Continue looking instead of stopping the whole search.
+                console.info(
+                    "This opponent was not available:",
+                    error.message
                 );
-
             }
-
         }
 
-
-        if (!opponentFound && !currentBattleId) {
-
+        if (!currentBattleId) {
             setMatchStatus(
                 "Waiting for Opponent",
                 "You are in the queue. Waiting for another student."
             );
-
         }
 
     } finally {
-
         opponentSearchInProgress = false;
-
     }
-
 }
 
 
-/* =====================================================
-   11. LISTEN TO OWN QUEUE
-===================================================== */
+/* =========================================================
+   11. LISTEN TO THE STUDENT'S QUEUE
+========================================================= */
 
 function listenToOwnQueue() {
-
     if (!currentStudent) return;
 
-
     if (queueUnsubscribe) {
-
         queueUnsubscribe();
-
+        queueUnsubscribe = null;
     }
-
 
     const queueRef = doc(
         db,
@@ -1059,278 +781,161 @@ function listenToOwnQueue() {
         currentStudent.uid
     );
 
-
     queueUnsubscribe = onSnapshot(
         queueRef,
-
         snapshot => {
-
             if (!snapshot.exists()) return;
 
-
             const data = snapshot.data();
-
-
-            // MATCHED
 
             if (
                 data.status === "matched" &&
                 data.matchedBattleId
             ) {
+                currentBattleId = data.matchedBattleId;
 
-                currentBattleId =
-                    data.matchedBattleId;
-
-
-                if (matchedOpponentName) {
-
-                    matchedOpponentName.textContent =
-                        "Matched with " +
-                        (data.opponentName || "Student");
-
-                }
-
-
+                setMatchedOpponent(data.opponentName);
                 showEnterBattleButton();
-
+                return;
             }
 
-
-            // WAITING
-
             if (data.status === "waiting") {
-
                 currentBattleId = null;
 
-
                 if (matchedOpponentBox) {
-
                     matchedOpponentBox.hidden = true;
-
                 }
 
-
                 if (data.challengeId) {
-
                     setMatchStatus(
                         "Direct Challenge Accepted",
-                        "Waiting for the student who challenged you to start the battle."
+                        "Waiting for the student who challenged you to connect the battle."
                     );
-
                 } else {
-
                     setMatchStatus(
                         "Waiting for Opponent",
                         "You are in the matchmaking queue."
                     );
-
                 }
-
 
                 setMatchButtons(true);
-
+                return;
             }
 
-
-            // CANCELLED
-
             if (data.status === "cancelled") {
-
                 currentBattleId = null;
 
-
                 if (matchedOpponentBox) {
-
                     matchedOpponentBox.hidden = true;
-
                 }
-
 
                 setMatchStatus(
                     "Ready to Play Again",
-                    "Your previous matchmaking session has ended. Find another opponent."
+                    "Your previous matchmaking session has ended."
                 );
 
-
                 setMatchButtons(false);
-
             }
-
         },
-
         error => {
-
-            console.error(
-                "Queue listener error:",
-                error
+            console.error("Queue listener error:", error);
+            showNotification(
+                "Queue update error: " + error.message
             );
-
         }
     );
-
 }
 
 
-/* =====================================================
-   12. SHOW ENTER BATTLE BUTTON
-===================================================== */
-
-function showEnterBattleButton() {
-
-    if (!currentBattleId) return;
-
-
-    if (matchedOpponentBox) {
-
-        matchedOpponentBox.hidden = false;
-
-    }
-
-
-    setMatchStatus(
-        "Opponent Found!",
-        "Your battle room is ready."
-    );
-
-
-    setMatchButtons(false);
-
-}
-
-
-/* =====================================================
-   13. ENTER BATTLE ROOM
-===================================================== */
+/* =========================================================
+   12. ENTER THE BATTLE ROOM
+========================================================= */
 
 function enterBattleRoom() {
-
     if (!currentBattleId) {
-
-        showNotification(
-            "No active battle was found."
-        );
-
+        showNotification("No active battle was found.");
         return;
-
     }
-
 
     window.location.href =
         "battle-room.html?battleId=" +
         encodeURIComponent(currentBattleId);
-
 }
 
 
-/* =====================================================
-   14. CANCEL MATCHMAKING
-===================================================== */
+/* =========================================================
+   13. CANCEL MATCHMAKING
+========================================================= */
 
 async function cancelMatchmaking() {
-
     if (!currentStudent) return;
 
-
     if (currentBattleId) {
-
         showNotification(
             "A battle has already been created. You cannot cancel this queue."
         );
-
         return;
-
     }
 
-
     try {
-
         const queueRef = doc(
             db,
             "battleQueue",
             currentStudent.uid
         );
 
-
-        const queueSnap = await getDoc(
-            queueRef
-        );
-
+        const queueSnap = await getDoc(queueRef);
 
         if (!queueSnap.exists()) {
-
             showNotification(
                 "No active matchmaking request was found."
             );
-
+            setMatchButtons(false);
             return;
-
         }
 
-
         const queueData = queueSnap.data();
-
 
         if (
             queueData.status !== "waiting" ||
             queueData.challengeId
         ) {
-
             showNotification(
-                "This queue cannot be cancelled using random matchmaking controls."
+                "This queue cannot be cancelled using the matchmaking controls."
             );
-
             return;
-
         }
 
-
         await updateDoc(queueRef, {
-
             status: "cancelled",
-
-            cancelledAt: serverTimestamp()
-
+            cancelledAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
         });
-
 
         setMatchStatus(
             "Search Cancelled",
             "You have left the matchmaking queue."
         );
 
-
         setMatchButtons(false);
-
-        showNotification(
-            "Matchmaking cancelled."
-        );
-
+        showNotification("Matchmaking cancelled.");
 
     } catch (error) {
-
-        console.error(
-            "Cancel matchmaking error:",
-            error
-        );
-
+        console.error("Cancel matchmaking error:", error);
 
         showNotification(
             "Unable to cancel matchmaking: " + error.message
         );
-
     }
-
 }
 
 
-/* =====================================================
-   15. RECOVER EXISTING BATTLE
-===================================================== */
+/* =========================================================
+   14. RECOVER AN EXISTING BATTLE OR QUEUE
+========================================================= */
 
 async function recoverExistingBattle() {
-
     if (!currentStudent) return;
-
 
     const queueRef = doc(
         db,
@@ -1338,192 +943,110 @@ async function recoverExistingBattle() {
         currentStudent.uid
     );
 
-
-    const queueSnap = await getDoc(
-        queueRef
-    );
-
+    const queueSnap = await getDoc(queueRef);
 
     if (!queueSnap.exists()) return;
 
-
     const data = queueSnap.data();
-
 
     if (
         data.status === "matched" &&
         data.matchedBattleId
     ) {
-
-        const battleRef = doc(
-            db,
-            "battles",
-            data.matchedBattleId
-        );
-
-
         const battleSnap = await getDoc(
-            battleRef
+            doc(db, "battles", data.matchedBattleId)
         );
-
 
         if (
             !battleSnap.exists() ||
             battleSnap.data().status === "completed"
         ) {
-
             await updateDoc(queueRef, {
-
                 status: "cancelled",
-
                 matchedBattleId: null,
-
                 opponentName: null,
-
                 cancelledAt: serverTimestamp()
-
             });
 
-
             currentBattleId = null;
-
 
             setMatchStatus(
                 "Ready to Play Again",
                 "Your previous battle has ended. You can find another opponent."
             );
 
-
             setMatchButtons(false);
-
             return;
-
         }
 
-
-        currentBattleId =
-            data.matchedBattleId;
-
-
-        if (matchedOpponentName) {
-
-            matchedOpponentName.textContent =
-                "Matched with " +
-                (data.opponentName || "Student");
-
-        }
-
-
+        currentBattleId = data.matchedBattleId;
+        setMatchedOpponent(data.opponentName);
         showEnterBattleButton();
-
+        return;
     }
 
-
-    else if (data.status === "waiting") {
-
+    if (data.status === "waiting") {
         currentBattleId = null;
 
-
         if (data.challengeId) {
-
             setMatchStatus(
                 "Direct Challenge Accepted",
-                "Waiting for the challenger to connect you to the battle."
+                "Waiting for the challenger to connect the battle."
             );
-
         } else {
-
             setMatchStatus(
                 "Waiting for Opponent",
                 "You are already in the matchmaking queue."
             );
-
         }
 
-
         setMatchButtons(true);
-
     }
-
 }
 
 
-/* =====================================================
-   16. LISTEN TO INCOMING BATTLE CHALLENGES
-===================================================== */
+/* =========================================================
+   15. LISTEN TO INCOMING CHALLENGES
+========================================================= */
 
 function listenToIncomingChallenges() {
+    if (!currentStudent || !incomingChallengesContainer) return;
 
-    if (
-        !currentStudent ||
-        !incomingChallengesContainer
-    ) {
-        return;
+    if (incomingChallengesUnsubscribe) {
+        incomingChallengesUnsubscribe();
     }
 
-
-    const challengesRef = collection(
-        db,
-        "battleChallenges"
-    );
-
-
     const challengesQuery = query(
-        challengesRef,
-
-        where(
-            "opponentId",
-            "==",
-            currentStudent.uid
-        ),
-
-        where(
-            "status",
-            "==",
-            "pending"
-        ),
-
+        collection(db, "battleChallenges"),
+        where("opponentId", "==", currentStudent.uid),
+        where("status", "==", "pending"),
         limit(30)
     );
 
-
-    onSnapshot(
+    incomingChallengesUnsubscribe = onSnapshot(
         challengesQuery,
-
         snapshot => {
-
             if (snapshot.empty) {
-
                 incomingChallengesContainer.innerHTML =
                     "<p>You have no pending battle challenges.</p>";
-
                 return;
-
             }
-
 
             incomingChallengesContainer.innerHTML =
                 snapshot.docs.map(item => {
-
                     const challenge = item.data();
 
-
                     return `
-
                         <div class="competition-card">
-
                             <h3>
                                 ${escapeHTML(
                                     challenge.challengerName || "Student"
                                 )}
                             </h3>
 
-                            <p>
-                                Has challenged you to a battle.
-                            </p>
+                            <p>Has challenged you to a battle.</p>
 
                             <div class="match-options">
-
                                 <button
                                     class="primary-btn accept-challenge-btn"
                                     data-id="${escapeHTML(item.id)}"
@@ -1537,87 +1060,56 @@ function listenToIncomingChallenges() {
                                 >
                                     Reject
                                 </button>
-
                             </div>
-
                         </div>
-
                     `;
-
                 }).join("");
-
-
-            // ACCEPT BUTTON
 
             incomingChallengesContainer
                 .querySelectorAll(".accept-challenge-btn")
                 .forEach(button => {
-
                     button.addEventListener("click", () => {
-
                         respondToChallenge(
                             button.dataset.id,
                             "accepted"
                         );
-
                     });
-
                 });
-
-
-            // REJECT BUTTON
 
             incomingChallengesContainer
                 .querySelectorAll(".reject-challenge-btn")
                 .forEach(button => {
-
                     button.addEventListener("click", () => {
-
                         respondToChallenge(
                             button.dataset.id,
                             "rejected"
                         );
-
                     });
-
                 });
-
         },
-
         error => {
-
-            console.error(
-                "Incoming challenges error:",
-                error
-            );
-
+            console.error("Incoming challenges error:", error);
 
             incomingChallengesContainer.innerHTML =
                 "<p>Unable to load incoming challenges.</p>";
-
         }
     );
-
 }
 
 
-/* =====================================================
-   17. ACCEPT OR REJECT BATTLE CHALLENGE
-===================================================== */
+/* =========================================================
+   16. ACCEPT OR REJECT A CHALLENGE
+========================================================= */
 
 async function respondToChallenge(challengeId, response) {
-
     if (!currentStudent) return;
 
-
     try {
-
         const challengeRef = doc(
             db,
             "battleChallenges",
             challengeId
         );
-
 
         const queueRef = doc(
             db,
@@ -1625,169 +1117,82 @@ async function respondToChallenge(challengeId, response) {
             currentStudent.uid
         );
 
+        await runTransaction(db, async transaction => {
+            // All transaction reads happen before any writes.
+            const challengeSnap =
+                await transaction.get(challengeRef);
 
-        await runTransaction(
-            db,
-            async transaction => {
+            const queueSnap =
+                await transaction.get(queueRef);
 
-                // READ DOCUMENTS FIRST
+            if (!challengeSnap.exists()) {
+                throw new Error("Challenge no longer exists.");
+            }
 
-                const challengeSnap =
-                    await transaction.get(challengeRef);
+            const challenge = challengeSnap.data();
 
+            if (challenge.opponentId !== currentStudent.uid) {
+                throw new Error(
+                    "This invitation belongs to another student."
+                );
+            }
 
-                const queueSnap =
-                    await transaction.get(queueRef);
+            if (challenge.status !== "pending") {
+                throw new Error(
+                    "This invitation has already been answered."
+                );
+            }
 
+            if (response === "rejected") {
+                transaction.update(challengeRef, {
+                    status: "rejected",
+                    respondedAt: serverTimestamp()
+                });
+                return;
+            }
 
-                if (!challengeSnap.exists()) {
+            if (response !== "accepted") {
+                throw new Error("Invalid challenge response.");
+            }
 
-                    throw new Error(
-                        "Challenge no longer exists."
-                    );
-
-                }
-
-
-                const challenge = challengeSnap.data();
-
+            if (queueSnap.exists()) {
+                const existingQueue = queueSnap.data();
 
                 if (
-                    challenge.opponentId !==
-                    currentStudent.uid
+                    existingQueue.status === "waiting" ||
+                    existingQueue.status === "matched"
                 ) {
-
                     throw new Error(
-                        "This invitation belongs to another student."
+                        "You already have an active battle session. Finish it first."
                     );
-
                 }
-
-
-                if (challenge.status !== "pending") {
-
-                    throw new Error(
-                        "This invitation has already been answered."
-                    );
-
-                }
-
-
-                // REJECT CHALLENGE
-
-                if (response === "rejected") {
-
-                    transaction.update(
-                        challengeRef,
-                        {
-
-                            status: "rejected",
-
-                            respondedAt: serverTimestamp()
-
-                        }
-                    );
-
-                    return;
-
-                }
-
-
-                if (response !== "accepted") {
-
-                    throw new Error(
-                        "Invalid challenge response."
-                    );
-
-                }
-
-
-                // CHECK EXISTING QUEUE
-
-                if (queueSnap.exists()) {
-
-                    const existingQueue =
-                        queueSnap.data();
-
-
-                    if (
-                        existingQueue.status === "waiting" ||
-                        existingQueue.status === "matched"
-                    ) {
-
-                        throw new Error(
-                            "You already have an active battle session. Finish or cancel it first."
-                        );
-
-                    }
-
-                }
-
-
-                // CREATE DIRECT CHALLENGE QUEUE
-
-                const directCompetitionId =
-                    "direct_" + challengeId;
-
-
-                transaction.set(
-                    queueRef,
-                    {
-
-                        studentId:
-                            currentStudent.uid,
-
-                        fullName:
-                            currentStudent.fullName || "Student",
-
-                        department:
-                            currentStudent.department || "",
-
-                        level:
-                            currentStudent.level || "",
-
-                        status: "waiting",
-
-                        matchedBattleId: null,
-
-                        opponentName:
-                            challenge.challengerName || "Student",
-
-                        competitionId:
-                            directCompetitionId,
-
-                        competitionTitle:
-                            "Direct Challenge",
-
-                        challengeId:
-                            challengeId,
-
-                        createdAt:
-                            serverTimestamp(),
-
-                        updatedAt:
-                            serverTimestamp()
-
-                    }
-                );
-
-
-                // ACCEPT INVITATION
-
-                transaction.update(
-                    challengeRef,
-                    {
-
-                        status: "accepted",
-
-                        respondedAt: serverTimestamp()
-
-                    }
-                );
-
             }
-        );
 
+            transaction.set(queueRef, {
+                studentId: currentStudent.uid,
+                fullName: currentStudent.fullName || "Student",
+                department: currentStudent.department || "",
+                level: currentStudent.level || "",
+
+                status: "waiting",
+                matchedBattleId: null,
+
+                opponentName:
+                    challenge.challengerName || "Student",
+
+                competitionId: "direct_" + challengeId,
+                competitionTitle: "Direct Challenge",
+                challengeId,
+
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+
+            transaction.update(challengeRef, {
+                status: "accepted",
+                respondedAt: serverTimestamp()
+            });
+        });
 
         showNotification(
             response === "accepted"
@@ -1795,119 +1200,61 @@ async function respondToChallenge(challengeId, response) {
                 : "Challenge rejected."
         );
 
-
     } catch (error) {
-
-        console.error(
-            "Challenge response error:",
-            error
-        );
-
-
-        showNotification(
-            error.message
-        );
-
+        console.error("Challenge response error:", error);
+        showNotification(error.message);
     }
-
 }
 
 
-/* =====================================================
-   18. LISTEN TO OUTGOING BATTLE CHALLENGES
-===================================================== */
+/* =========================================================
+   17. LISTEN TO OUTGOING CHALLENGES
+========================================================= */
 
 function listenToOutgoingChallenges() {
-
     if (!currentStudent) return;
 
-
-    const challengesRef = collection(
-        db,
-        "battleChallenges"
-    );
-
+    if (outgoingChallengesUnsubscribe) {
+        outgoingChallengesUnsubscribe();
+    }
 
     const challengesQuery = query(
-        challengesRef,
-
-        where(
-            "challengerId",
-            "==",
-            currentStudent.uid
-        ),
-
-        limit(30)
+        collection(db, "battleChallenges"),
+        where("challengerId", "==", currentStudent.uid),
+        limit(50)
     );
 
-
-    onSnapshot(
+    outgoingChallengesUnsubscribe = onSnapshot(
         challengesQuery,
-
         snapshot => {
-
             snapshot.docs.forEach(item => {
-
                 const challenge = item.data();
 
+                if (challenge.status !== "accepted") return;
+                if (processingChallenges.has(item.id)) return;
 
-                if (challenge.status !== "accepted") {
-                    return;
-                }
-
-
-                if (
-                    processedAcceptedChallenges.has(item.id)
-                ) {
-                    return;
-                }
-
-
-                handleAcceptedChallenge(
-                    item.id,
-                    challenge
-                );
-
+                handleAcceptedChallenge(item.id, challenge);
             });
-
         },
-
         error => {
-
-            console.error(
-                "Outgoing challenges error:",
-                error
-            );
-
+            console.error("Outgoing challenges error:", error);
         }
     );
-
 }
 
 
-/* =====================================================
-   19. HANDLE ACCEPTED DIRECT CHALLENGE
-===================================================== */
+/* =========================================================
+   18. PROCESS AN ACCEPTED DIRECT CHALLENGE
+========================================================= */
 
-async function handleAcceptedChallenge(
-    challengeId,
-    challenge
-) {
-
+async function handleAcceptedChallenge(challengeId, challenge) {
     if (!currentStudent) return;
+    if (processingChallenges.has(challengeId)) return;
 
-
-    if (
-        processedAcceptedChallenges.has(challengeId)
-    ) {
-        return;
-    }
-
-
-    processedAcceptedChallenges.add(challengeId);
-
+    processingChallenges.add(challengeId);
 
     try {
+        const battleSettings = getBattleSettings("random");
 
         const challengeRef = doc(
             db,
@@ -1915,13 +1262,11 @@ async function handleAcceptedChallenge(
             challengeId
         );
 
-
         const ownQueueRef = doc(
             db,
             "battleQueue",
             currentStudent.uid
         );
-
 
         const opponentQueueRef = doc(
             db,
@@ -1929,341 +1274,197 @@ async function handleAcceptedChallenge(
             challenge.opponentId
         );
 
+        /*
+           PHASE 1:
+           Ensure the challenger has a queue entry for this
+           exact direct challenge.
+        */
 
-        /* =====================================
-           PHASE 1: CREATE CHALLENGER QUEUE
-        ===================================== */
-
-        await runTransaction(
+        const phaseOneBattleId = await runTransaction(
             db,
             async transaction => {
-
                 const challengeSnap =
                     await transaction.get(challengeRef);
-
 
                 const ownQueueSnap =
                     await transaction.get(ownQueueRef);
 
-
                 if (!challengeSnap.exists()) {
-
-                    throw new Error(
-                        "Challenge no longer exists."
-                    );
-
+                    throw new Error("Challenge no longer exists.");
                 }
 
+                const currentChallenge = challengeSnap.data();
 
-                const currentChallenge =
-                    challengeSnap.data();
-
-
-                if (
-                    currentChallenge.status !== "accepted"
-                ) {
-
+                if (currentChallenge.status !== "accepted") {
                     throw new Error(
                         "This challenge has not been accepted."
                     );
-
                 }
-
 
                 if (
                     currentChallenge.challengerId !==
                     currentStudent.uid
                 ) {
-
-                    throw new Error(
-                        "This is not your challenge."
-                    );
-
+                    throw new Error("This is not your challenge.");
                 }
-
 
                 if (
                     currentChallenge.opponentId !==
                     challenge.opponentId
                 ) {
-
-                    throw new Error(
-                        "Challenge opponent mismatch."
-                    );
-
+                    throw new Error("Challenge opponent mismatch.");
                 }
 
-
-                // CHECK EXISTING QUEUE
-
                 if (ownQueueSnap.exists()) {
-
-                    const ownQueue =
-                        ownQueueSnap.data();
-
-
-                    // Already matched to this challenge.
+                    const ownQueue = ownQueueSnap.data();
 
                     if (
+                        ownQueue.challengeId === challengeId &&
                         ownQueue.status === "matched" &&
-                        ownQueue.challengeId === challengeId
+                        ownQueue.matchedBattleId
                     ) {
-
-                        currentBattleId =
-                            ownQueue.matchedBattleId;
-
-                        return;
-
+                        return ownQueue.matchedBattleId;
                     }
-
-
-                    // Already waiting for this challenge.
 
                     if (
-                        ownQueue.status === "waiting" &&
-                        ownQueue.challengeId === challengeId
+                        ownQueue.challengeId === challengeId &&
+                        ownQueue.status === "waiting"
                     ) {
-
-                        return;
-
+                        return null;
                     }
-
-
-                    // Do not overwrite another active session.
 
                     if (
                         ownQueue.status === "waiting" ||
                         ownQueue.status === "matched"
                     ) {
-
                         throw new Error(
-                            "You already have another active battle session. Finish or cancel it before accepting this challenge."
+                            "You already have another active battle session. Finish it first."
                         );
-
                     }
-
                 }
 
+                transaction.set(ownQueueRef, {
+                    studentId: currentStudent.uid,
+                    fullName: currentStudent.fullName || "Student",
+                    department: currentStudent.department || "",
+                    level: currentStudent.level || "",
 
-                // CREATE CHALLENGER QUEUE
+                    status: "waiting",
+                    matchedBattleId: null,
 
-                transaction.set(
-                    ownQueueRef,
-                    {
+                    opponentName:
+                        currentChallenge.opponentName || "Student",
 
-                        studentId:
-                            currentStudent.uid,
+                    competitionId: "direct_" + challengeId,
+                    competitionTitle: "Direct Challenge",
+                    challengeId,
 
-                        fullName:
-                            currentStudent.fullName || "Student",
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                });
 
-                        department:
-                            currentStudent.department || "",
-
-                        level:
-                            currentStudent.level || "",
-
-                        status: "waiting",
-
-                        matchedBattleId: null,
-
-                        opponentName:
-                            currentChallenge.opponentName || "Student",
-
-                        competitionId:
-                            "direct_" + challengeId,
-
-                        competitionTitle:
-                            "Direct Challenge",
-
-                        challengeId:
-                            challengeId,
-
-                        createdAt:
-                            serverTimestamp(),
-
-                        updatedAt:
-                            serverTimestamp()
-
-                    }
-                );
-
+                return null;
             }
         );
 
-
-        // A previous transaction may have already matched us.
-
-        if (currentBattleId) {
-
+        if (phaseOneBattleId) {
+            currentBattleId = phaseOneBattleId;
+            setMatchedOpponent(challenge.opponentName);
             showEnterBattleButton();
-
             return;
-
         }
 
+        /*
+           PHASE 2:
+           Create one battle only. The transaction returns the
+           actual existing or newly created battle ID, so a
+           second browser tab cannot overwrite it with an unused ID.
+        */
 
-        /* =====================================
-           PHASE 2: CREATE ACTUAL BATTLE
-        ===================================== */
+        const proposedBattleRef = doc(collection(db, "battles"));
 
-        const battleRef = doc(
-            collection(db, "battles")
-        );
-
-
-        await runTransaction(
+        const actualBattleId = await runTransaction(
             db,
             async transaction => {
-
-                // READ ALL DOCUMENTS FIRST
-
                 const challengeSnap =
                     await transaction.get(challengeRef);
-
 
                 const ownQueueSnap =
                     await transaction.get(ownQueueRef);
 
-
                 const opponentQueueSnap =
                     await transaction.get(opponentQueueRef);
 
-
-                if (!challengeSnap.exists()) {
-
-                    throw new Error(
-                        "Challenge no longer exists."
-                    );
-
-                }
-
-
                 if (
+                    !challengeSnap.exists() ||
                     !ownQueueSnap.exists() ||
                     !opponentQueueSnap.exists()
                 ) {
-
                     throw new Error(
                         "One of the students is not in the battle queue."
                     );
-
                 }
 
+                const currentChallenge = challengeSnap.data();
+                const ownQueue = ownQueueSnap.data();
+                const opponentQueue = opponentQueueSnap.data();
 
-                const currentChallenge =
-                    challengeSnap.data();
-
-
-                const ownQueue =
-                    ownQueueSnap.data();
-
-
-                const opponentQueue =
-                    opponentQueueSnap.data();
-
-
-                // CHECK CHALLENGE
-
-                if (
-                    currentChallenge.status !== "accepted"
-                ) {
-
+                if (currentChallenge.status !== "accepted") {
                     throw new Error(
                         "Challenge acceptance is no longer valid."
                     );
-
                 }
-
 
                 if (
                     currentChallenge.challengerId !==
                     currentStudent.uid
                 ) {
-
-                    throw new Error(
-                        "You are not the challenger."
-                    );
-
+                    throw new Error("You are not the challenger.");
                 }
-
-
-                // CHECK QUEUE OWNERS
 
                 if (
-                    ownQueue.studentId !==
-                    currentStudent.uid
+                    ownQueue.studentId !== currentStudent.uid ||
+                    opponentQueue.studentId !== currentChallenge.opponentId
                 ) {
-
-                    throw new Error(
-                        "Your queue information is invalid."
-                    );
-
+                    throw new Error("Queue ownership could not be verified.");
                 }
-
-
-                if (
-                    opponentQueue.studentId !==
-                    currentChallenge.opponentId
-                ) {
-
-                    throw new Error(
-                        "Opponent queue information is invalid."
-                    );
-
-                }
-
-
-                // CHECK BOTH CHALLENGE IDS
 
                 if (
                     ownQueue.challengeId !== challengeId ||
                     opponentQueue.challengeId !== challengeId
                 ) {
-
                     throw new Error(
                         "The students are not waiting for the same challenge."
                     );
-
                 }
 
-
-                // CHECK IF ALREADY MATCHED
-
+                // If another tab already created the battle, reuse it.
                 if (
                     ownQueue.status === "matched" &&
                     ownQueue.matchedBattleId
                 ) {
-
-                    currentBattleId =
-                        ownQueue.matchedBattleId;
-
-                    return;
-
+                    return ownQueue.matchedBattleId;
                 }
 
+                if (
+                    opponentQueue.status === "matched" &&
+                    opponentQueue.matchedBattleId
+                ) {
+                    return opponentQueue.matchedBattleId;
+                }
 
                 if (
                     ownQueue.status !== "waiting" ||
                     opponentQueue.status !== "waiting"
                 ) {
-
                     throw new Error(
                         "One of the students is no longer waiting."
                     );
-
                 }
 
-
-                // CREATE DIRECT BATTLE
-
                 const battleData = {
-
-                    player1Id:
-                        currentStudent.uid,
-
-                    player2Id:
-                        currentChallenge.opponentId,
+                    player1Id: currentStudent.uid,
+                    player2Id: currentChallenge.opponentId,
 
                     player1Name:
                         currentStudent.fullName || "Student",
@@ -2271,199 +1472,114 @@ async function handleAcceptedChallenge(
                     player2Name:
                         opponentQueue.fullName || "Student",
 
-                    competitionId:
-                        "direct_" + challengeId,
+                    // Keep null so the existing battle-room.js
+                    // loads published battle questions normally.
+                    competitionId: null,
+                    competitionTitle: "Direct Challenge",
 
-                    competitionTitle:
-                        "Direct Challenge",
-
-                    questionLimit: 10,
-
-                    durationSeconds: 60,
+                    questionLimit: battleSettings.questionLimit,
+                    durationSeconds: battleSettings.durationSeconds,
 
                     status: "waiting",
-
-                    createdAt:
-                        serverTimestamp(),
+                    createdAt: serverTimestamp(),
 
                     player1Score: 0,
-
                     player2Score: 0,
-
                     player1Answers: {},
-
                     player2Answers: {},
 
-                    challengeId:
-                        challengeId
-
+                    challengeId
                 };
 
+                transaction.set(proposedBattleRef, battleData);
 
-                transaction.set(
-                    battleRef,
-                    battleData
-                );
+                transaction.update(ownQueueRef, {
+                    status: "matched",
+                    matchedBattleId: proposedBattleRef.id,
+                    opponentName:
+                        opponentQueue.fullName || "Student",
+                    updatedAt: serverTimestamp()
+                });
 
+                transaction.update(opponentQueueRef, {
+                    status: "matched",
+                    matchedBattleId: proposedBattleRef.id,
+                    opponentName:
+                        currentStudent.fullName || "Student",
+                    updatedAt: serverTimestamp()
+                });
 
-                // UPDATE CHALLENGER QUEUE
-
-                transaction.update(
-                    ownQueueRef,
-                    {
-
-                        status: "matched",
-
-                        matchedBattleId:
-                            battleRef.id,
-
-                        opponentName:
-                            opponentQueue.fullName || "Student",
-
-                        updatedAt:
-                            serverTimestamp()
-
-                    }
-                );
-
-
-                // UPDATE OPPONENT QUEUE
-
-                transaction.update(
-                    opponentQueueRef,
-                    {
-
-                        status: "matched",
-
-                        matchedBattleId:
-                            battleRef.id,
-
-                        opponentName:
-                            currentStudent.fullName || "Student",
-
-                        updatedAt:
-                            serverTimestamp()
-
-                    }
-                );
-
-
+                return proposedBattleRef.id;
             }
         );
 
+        currentBattleId = actualBattleId;
 
-        // UPDATE CURRENT BATTLE
-
-        currentBattleId = battleRef.id;
-
+        setMatchedOpponent(challenge.opponentName || "Student");
 
         showNotification(
             "Your challenge has been accepted! Your battle is ready."
         );
-
 
         setMatchStatus(
             "Direct Battle Ready",
             "Your opponent accepted your challenge. Enter the battle room."
         );
 
-
-        if (matchedOpponentName) {
-
-            matchedOpponentName.textContent =
-                "Matched with " +
-                (challenge.opponentName || "Student");
-
-        }
-
-
         showEnterBattleButton();
 
-
     } catch (error) {
-
         console.error(
             "Accepted challenge processing error:",
             error
         );
 
-
-        processedAcceptedChallenges.delete(
-            challengeId
-        );
-
-
         showNotification(
             "Direct challenge error: " + error.message
         );
 
+    } finally {
+        processingChallenges.delete(challengeId);
     }
-
 }
 
 
-/* =====================================================
-   20. SEND STUDENT CHALLENGE
-===================================================== */
+/* =========================================================
+   19. SEND A STUDENT CHALLENGE
+========================================================= */
 
 async function sendStudentChallenge() {
+    if (!currentStudent || !challengeStudentId) return;
 
-    if (!currentStudent) return;
-
-
-    if (!challengeStudentId) return;
-
-
-    const opponentId =
-        challengeStudentId.value.trim();
-
+    const opponentId = challengeStudentId.value.trim();
 
     if (!opponentId) {
-
         if (challengeStatus) {
-
             challengeStatus.textContent =
                 "Enter the student's ID first.";
-
         }
-
         return;
-
     }
-
 
     if (opponentId === currentStudent.uid) {
-
         if (challengeStatus) {
-
             challengeStatus.textContent =
                 "You cannot challenge yourself.";
-
         }
-
         return;
-
     }
-
 
     if (sendChallengeBtn) {
-
         sendChallengeBtn.disabled = true;
-
     }
-
 
     if (challengeStatus) {
-
-        challengeStatus.textContent =
-            "Sending challenge...";
-
+        challengeStatus.textContent = "Sending challenge...";
     }
 
-
     try {
-
-        // CHECK THAT THE OPPONENT EXISTS
+        // Confirm there are published admin settings for this battle.
+        getBattleSettings("random");
 
         const opponentRef = doc(
             db,
@@ -2471,210 +1587,111 @@ async function sendStudentChallenge() {
             opponentId
         );
 
-
-        const opponentSnap = await getDoc(
-            opponentRef
-        );
-
+        const opponentSnap = await getDoc(opponentRef);
 
         if (!opponentSnap.exists()) {
-
             throw new Error(
                 "Student account was not found. Check the student ID."
             );
-
         }
 
-
-        const opponentData =
-            opponentSnap.data();
-
+        const opponentData = opponentSnap.data();
 
         if (
             opponentData.role &&
             opponentData.role !== "student"
         ) {
-
             throw new Error(
                 "You can only challenge another student."
             );
-
         }
 
-
-        // CREATE CHALLENGE
-
-        const challengeRef = collection(
-            db,
-            "battleChallenges"
-        );
-
-
         await addDoc(
-            challengeRef,
+            collection(db, "battleChallenges"),
             {
-
-                challengerId:
-                    currentStudent.uid,
-
+                challengerId: currentStudent.uid,
                 challengerName:
                     currentStudent.fullName || "Student",
-
-                opponentId:
-                    opponentId,
-
-                status:
-                    "pending",
-
-                createdAt:
-                    serverTimestamp()
-
+                opponentId,
+                status: "pending",
+                createdAt: serverTimestamp()
             }
         );
 
-
         if (challengeStatus) {
-
             challengeStatus.textContent =
                 "Challenge sent successfully!";
-
         }
-
 
         challengeStudentId.value = "";
 
-
-        showNotification(
-            "Battle challenge sent."
-        );
-
+        showNotification("Battle challenge sent.");
 
     } catch (error) {
-
-        console.error(
-            "Challenge error:",
-            error
-        );
-
+        console.error("Challenge error:", error);
 
         if (challengeStatus) {
-
             challengeStatus.textContent =
                 "Challenge failed: " + error.message;
-
         }
 
     } finally {
-
         if (sendChallengeBtn) {
-
             sendChallengeBtn.disabled = false;
-
         }
-
     }
-
 }
 
 
-/* =====================================================
-   21. LOAD STUDENT BATTLE STATISTICS
-===================================================== */
+/* =========================================================
+   20. LOAD STUDENT BATTLE STATISTICS
+========================================================= */
 
 async function loadStudentStats() {
-
     if (!currentStudent) return;
 
-
-    const battlesRef = collection(
-        db,
-        "battles"
-    );
-
+    const battlesRef = collection(db, "battles");
 
     const playerOneQuery = query(
         battlesRef,
-
-        where(
-            "player1Id",
-            "==",
-            currentStudent.uid
-        ),
-
+        where("player1Id", "==", currentStudent.uid),
         limit(100)
     );
-
 
     const playerTwoQuery = query(
         battlesRef,
-
-        where(
-            "player2Id",
-            "==",
-            currentStudent.uid
-        ),
-
+        where("player2Id", "==", currentStudent.uid),
         limit(100)
     );
 
-
-    const [
-        playerOneSnap,
-        playerTwoSnap
-    ] = await Promise.all([
-
+    const [playerOneSnap, playerTwoSnap] = await Promise.all([
         getDocs(playerOneQuery),
-
         getDocs(playerTwoQuery)
-
     ]);
-
 
     const battleMap = new Map();
 
-
     playerOneSnap.docs.forEach(item => {
-
-        battleMap.set(
-            item.id,
-            item.data()
-        );
-
+        battleMap.set(item.id, item.data());
     });
-
 
     playerTwoSnap.docs.forEach(item => {
-
-        battleMap.set(
-            item.id,
-            item.data()
-        );
-
+        battleMap.set(item.id, item.data());
     });
 
+    const battles = Array.from(battleMap.values());
 
-    const battles = Array.from(
-        battleMap.values()
+    const completed = battles.filter(
+        battle => battle.status === "completed"
     );
-
-
-    const completed = battles.filter(item =>
-        item.status === "completed"
-    );
-
 
     let wins = 0;
-
     let losses = 0;
-
     let xp = 0;
 
-
     completed.forEach(battle => {
-
         const isPlayerOne =
             battle.player1Id === currentStudent.uid;
-
 
         const myScore = Number(
             isPlayerOne
@@ -2682,438 +1699,266 @@ async function loadStudentStats() {
                 : battle.player2Score || 0
         );
 
-
         const opponentScore = Number(
             isPlayerOne
                 ? battle.player2Score || 0
                 : battle.player1Score || 0
         );
 
-
         if (myScore > opponentScore) {
-
             wins++;
-
             xp += 20;
-
-        }
-
-        else if (myScore < opponentScore) {
-
+        } else if (myScore < opponentScore) {
             losses++;
-
             xp += 5;
-
         }
-
     });
 
-
     if (totalBattles) {
-
-        totalBattles.textContent =
-            battles.length;
-
+        totalBattles.textContent = battles.length;
     }
-
 
     if (totalWins) {
-
-        totalWins.textContent =
-            wins;
-
+        totalWins.textContent = wins;
     }
-
 
     if (totalLosses) {
-
-        totalLosses.textContent =
-            losses;
-
+        totalLosses.textContent = losses;
     }
-
 
     if (totalXP) {
-
-        totalXP.textContent =
-            xp;
-
+        totalXP.textContent = xp;
     }
-
 }
 
 
-/* =====================================================
-   22. LOAD BATTLE HISTORY
-===================================================== */
+/* =========================================================
+   21. LOAD BATTLE HISTORY
+========================================================= */
 
 async function loadBattleHistory() {
-
-    if (
-        !currentStudent ||
-        !battleHistoryContainer
-    ) {
-        return;
-    }
-
+    if (!currentStudent || !battleHistoryContainer) return;
 
     battleHistoryContainer.innerHTML =
         "<p>Loading battle history...</p>";
 
-
-    const battlesRef = collection(
-        db,
-        "battles"
-    );
-
+    const battlesRef = collection(db, "battles");
 
     const firstQuery = query(
         battlesRef,
-
-        where(
-            "player1Id",
-            "==",
-            currentStudent.uid
-        ),
-
-        limit(20)
+        where("player1Id", "==", currentStudent.uid),
+        limit(50)
     );
-
 
     const secondQuery = query(
         battlesRef,
-
-        where(
-            "player2Id",
-            "==",
-            currentStudent.uid
-        ),
-
-        limit(20)
+        where("player2Id", "==", currentStudent.uid),
+        limit(50)
     );
 
-
-    const [
-        firstSnap,
-        secondSnap
-    ] = await Promise.all([
-
+    const [firstSnap, secondSnap] = await Promise.all([
         getDocs(firstQuery),
-
         getDocs(secondQuery)
-
     ]);
-
 
     const battleMap = new Map();
 
-
     firstSnap.docs.forEach(item => {
-
         battleMap.set(item.id, {
-
             id: item.id,
-
             ...item.data()
-
         });
-
     });
-
 
     secondSnap.docs.forEach(item => {
-
         battleMap.set(item.id, {
-
             id: item.id,
-
             ...item.data()
-
         });
-
     });
 
-
-    const battles = Array.from(
-        battleMap.values()
-    );
-
+    const battles = Array.from(battleMap.values());
 
     battles.sort((a, b) => {
-
-        const timeA =
-            a.createdAt?.toMillis?.() || 0;
-
-        const timeB =
-            b.createdAt?.toMillis?.() || 0;
-
-        return timeB - timeA;
-
+        return (
+            getTimestampValue(b.createdAt) -
+            getTimestampValue(a.createdAt)
+        );
     });
 
-
     if (battles.length === 0) {
-
         battleHistoryContainer.innerHTML =
             "<p>No battle history available yet.</p>";
-
         return;
-
     }
-
 
     battleHistoryContainer.innerHTML =
         battles.slice(0, 10).map(battle => {
-
             const isPlayerOne =
                 battle.player1Id === currentStudent.uid;
-
 
             const opponentName = isPlayerOne
                 ? battle.player2Name
                 : battle.player1Name;
 
-
             const myScore = isPlayerOne
                 ? battle.player1Score
                 : battle.player2Score;
-
 
             const opponentScore = isPlayerOne
                 ? battle.player2Score
                 : battle.player1Score;
 
-
             let result = "In Progress";
-
             let resultClass = "";
 
-
             if (battle.status === "completed") {
-
-                if (
-                    Number(myScore) >
-                    Number(opponentScore)
-                ) {
-
+                if (Number(myScore) > Number(opponentScore)) {
                     result = "Victory";
-
                     resultClass = "win-label";
-
-                }
-
-                else if (
-                    Number(myScore) <
-                    Number(opponentScore)
-                ) {
-
+                } else if (Number(myScore) < Number(opponentScore)) {
                     result = "Defeat";
-
                     resultClass = "loss-label";
-
-                }
-
-                else {
-
+                } else {
                     result = "Draw";
-
                 }
-
             }
 
-
             return `
-
                 <div class="history-item">
-
                     <div>
-
                         <strong>
                             ${escapeHTML(opponentName || "Student")}
                         </strong>
-
                         <p>
                             ${Number(myScore || 0)}
                             -
                             ${Number(opponentScore || 0)}
                         </p>
-
                     </div>
 
                     <span class="${resultClass}">
                         ${result}
                     </span>
-
                 </div>
-
             `;
-
         }).join("");
-
 }
 
 
-/* =====================================================
-   23. LOAD LEADERBOARD
-===================================================== */
+/* =========================================================
+   22. LOAD LEADERBOARD
+========================================================= */
 
 async function loadLeaderboard() {
-
     if (!leaderboardContainer) return;
-
 
     leaderboardContainer.innerHTML =
         "<p>Loading leaderboard...</p>";
 
-
-    const leaderboardRef = collection(
-        db,
-        "battleLeaderboard"
-    );
-
-
     const leaderboardQuery = query(
-        leaderboardRef,
-        limit(20)
+        collection(db, "battleLeaderboard"),
+        limit(50)
     );
 
-
-    const snapshot = await getDocs(
-        leaderboardQuery
-    );
-
+    const snapshot = await getDocs(leaderboardQuery);
 
     if (snapshot.empty) {
-
         leaderboardContainer.innerHTML =
             "<p>The leaderboard is not available yet.</p>";
-
         return;
-
     }
 
-
     const students = snapshot.docs.map(item => ({
-
         id: item.id,
-
         ...item.data()
-
     }));
 
-
-    students.sort((a, b) =>
-
-        Number(b.xp || 0) -
-        Number(a.xp || 0)
-
-    );
-
+    students.sort((a, b) => {
+        return Number(b.xp || 0) - Number(a.xp || 0);
+    });
 
     leaderboardContainer.innerHTML =
         students.slice(0, 10).map((student, index) => {
-
             return `
-
                 <div class="leaderboard-item">
-
                     <div>
-
                         <strong>
                             ${index + 1}.
                             ${escapeHTML(student.fullName || "Student")}
                         </strong>
-
                         <p>
                             ${Number(student.wins || 0)} victories
                         </p>
-
                     </div>
 
                     <strong>
                         ${Number(student.xp || 0)} XP
                     </strong>
-
                 </div>
-
             `;
-
         }).join("");
-
 }
 
 
-/* =====================================================
-   24. BUTTON EVENTS
-===================================================== */
+/* =========================================================
+   23. BUTTON EVENTS
+========================================================= */
 
 if (randomMatchBtn) {
-
     randomMatchBtn.addEventListener(
         "click",
         startRandomMatch
     );
-
 }
 
-
 if (cancelMatchBtn) {
-
     cancelMatchBtn.addEventListener(
         "click",
         cancelMatchmaking
     );
-
 }
 
-
 if (enterBattleBtn) {
-
     enterBattleBtn.addEventListener(
         "click",
         enterBattleRoom
     );
-
 }
 
-
 if (sendChallengeBtn) {
-
     sendChallengeBtn.addEventListener(
         "click",
         sendStudentChallenge
     );
-
 }
-
 
 if (backDashboardBtn) {
-
-    backDashboardBtn.addEventListener(
-        "click",
-        () => {
-
-            window.location.href =
-                "student-dashboard.html";
-
-        }
-    );
-
+    backDashboardBtn.addEventListener("click", () => {
+        window.location.href = "student-dashboard.html";
+    });
 }
 
 
-/* =====================================================
-   25. CLEANUP
-===================================================== */
+/* =========================================================
+   24. CLEANUP
+========================================================= */
 
 window.addEventListener("pagehide", () => {
-
     if (queueUnsubscribe) {
-
         queueUnsubscribe();
-
         queueUnsubscribe = null;
-
     }
 
+    if (incomingChallengesUnsubscribe) {
+        incomingChallengesUnsubscribe();
+        incomingChallengesUnsubscribe = null;
+    }
+
+    if (outgoingChallengesUnsubscribe) {
+        outgoingChallengesUnsubscribe();
+        outgoingChallengesUnsubscribe = null;
+    }
+
+    clearTimeout(notificationTimer);
 });
