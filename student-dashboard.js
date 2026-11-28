@@ -2747,15 +2747,22 @@ async function sendAIMessage(message) {
                 "Content-Type": "application/json"
             },
 
-            body: JSON.stringify({
-                message: cleanMessage,
-                history: historyForRequest
-            })
+           body: JSON.stringify({
+    message: cleanMessage,
+    history: historyForRequest,
+
+    student: {
+        fullName: currentStudent.fullName || "",
+        department: currentStudent.department || "",
+        level: currentStudent.level || "",
+        university: currentStudent.university || ""
+    }
+})
         });
 
         const responseText = await response.text();
 
-        let data = {};
+        let data = {}
 
         try {
             data = responseText ? JSON.parse(responseText) : {};
