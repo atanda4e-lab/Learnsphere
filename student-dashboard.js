@@ -2373,9 +2373,14 @@ function displayAIMessage(message, sender) {
     messageDiv.className = `ai-message ${sender}-message`;
 
     const messageText = document.createElement("p");
+
     messageText.textContent = message;
 
+    messageText.style.whiteSpace = "pre-wrap";
+    messageText.style.lineHeight = "1.8";
+
     messageDiv.appendChild(messageText);
+
     aiMessages.appendChild(messageDiv);
 
     aiMessages.scrollTop = aiMessages.scrollHeight;

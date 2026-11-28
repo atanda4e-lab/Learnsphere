@@ -2944,3 +2944,27 @@ button:disabled {
         padding: 10px;
     }
 }
+/* =========================================
+   LEARNSPHERE AI MESSAGE SPACING
+========================================= */
+
+.ai-message {
+    margin-bottom: 22px;
+    padding: 16px 20px;
+    max-width: 85%;
+}
+
+.ai-message p {
+    margin: 0;
+    white-space: pre-wrap;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+}
+
+.ai-message.assistant-message {
+    margin-right: auto;
+}
+
+.ai-message.user-message {
+    margin-left: auto;
+}
