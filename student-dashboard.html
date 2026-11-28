@@ -728,6 +728,77 @@
             <i class="fas fa-robot"></i>
         </div>
     </div>
+    <!-- AI PRACTICE QUESTION GENERATOR -->
+
+<div class="ai-practice-panel">
+
+    <div class="ai-practice-heading">
+        <div>
+            <span class="ai-label">
+                <i class="fas fa-brain"></i> TEST YOUR KNOWLEDGE
+            </span>
+
+            <h2>Practice Question Generator</h2>
+
+            <p>Generate questions and challenge your understanding.</p>
+        </div>
+
+        <div class="ai-practice-icon">
+            <i class="fas fa-clipboard-question"></i>
+        </div>
+    </div>
+
+    <div class="ai-practice-form">
+
+        <div class="ai-practice-field">
+            <label for="aiPracticeTopic">Topic or Course</label>
+
+            <input
+                type="text"
+                id="aiPracticeTopic"
+                placeholder="e.g. Artificial Intelligence"
+            >
+        </div>
+
+        <div class="ai-practice-field">
+            <label for="aiPracticeType">Question Type</label>
+
+            <select id="aiPracticeType">
+                <option value="Multiple Choice">Multiple Choice (MCQ)</option>
+                <option value="Theory">Theory Questions</option>
+                <option value="Mixed">Mixed Questions</option>
+            </select>
+        </div>
+
+        <div class="ai-practice-field">
+            <label for="aiPracticeDifficulty">Difficulty</label>
+
+            <select id="aiPracticeDifficulty">
+                <option value="Easy">Easy</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="Hard">Hard</option>
+            </select>
+        </div>
+
+        <div class="ai-practice-field">
+            <label for="aiPracticeCount">Number of Questions</label>
+
+            <select id="aiPracticeCount">
+                <option value="5">5 Questions</option>
+                <option value="10" selected>10 Questions</option>
+                <option value="15">15 Questions</option>
+                <option value="20">20 Questions</option>
+            </select>
+        </div>
+
+    </div>
+
+    <button type="button" id="generateAIPractice">
+        <i class="fas fa-wand-magic-sparkles"></i>
+        Generate Practice Questions
+    </button>
+
+</div>
 
     <div class="ai-workspace">
 

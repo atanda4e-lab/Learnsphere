@@ -3305,3 +3305,67 @@ document.querySelectorAll(".ai-suggestion").forEach(button => {
 console.log(
     "LearnSphere AI Firestore chat system initialized successfully."
 );
+// ======================================================
+// LEARNSPHERE AI - PRACTICE QUESTION GENERATOR
+// ======================================================
+
+const generateAIPractice = document.getElementById("generateAIPractice");
+
+const aiPracticeTopic = document.getElementById("aiPracticeTopic");
+const aiPracticeType = document.getElementById("aiPracticeType");
+const aiPracticeDifficulty = document.getElementById("aiPracticeDifficulty");
+const aiPracticeCount = document.getElementById("aiPracticeCount");
+
+
+if (generateAIPractice) {
+
+    generateAIPractice.addEventListener("click", async function () {
+
+        const topic = aiPracticeTopic.value.trim();
+        const questionType = aiPracticeType.value;
+        const difficulty = aiPracticeDifficulty.value;
+        const questionCount = aiPracticeCount.value;
+
+        if (!topic) {
+            alert("Please enter a course or topic first.");
+            aiPracticeTopic.focus();
+            return;
+        }
+
+        if (aiIsLoading) {
+            alert("Please wait for the current AI response to finish.");
+            return;
+        }
+
+        const practicePrompt = `
+You are LearnSphere AI, an academic practice question generator.
+
+Generate ${questionCount} practice questions on:
+
+TOPIC: ${topic}
+QUESTION TYPE: ${questionType}
+DIFFICULTY: ${difficulty}
+
+INSTRUCTIONS:
+
+1. Generate exactly ${questionCount} questions.
+2. Make every question academically accurate and relevant to the topic.
+3. Use clear numbering and proper spacing.
+4. For Multiple Choice questions, provide four options (A, B, C, D).
+5. For Theory questions, provide well-structured questions.
+6. For Mixed questions, combine multiple-choice and theory questions.
+7. After all questions, provide a separate ANSWER KEY.
+8. Explain why each answer is correct.
+9. Do not repeat questions.
+10. Use clear headings and readable formatting.
+
+Make the questions suitable for university students.
+`;
+
+        aiUserInput.value = practicePrompt;
+
+        await sendAIMessage();
+
+    });
+
+}
