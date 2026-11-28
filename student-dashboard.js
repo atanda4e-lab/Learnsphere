@@ -2193,8 +2193,8 @@ function loadDashboard() {
 // FIREBASE AUTHENTICATION
 // ==========================================
 
-(auth, async function(user) {
-    if (!user) {onAuthStateChanged
+onAuthStateChanged(auth, async function(user) {
+    if (!user) {
         window.location.href = "auth.html?mode=student";
         return;
     }
