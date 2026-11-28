@@ -2323,3 +2323,325 @@ themeToggle.addEventListener("click", function () {
 
 // INITIAL BUTTON STATE
 updateThemeButton();
+// ==========================================
+// LEARNSPHERE AI - COMPLETE CHAT SYSTEM
+// ==========================================
+
+// DOM ELEMENTS
+const aiChatForm = document.getElementById("aiChatForm");
+const aiUserInput = document.getElementById("aiUserInput");
+const aiMessages = document.getElementById("aiMessages");
+const clearAIChat = document.getElementById("clearAIChat");
+const aiSendButton = document.getElementById("aiSendButton");
+
+// CONVERSATION HISTORY
+let aiConversationHistory = [];
+
+
+// ==========================================
+// DISPLAY AI MESSAGE
+// ==========================================
+
+function displayAIMessage(message, sender) {
+
+    const messageDiv = document.createElement("div");
+
+    messageDiv.className = `ai-message ${sender}-message`;
+
+    const messageText = document.createElement("p");
+
+    messageText.textContent = message;
+
+    messageDiv.appendChild(messageText);
+
+    aiMessages.appendChild(messageDiv);
+
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+}
+
+
+// ==========================================
+// REMOVE WELCOME MESSAGE
+// ==========================================
+
+function removeAIWelcomeMessage() {
+
+    const welcomeMessage = aiMessages.querySelector(
+        ".ai-welcome-message"
+    );
+
+    if (welcomeMessage) {
+        welcomeMessage.remove();
+    }
+}
+
+
+// ==========================================
+// SHOW WELCOME MESSAGE
+// ==========================================
+
+function showAIWelcomeMessage() {
+
+    aiMessages.innerHTML = `
+        <div class="ai-welcome-message">
+
+            <div class="ai-welcome-icon">
+                <i class="fas fa-robot"></i>
+            </div>
+
+            <h2>Hello, welcome to LearnSphere AI!</h2>
+
+            <p>
+                I'm here to make learning easier.
+                What would you like to learn today?
+            </p>
+
+        </div>
+    `;
+}
+
+
+// ==========================================
+// SHOW LOADING MESSAGE
+// ==========================================
+
+function showAILoading() {
+
+    const loadingDiv = document.createElement("div");
+
+    loadingDiv.className = "ai-message assistant-message";
+
+    loadingDiv.id = "aiLoadingMessage";
+
+    loadingDiv.innerHTML = `
+        <p>
+            <i class="fas fa-circle-notch fa-spin"></i>
+            LearnSphere AI is thinking...
+        </p>
+    `;
+
+    aiMessages.appendChild(loadingDiv);
+
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+}
+
+
+// ==========================================
+// REMOVE LOADING MESSAGE
+// ==========================================
+
+function removeAILoading() {
+
+    const loadingMessage = document.getElementById(
+        "aiLoadingMessage"
+    );
+
+    if (loadingMessage) {
+        loadingMessage.remove();
+    }
+}
+
+
+// ==========================================
+// SEND MESSAGE TO GEMINI AI
+// ==========================================
+
+async function sendAIMessage(message) {
+
+    const cleanMessage = message.trim();
+
+    if (!cleanMessage) return;
+
+    if (aiSendButton.disabled) return;
+
+    // Remove welcome screen
+    removeAIWelcomeMessage();
+
+    // Display student's message
+    displayAIMessage(cleanMessage, "user");
+
+    // Clear input
+    aiUserInput.value = "";
+
+    // Disable send button
+    aiSendButton.disabled = true;
+
+    // Show loading animation
+    showAILoading();
+
+    try {
+
+        // Connect to LearnSphere backend
+        const response = await fetch("/api/chat", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+
+                message: cleanMessage,
+
+                history: aiConversationHistory
+
+            })
+
+        });
+
+
+        const data = await response.json();
+
+
+        // Remove loading animation
+        removeAILoading();
+
+
+        // Check for errors
+        if (!response.ok) {
+
+            throw new Error(
+                data.error || "Unable to get an AI response."
+            );
+
+        }
+
+
+        // Display AI response
+        displayAIMessage(data.reply, "assistant");
+
+
+        // Save conversation history
+        aiConversationHistory.push(
+
+            {
+                role: "user",
+                text: cleanMessage
+            },
+
+            {
+                role: "model",
+                text: data.reply
+            }
+
+        );
+
+
+        // Keep only the latest 12 messages
+        aiConversationHistory = aiConversationHistory.slice(-12);
+
+
+    } catch (error) {
+
+        removeAILoading();
+
+        console.error("LearnSphere AI Error:", error);
+
+
+        displayAIMessage(
+
+            error.message ||
+            "Something went wrong. Please try again.",
+
+            "assistant"
+
+        );
+
+    } finally {
+
+        // Enable send button again
+        aiSendButton.disabled = false;
+
+        aiUserInput.focus();
+
+    }
+
+}
+
+
+// ==========================================
+// CHAT FORM SUBMISSION
+// ==========================================
+
+if (aiChatForm) {
+
+    aiChatForm.addEventListener("submit", function (event) {
+
+        event.preventDefault();
+
+        sendAIMessage(aiUserInput.value);
+
+    });
+
+}
+
+
+// ==========================================
+// ENTER KEY TO SEND MESSAGE
+// ==========================================
+
+if (aiUserInput) {
+
+    aiUserInput.addEventListener("keydown", function (event) {
+
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
+
+            event.preventDefault();
+
+            if (aiChatForm) {
+                aiChatForm.requestSubmit();
+            }
+
+        }
+
+    });
+
+}
+
+
+// ==========================================
+// AI SUGGESTION BUTTONS
+// ==========================================
+
+document.querySelectorAll(".ai-suggestion").forEach(function (button) {
+
+    button.addEventListener("click", function () {
+
+        sendAIMessage(this.textContent);
+
+    });
+
+});
+
+
+// ==========================================
+// CLEAR CHAT
+// ==========================================
+
+if (clearAIChat) {
+
+    clearAIChat.addEventListener("click", function () {
+
+        // Clear conversation history
+        aiConversationHistory = [];
+
+        // Restore welcome screen
+        showAIWelcomeMessage();
+
+        // Clear input
+        aiUserInput.value = "";
+
+    });
+
+}
+
+
+// ==========================================
+// LEARNSPHERE AI INITIALIZATION
+// ==========================================
+
+console.log("LearnSphere AI initialized successfully.");
