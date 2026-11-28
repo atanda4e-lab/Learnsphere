@@ -3338,31 +3338,44 @@ if (generateAIPractice) {
             return;
         }
 
-        const practicePrompt = `
-You are LearnSphere AI, an academic practice question generator.
+       const practicePrompt = `
+You are LearnSphere AI, an academic examination assistant.
 
-Generate ${questionCount} practice questions on:
+Generate exactly ${questionCount} practice questions.
 
 TOPIC: ${topic}
 QUESTION TYPE: ${questionType}
 DIFFICULTY: ${difficulty}
 
-INSTRUCTIONS:
+QUESTION GENERATION RULES:
 
 1. Generate exactly ${questionCount} questions.
-2. Make every question academically accurate and relevant to the topic.
-3. Use clear numbering and proper spacing.
-4. For Multiple Choice questions, provide four options (A, B, C, D).
-5. For Theory questions, provide well-structured questions.
-6. For Mixed questions, combine multiple-choice and theory questions.
-7. After all questions, provide a separate ANSWER KEY.
-8. Explain why each answer is correct.
-9. Do not repeat questions.
-10. Use clear headings and readable formatting.
+2. Ensure all questions are academically accurate.
+3. Number every question clearly.
+4. For MCQs, provide four options (A, B, C, D).
+5. For Theory, generate well-structured academic questions.
+6. For Mixed, combine MCQs and theory questions.
+7. Make the questions suitable for university students.
+8. Respect the selected difficulty level.
 
-Make the questions suitable for university students.
+IMPORTANT EXAMINATION RULES:
+
+1. DO NOT display the correct answers immediately.
+2. DO NOT provide an answer key.
+3. DO NOT reveal explanations or hints.
+4. Present only the questions and their options.
+5. After presenting all questions, invite the student to submit their answers.
+6. Tell the student that you will mark their answers and provide explanations after submission.
+
+When the student submits answers:
+- Mark each answer.
+- Calculate the total score.
+- Show the correct answers.
+- Explain mistakes.
+- Provide the final score.
+
+Use clear headings, numbering and proper spacing.
 `;
-
         aiUserInput.value = practicePrompt;
 
         await sendAIMessage();
