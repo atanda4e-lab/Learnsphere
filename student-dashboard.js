@@ -3320,6 +3320,7 @@ const aiPracticeCount = document.getElementById("aiPracticeCount");
 if (generateAIPractice) {
 
     generateAIPractice.addEventListener("click", async function () {
+        console.log("Practice Generator button clicked!");
 
         const topic = aiPracticeTopic.value.trim();
         const questionType = aiPracticeType.value;
