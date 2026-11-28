@@ -2719,3 +2719,49 @@ button:disabled {
 /* ============================================================
    END OF LEARNSPHERE STUDENT DASHBOARD
 ============================================================ */
+/* =====================================
+   LEARNSPHERE AI CHAT MESSAGE ALIGNMENT
+===================================== */
+
+.ai-message {
+    display: flex;
+    width: 100%;
+    margin: 12px 0;
+}
+
+.assistant-message {
+    justify-content: flex-start;
+}
+
+.user-message {
+    justify-content: flex-end;
+}
+
+.ai-message p {
+    max-width: 75%;
+    padding: 13px 17px;
+    border-radius: 16px;
+    line-height: 1.6;
+    font-size: 14px;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.assistant-message p {
+    background: #142b3b;
+    color: #e2e8f0;
+    border: 1px solid #244255;
+    border-bottom-left-radius: 4px;
+}
+
+.user-message p {
+    background: #0d9488;
+    color: #ffffff;
+    border-bottom-right-radius: 4px;
+}
+
+@media (max-width: 600px) {
+    .ai-message p {
+        max-width: 88%;
+    }
+}
