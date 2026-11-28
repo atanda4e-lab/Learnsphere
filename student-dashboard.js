@@ -2259,15 +2259,12 @@ onAuthStateChanged(auth, async function(user) {
 
         await loadAllStudentData();
 
-await loadStudentNotifications();
-await loadStudentNotes();
+        await loadStudentNotifications();
+        await loadStudentNotes();
 
-// Load saved LearnSphere AI conversations
-await loadAIConversations();
+        await checkForNewStudentActivity();
 
-await checkForNewStudentActivity();
-
-loadDashboard();
+        loadDashboard();
 
         console.log("LearnSphere student dashboard loaded successfully.");
 
@@ -2327,7 +2324,12 @@ themeToggle.addEventListener("click", function () {
 // INITIAL BUTTON STATE
 updateThemeButton();
 // ======================================================
-// LEARNSPHERE AI - FIRESTORE CHAT MEMORY
+// LEARNSPHERE AI - IMPROVED FIRESTORE CHAT SYSTEM
+// ======================================================
+
+
+// ======================================================
+// 1. AI ELEMENTS
 // ======================================================
 
 const aiChatForm = document.getElementById("aiChatForm");
@@ -2344,12 +2346,18 @@ let aiIsLoading = false;
 
 
 // ======================================================
-// FIRESTORE REFERENCES
+// 2. FIRESTORE REFERENCES
 // ======================================================
 
 function getAIConversationsRef() {
-    return collection(db, "users", currentStudent.uid, "aiConversations");
+    return collection(
+        db,
+        "users",
+        currentStudent.uid,
+        "aiConversations"
+    );
 }
+
 
 function getAIMessagesRef(conversationId) {
     return collection(
@@ -2364,10 +2372,11 @@ function getAIMessagesRef(conversationId) {
 
 
 // ======================================================
-// DISPLAY AI MESSAGES
+// 3. DISPLAY AI MESSAGES
 // ======================================================
 
 function displayAIMessage(message, sender) {
+
     const messageDiv = document.createElement("div");
 
     messageDiv.className = `ai-message ${sender}-message`;
@@ -2387,8 +2396,15 @@ function displayAIMessage(message, sender) {
 }
 
 
+// ======================================================
+// 4. WELCOME MESSAGE
+// ======================================================
+
 function removeAIWelcomeMessage() {
-    const welcome = aiMessages.querySelector(".ai-welcome-message");
+
+    const welcome = aiMessages.querySelector(
+        ".ai-welcome-message"
+    );
 
     if (welcome) {
         welcome.remove();
@@ -2397,8 +2413,10 @@ function removeAIWelcomeMessage() {
 
 
 function showAIWelcomeMessage() {
+
     aiMessages.innerHTML = `
         <div class="ai-welcome-message">
+
             <div class="ai-welcome-icon">
                 <i class="fas fa-robot"></i>
             </div>
@@ -2409,31 +2427,51 @@ function showAIWelcomeMessage() {
                 I'm here to make learning easier.
                 What would you like to learn today?
             </p>
+
         </div>
     `;
 }
 
 
+// ======================================================
+// 5. LOADING INDICATOR
+// ======================================================
+
 function showAILoading() {
+
+    removeAILoading();
+
     const loadingDiv = document.createElement("div");
 
     loadingDiv.className = "ai-message assistant-message";
+
     loadingDiv.id = "aiLoadingMessage";
 
-    loadingDiv.innerHTML = `
-        <p>
-            <i class="fas fa-circle-notch fa-spin"></i>
-            LearnSphere AI is thinking...
-        </p>
-    `;
+    const loadingText = document.createElement("p");
+
+    const icon = document.createElement("i");
+
+    icon.className = "fas fa-circle-notch fa-spin";
+
+    loadingText.appendChild(icon);
+
+    loadingText.appendChild(
+        document.createTextNode(" LearnSphere AI is thinking...")
+    );
+
+    loadingDiv.appendChild(loadingText);
 
     aiMessages.appendChild(loadingDiv);
+
     aiMessages.scrollTop = aiMessages.scrollHeight;
 }
 
 
 function removeAILoading() {
-    const loading = document.getElementById("aiLoadingMessage");
+
+    const loading = document.getElementById(
+        "aiLoadingMessage"
+    );
 
     if (loading) {
         loading.remove();
@@ -2442,15 +2480,18 @@ function removeAILoading() {
 
 
 // ======================================================
-// CREATE A NEW CONVERSATION
+// 6. CREATE NEW CONVERSATION
 // ======================================================
 
 async function createAIConversation(firstMessage) {
+
     const conversationRef = await addDoc(
         getAIConversationsRef(),
         {
             title: firstMessage.slice(0, 55) || "New conversation",
+
             createdAt: serverTimestamp(),
+
             updatedAt: serverTimestamp()
         }
     );
@@ -2464,10 +2505,11 @@ async function createAIConversation(firstMessage) {
 
 
 // ======================================================
-// SAVE A MESSAGE TO FIRESTORE
+// 7. SAVE MESSAGE TO FIRESTORE
 // ======================================================
 
 async function saveAIMessage(role, text) {
+
     if (!activeAIConversationId) return;
 
     await addDoc(
@@ -2475,6 +2517,7 @@ async function saveAIMessage(role, text) {
         {
             role,
             text,
+
             timestamp: serverTimestamp()
         }
     );
@@ -2488,101 +2531,157 @@ async function saveAIMessage(role, text) {
     );
 
     await updateDoc(conversationRef, {
+
         updatedAt: serverTimestamp()
+
     });
 }
 
 
 // ======================================================
-// LOAD CONVERSATION HISTORY LIST
+// 8. LOAD CONVERSATION LIST
 // ======================================================
 
 async function loadAIConversations() {
-    if (!currentStudent?.uid || !aiConversationList) return;
+
+    if (!currentStudent?.uid || !aiConversationList) {
+        return;
+    }
 
     try {
-        const snapshot = await getDocs(getAIConversationsRef());
+
+        const snapshot = await getDocs(
+            getAIConversationsRef()
+        );
 
         const conversations = snapshot.docs.map(document => ({
+
             id: document.id,
+
             ...document.data()
+
         }));
 
-        conversations.sort((a, b) => {
-            const dateA = a.updatedAt?.toMillis?.() ||
-                          a.createdAt?.toMillis?.() || 0;
 
-            const dateB = b.updatedAt?.toMillis?.() ||
-                          b.createdAt?.toMillis?.() || 0;
+        conversations.sort((a, b) => {
+
+            const dateA =
+                a.updatedAt?.toMillis?.() ||
+                a.createdAt?.toMillis?.() || 0;
+
+            const dateB =
+                b.updatedAt?.toMillis?.() ||
+                b.createdAt?.toMillis?.() || 0;
 
             return dateB - dateA;
+
         });
+
 
         aiConversationList.innerHTML = "";
 
+
         if (conversations.length === 0) {
+
             aiConversationList.innerHTML = `
                 <p class="ai-history-empty">
                     Your conversations will appear here.
                 </p>
             `;
+
             return;
         }
 
+
         conversations.forEach(conversation => {
+
             const item = document.createElement("div");
 
             item.className = "ai-conversation-item";
 
-            if (conversation.id === activeAIConversationId) {
+
+            if (
+                conversation.id === activeAIConversationId
+            ) {
+
                 item.classList.add("active");
+
             }
+
 
             const title = document.createElement("span");
 
             title.className = "ai-conversation-title";
-            title.textContent = conversation.title || "New conversation";
+
+            title.textContent =
+                conversation.title || "New conversation";
+
 
             const deleteButton = document.createElement("button");
 
             deleteButton.type = "button";
+
             deleteButton.className = "ai-delete-conversation";
-            deleteButton.innerHTML = `<i class="fas fa-trash"></i>`;
+
+            deleteButton.innerHTML = `
+                <i class="fas fa-trash"></i>
+            `;
+
             deleteButton.title = "Delete conversation";
 
+
             deleteButton.addEventListener("click", async event => {
+
                 event.stopPropagation();
 
                 await deleteAIConversation(conversation.id);
+
             });
+
 
             item.appendChild(title);
+
             item.appendChild(deleteButton);
 
+
             item.addEventListener("click", () => {
+
                 loadAIConversation(conversation.id);
+
             });
 
+
             aiConversationList.appendChild(item);
+
         });
 
     } catch (error) {
-        console.error("Unable to load AI conversations:", error);
+
+        console.error(
+            "Unable to load AI conversations:",
+            error
+        );
+
     }
 }
 
 
 // ======================================================
-// OPEN A SAVED CONVERSATION
+// 9. LOAD SAVED CONVERSATION
 // ======================================================
 
 async function loadAIConversation(conversationId) {
-    if (!currentStudent?.uid || aiIsLoading) return;
+
+    if (!currentStudent?.uid || aiIsLoading) {
+        return;
+    }
 
     try {
+
         activeAIConversationId = conversationId;
 
         aiConversationHistory = [];
+
 
         aiMessages.innerHTML = `
             <p class="ai-history-empty">
@@ -2590,47 +2689,94 @@ async function loadAIConversation(conversationId) {
             </p>
         `;
 
+
         const snapshot = await getDocs(
             getAIMessagesRef(conversationId)
         );
 
+
         const messages = snapshot.docs.map(document => ({
+
             id: document.id,
+
             ...document.data()
+
         }));
 
+
+        // Sort messages into their original order.
         messages.sort((a, b) => {
-            const dateA = a.timestamp?.toMillis?.() || 0;
-            const dateB = b.timestamp?.toMillis?.() || 0;
+
+            const dateA =
+                a.timestamp?.toMillis?.() || 0;
+
+            const dateB =
+                b.timestamp?.toMillis?.() || 0;
 
             return dateA - dateB;
+
         });
+
 
         aiMessages.innerHTML = "";
 
+
         if (messages.length === 0) {
+
             showAIWelcomeMessage();
+
         }
 
+
         messages.forEach(message => {
+
+            if (
+                !["user", "assistant", "model"].includes(message.role) ||
+                typeof message.text !== "string"
+            ) {
+                return;
+            }
+
+
             const sender = message.role === "user"
                 ? "user"
                 : "assistant";
 
-            displayAIMessage(message.text, sender);
+
+            displayAIMessage(
+                message.text,
+                sender
+            );
+
 
             aiConversationHistory.push({
-                role: message.role === "user" ? "user" : "model",
+
+                role: message.role === "user"
+                    ? "user"
+                    : "model",
+
                 text: message.text
+
             });
+
         });
 
-        aiConversationHistory = aiConversationHistory.slice(-12);
+
+        // Keep the latest 12 messages for Gemini.
+        aiConversationHistory =
+            aiConversationHistory.slice(-12);
+
 
         await loadAIConversations();
 
+
     } catch (error) {
-        console.error("Unable to open AI conversation:", error);
+
+        console.error(
+            "Unable to open AI conversation:",
+            error
+        );
+
 
         showAIWelcomeMessage();
 
@@ -2638,29 +2784,37 @@ async function loadAIConversation(conversationId) {
             "Unable to load this conversation. Please try again.",
             "assistant"
         );
+
     }
 }
 
 
 // ======================================================
-// DELETE A CONVERSATION
+// 10. DELETE CONVERSATION
 // ======================================================
 
 async function deleteAIConversation(conversationId) {
+
     const confirmed = window.confirm(
         "Are you sure you want to delete this conversation?"
     );
 
     if (!confirmed) return;
 
+
     try {
+
         const messagesSnapshot = await getDocs(
             getAIMessagesRef(conversationId)
         );
 
+
         for (const message of messagesSnapshot.docs) {
+
             await deleteDoc(message.ref);
+
         }
+
 
         const conversationRef = doc(
             db,
@@ -2670,206 +2824,484 @@ async function deleteAIConversation(conversationId) {
             conversationId
         );
 
+
         await deleteDoc(conversationRef);
 
+
         if (activeAIConversationId === conversationId) {
-            startNewAIChat();
+
+            activeAIConversationId = null;
+
+            aiConversationHistory = [];
+
+            showAIWelcomeMessage();
+
         }
+
 
         await loadAIConversations();
 
-    } catch (error) {
-        console.error("Unable to delete conversation:", error);
 
-        alert("Unable to delete this conversation. Please try again.");
+    } catch (error) {
+
+        console.error(
+            "Unable to delete conversation:",
+            error
+        );
+
+        alert(
+            "Unable to delete this conversation. Please try again."
+        );
+
     }
 }
 
 
 // ======================================================
-// START A NEW CHAT
+// 11. START NEW CHAT
 // ======================================================
 
 function startNewAIChat() {
+
+    if (aiIsLoading) return;
+
     activeAIConversationId = null;
+
     aiConversationHistory = [];
 
     showAIWelcomeMessage();
 
+
     if (aiUserInput) {
+
         aiUserInput.value = "";
+
     }
 
+
     loadAIConversations();
+
 }
 
 
 // ======================================================
-// SEND MESSAGE TO LEARNSPHERE AI
+// 12. PREPARE CONVERSATION HISTORY
+// ======================================================
+
+function prepareAIHistory() {
+
+    return aiConversationHistory
+
+        .slice(-12)
+
+        .filter(item => {
+
+            return (
+                item &&
+                ["user", "model"].includes(item.role) &&
+                typeof item.text === "string" &&
+                item.text.trim().length > 0
+            );
+
+        })
+
+        .map(item => ({
+
+            role: item.role,
+
+            text: item.text
+
+        }));
+
+}
+
+
+// ======================================================
+// 13. SEND MESSAGE TO GEMINI
 // ======================================================
 
 async function sendAIMessage(message) {
-    const cleanMessage = message.trim();
 
-    if (!cleanMessage || aiIsLoading) return;
+    const cleanMessage =
+        typeof message === "string"
+            ? message.trim()
+            : "";
+
+
+    if (!cleanMessage || aiIsLoading) {
+        return;
+    }
+
 
     if (!currentStudent?.uid) {
+
         displayAIMessage(
             "Your student profile is not ready. Please refresh the page.",
             "assistant"
         );
+
         return;
     }
 
+
     aiIsLoading = true;
+
 
     removeAIWelcomeMessage();
 
-    displayAIMessage(cleanMessage, "user");
 
-    aiUserInput.value = "";
+    displayAIMessage(
+        cleanMessage,
+        "user"
+    );
 
-    aiSendButton.disabled = true;
+
+    if (aiUserInput) {
+
+        aiUserInput.value = "";
+
+    }
+
+
+    if (aiSendButton) {
+
+        aiSendButton.disabled = true;
+
+    }
+
 
     showAILoading();
 
+
     try {
-        // Create a conversation if this is a new chat.
+
+        // ----------------------------------------------
+        // A. CREATE CONVERSATION IF NECESSARY
+        // ----------------------------------------------
+
         if (!activeAIConversationId) {
+
             await createAIConversation(cleanMessage);
+
         }
 
-        // Save the student's message.
-        await saveAIMessage("user", cleanMessage);
 
-        // Preserve previous conversation context for Gemini.
-        const historyForRequest = [...aiConversationHistory];
+        // ----------------------------------------------
+        // B. PREPARE PREVIOUS CONVERSATION HISTORY
+        // ----------------------------------------------
+
+        const historyForRequest =
+            prepareAIHistory();
+
+
+        console.log(
+            "LearnSphere AI conversation history:",
+            historyForRequest
+        );
+
+
+        // ----------------------------------------------
+        // C. SAVE STUDENT MESSAGE
+        // ----------------------------------------------
+
+        await saveAIMessage(
+            "user",
+            cleanMessage
+        );
+
+
+        // ----------------------------------------------
+        // D. SEND REQUEST TO BACKEND
+        // ----------------------------------------------
 
         const response = await fetch("/api/chat", {
+
             method: "POST",
 
             headers: {
+
                 "Content-Type": "application/json"
+
             },
 
-           body: JSON.stringify({
-    message: cleanMessage,
-    history: historyForRequest,
+            body: JSON.stringify({
 
-    student: {
-        fullName: currentStudent.fullName || "",
-        department: currentStudent.department || "",
-        level: currentStudent.level || "",
-        university: currentStudent.university || ""
-    }
-})
+                message: cleanMessage,
+
+                history: historyForRequest,
+
+                student: {
+
+                    fullName:
+                        currentStudent.fullName || "",
+
+                    department:
+                        currentStudent.department || "",
+
+                    level:
+                        currentStudent.level || "",
+
+                    university:
+                        currentStudent.university || ""
+
+                }
+
+            })
+
         });
 
-        const responseText = await response.text();
 
-        let data = {}
+        // ----------------------------------------------
+        // E. PROCESS BACKEND RESPONSE
+        // ----------------------------------------------
+
+        const responseText =
+            await response.text();
+
+
+        let data = {};
+
 
         try {
-            data = responseText ? JSON.parse(responseText) : {};
+
+            data = responseText
+                ? JSON.parse(responseText)
+                : {};
+
         } catch (error) {
-            throw new Error("The AI server returned an invalid response.");
+
+            throw new Error(
+                "The AI server returned an invalid response."
+            );
+
         }
+
 
         if (!response.ok) {
-            throw new Error(data.error || `Server error: ${response.status}`);
+
+            throw new Error(
+                data.error ||
+                `Server error: ${response.status}`
+            );
+
         }
 
-        if (!data.reply) {
-            throw new Error("The AI server returned an empty response.");
+
+        if (
+            typeof data.reply !== "string" ||
+            !data.reply.trim()
+        ) {
+
+            throw new Error(
+                "The AI server returned an empty response."
+            );
+
         }
+
+
+        const aiReply = data.reply.trim();
+
+
+        // ----------------------------------------------
+        // F. DISPLAY AI RESPONSE
+        // ----------------------------------------------
 
         removeAILoading();
 
-        // Display AI response.
-        displayAIMessage(data.reply, "assistant");
 
-        // Save AI response.
-        await saveAIMessage("assistant", data.reply);
+        displayAIMessage(
+            aiReply,
+            "assistant"
+        );
 
-        // Update Gemini conversation context.
+
+        // ----------------------------------------------
+        // G. SAVE AI RESPONSE
+        // ----------------------------------------------
+
+        await saveAIMessage(
+            "assistant",
+            aiReply
+        );
+
+
+        // ----------------------------------------------
+        // H. UPDATE CONVERSATION MEMORY
+        // ----------------------------------------------
+
         aiConversationHistory.push(
+
             {
                 role: "user",
                 text: cleanMessage
             },
+
             {
                 role: "model",
-                text: data.reply
+                text: aiReply
             }
+
         );
 
-        aiConversationHistory = aiConversationHistory.slice(-12);
+
+        // Keep the latest 12 messages.
+        aiConversationHistory =
+            aiConversationHistory.slice(-12);
+
+
+        console.log(
+            "LearnSphere AI updated conversation history:",
+            aiConversationHistory
+        );
+
+
+        // ----------------------------------------------
+        // I. REFRESH CONVERSATION LIST
+        // ----------------------------------------------
 
         await loadAIConversations();
 
+
     } catch (error) {
+
         removeAILoading();
 
-        console.error("LearnSphere AI Error:", error);
 
-        displayAIMessage(
-            error.message || "Something went wrong. Please try again.",
-            "assistant"
+        console.error(
+            "LearnSphere AI Error:",
+            error
         );
 
+
+        displayAIMessage(
+
+            error.message ||
+            "Something went wrong. Please try again.",
+
+            "assistant"
+
+        );
+
+
     } finally {
+
         aiIsLoading = false;
 
-        aiSendButton.disabled = false;
 
-        aiUserInput.focus();
+        if (aiSendButton) {
+
+            aiSendButton.disabled = false;
+
+        }
+
+
+        if (aiUserInput) {
+
+            aiUserInput.focus();
+
+        }
+
     }
+
 }
 
 
 // ======================================================
-// EVENT LISTENERS
+// 14. CHAT FORM EVENT
 // ======================================================
 
 if (aiChatForm) {
+
     aiChatForm.addEventListener("submit", event => {
+
         event.preventDefault();
 
-        sendAIMessage(aiUserInput.value);
+        sendAIMessage(
+            aiUserInput.value
+        );
+
     });
+
 }
 
+
+// ======================================================
+// 15. ENTER KEY EVENT
+// ======================================================
 
 if (aiUserInput) {
+
     aiUserInput.addEventListener("keydown", event => {
-        if (event.key === "Enter" && !event.shiftKey) {
+
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
+
             event.preventDefault();
 
-            aiChatForm.requestSubmit();
+            if (aiChatForm) {
+
+                aiChatForm.requestSubmit();
+
+            }
+
         }
+
     });
+
 }
 
+
+// ======================================================
+// 16. NEW CHAT BUTTON
+// ======================================================
 
 if (newAIChat) {
-    newAIChat.addEventListener("click", startNewAIChat);
+
+    newAIChat.addEventListener(
+        "click",
+        startNewAIChat
+    );
+
 }
 
+
+// ======================================================
+// 17. CLEAR CHAT BUTTON
+// ======================================================
 
 if (clearAIChat) {
-    clearAIChat.addEventListener("click", startNewAIChat);
+
+    clearAIChat.addEventListener(
+        "click",
+        startNewAIChat
+    );
+
 }
 
 
+// ======================================================
+// 18. AI SUGGESTIONS
+// ======================================================
+
 document.querySelectorAll(".ai-suggestion").forEach(button => {
+
     button.addEventListener("click", () => {
-        sendAIMessage(button.textContent);
+
+        sendAIMessage(
+            button.textContent.trim()
+        );
+
     });
+
 });
 
 
 // ======================================================
-// INITIALIZE LEARNSPHERE AI
+// 19. INITIALIZE LEARNSPHERE AI
 // ======================================================
 
-console.log("LearnSphere AI Firestore system initialized.");
+console.log(
+    "LearnSphere AI Firestore chat system initialized successfully."
+);
