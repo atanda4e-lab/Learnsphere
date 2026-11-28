@@ -704,7 +704,7 @@
                 </div>
 
             </section>
-            <!-- =====================================
+           <!-- =====================================
      LEARNSPHERE AI ASSISTANT
 ===================================== -->
 
@@ -729,102 +729,115 @@
         </div>
     </div>
 
+    <div class="ai-workspace">
 
-    <!-- AI CHAT CONTAINER -->
+        <!-- CONVERSATION SIDEBAR -->
 
-    <div class="ai-chat-container">
+        <aside class="ai-history-panel">
 
-        <div class="ai-chat-top">
-
-            <div class="ai-status">
-                <span class="ai-status-dot"></span>
-
-                <div>
-                    <h3>LearnSphere Assistant</h3>
-                    <p>Your learning companion</p>
-                </div>
-            </div>
-
-            <button type="button" id="clearAIChat">
-                <i class="fas fa-trash"></i>
-                Clear Chat
+            <button type="button" id="newAIChat">
+                <i class="fas fa-plus"></i>
+                New Chat
             </button>
 
-        </div>
+            <div class="ai-history-heading">
+                <h3><i class="fas fa-history"></i> Recent Chats</h3>
+            </div>
 
+            <div id="aiConversationList" class="ai-conversation-list">
+                <p class="ai-history-empty">Your conversations will appear here.</p>
+            </div>
 
-        <!-- CHAT MESSAGES -->
+        </aside>
 
-        <div class="ai-messages" id="aiMessages">
+        <!-- CHAT AREA -->
 
-            <div class="ai-welcome-message">
+        <div class="ai-chat-container">
 
-                <div class="ai-welcome-icon">
-                    <i class="fas fa-robot"></i>
+            <div class="ai-chat-top">
+
+                <div class="ai-status">
+                    <span class="ai-status-dot"></span>
+
+                    <div>
+                        <h3>LearnSphere Assistant</h3>
+                        <p>Your learning companion</p>
+                    </div>
                 </div>
 
-                <h2>Hello, welcome to LearnSphere AI!</h2>
-
-                <p>
-                    I'm here to make learning easier.
-                    What would you like to learn today?
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <!-- SUGGESTED QUESTIONS -->
-
-        <div class="ai-suggestions">
-
-            <p>TRY ASKING</p>
-
-            <div class="ai-suggestion-list">
-
-                <button type="button" class="ai-suggestion">
-                    Explain Artificial Intelligence
-                </button>
-
-                <button type="button" class="ai-suggestion">
-                    Teach me JavaScript basics
-                </button>
-
-                <button type="button" class="ai-suggestion">
-                    Give me 5 practice questions
-                </button>
-
-                <button type="button" class="ai-suggestion">
-                    Help me prepare for exams
+                <button type="button" id="clearAIChat">
+                    <i class="fas fa-trash"></i>
+                    Clear Chat
                 </button>
 
             </div>
 
+            <div class="ai-messages" id="aiMessages">
+
+                <div class="ai-welcome-message">
+
+                    <div class="ai-welcome-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+
+                    <h2>Hello, welcome to LearnSphere AI!</h2>
+
+                    <p>
+                        I'm here to make learning easier.
+                        What would you like to learn today?
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="ai-suggestions">
+
+                <p>TRY ASKING</p>
+
+                <div class="ai-suggestion-list">
+
+                    <button type="button" class="ai-suggestion">
+                        Explain Artificial Intelligence
+                    </button>
+
+                    <button type="button" class="ai-suggestion">
+                        Teach me JavaScript basics
+                    </button>
+
+                    <button type="button" class="ai-suggestion">
+                        Give me 5 practice questions
+                    </button>
+
+                    <button type="button" class="ai-suggestion">
+                        Help me prepare for exams
+                    </button>
+
+                </div>
+
+            </div>
+
+            <form class="ai-input-area" id="aiChatForm">
+
+                <textarea
+                    id="aiUserInput"
+                    placeholder="Ask LearnSphere AI anything..."
+                    rows="1"
+                    required
+                ></textarea>
+
+                <button type="submit" id="aiSendButton">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+
+            </form>
+
+            <p class="ai-disclaimer">
+                <i class="fas fa-info-circle"></i>
+                AI can make mistakes. Always verify important academic information.
+            </p>
+
         </div>
-
-
-        <!-- MESSAGE INPUT -->
-
-        <form class="ai-input-area" id="aiChatForm">
-
-            <textarea
-                id="aiUserInput"
-                placeholder="Ask LearnSphere AI anything..."
-                rows="1"
-                required
-            ></textarea>
-
-            <button type="submit" id="aiSendButton">
-                <i class="fas fa-paper-plane"></i>
-            </button>
-
-        </form>
-
-        <p class="ai-disclaimer">
-            <i class="fas fa-info-circle"></i>
-            AI can make mistakes. Always verify important academic information.
-        </p>
 
     </div>
 

@@ -2765,3 +2765,182 @@ button:disabled {
         max-width: 88%;
     }
 }
+/* ==========================================
+   LEARNSPHERE AI - CHAT WORKSPACE
+========================================== */
+
+.ai-workspace {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 18px;
+    align-items: stretch;
+    margin-top: 25px;
+}
+
+/* ==========================================
+   CONVERSATION HISTORY PANEL
+========================================== */
+
+.ai-history-panel {
+    background: #0b1c2a;
+    border: 1px solid #1d3547;
+    border-radius: 16px;
+    padding: 18px;
+    min-width: 0;
+    min-height: 550px;
+}
+
+#newAIChat {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    background: #0d9488;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+#newAIChat:hover {
+    background: #0f766e;
+    transform: translateY(-2px);
+}
+
+.ai-history-heading {
+    margin: 25px 0 15px;
+}
+
+.ai-history-heading h3 {
+    color: #cbd5e1;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.ai-history-heading i {
+    color: #2dd4bf;
+    margin-right: 7px;
+}
+
+.ai-conversation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 450px;
+    overflow-y: auto;
+}
+
+.ai-history-empty {
+    color: #8295a5;
+    font-size: 13px;
+    line-height: 1.6;
+    text-align: center;
+    padding: 20px 5px;
+}
+
+/* ==========================================
+   INDIVIDUAL CONVERSATION ITEMS
+========================================== */
+
+.ai-conversation-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 11px;
+    background: #102536;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: 0.25s ease;
+}
+
+.ai-conversation-item:hover {
+    background: #173447;
+    border-color: #245366;
+}
+
+.ai-conversation-item.active {
+    background: #123b43;
+    border-color: #0d9488;
+}
+
+.ai-conversation-title {
+    flex: 1;
+    min-width: 0;
+    color: #dbeafe;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ai-delete-conversation {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: #8194a5;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.ai-delete-conversation:hover {
+    background: #7f1d1d;
+    color: #ffffff;
+}
+
+/* ==========================================
+   CHAT CONTAINER
+========================================== */
+
+.ai-workspace .ai-chat-container {
+    min-width: 0;
+    width: 100%;
+    margin-top: 0;
+}
+
+/* ==========================================
+   RESPONSIVE DESIGN
+========================================== */
+
+@media (max-width: 900px) {
+    .ai-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .ai-history-panel {
+        min-height: auto;
+    }
+
+    .ai-conversation-list {
+        max-height: 180px;
+    }
+}
+
+@media (max-width: 600px) {
+    .ai-history-panel {
+        padding: 14px;
+    }
+
+    .ai-workspace {
+        gap: 12px;
+    }
+
+    .ai-workspace .ai-chat-container {
+        min-width: 0;
+    }
+
+    .ai-conversation-item {
+        padding: 10px;
+    }
+}
