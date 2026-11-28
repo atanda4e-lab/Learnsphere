@@ -2491,8 +2491,28 @@ async function sendAIMessage(message) {
         });
 
 
-        const data = await response.json();
+       const responseText = await response.text();
 
+let data = {};
+
+try {
+    data = responseText ? JSON.parse(responseText) : {};
+} catch (error) {
+    console.error("Invalid API response:", responseText);
+    throw new Error(
+        `Server returned an invalid response. HTTP status: ${response.status}`
+    );
+}
+
+if (!response.ok) {
+    throw new Error(
+        data.error || `Server error: ${response.status}`
+    );
+}
+
+if (!data.reply) {
+    throw new Error("The AI server returned an empty response.");
+}
 
         // Remove loading animation
         removeAILoading();
